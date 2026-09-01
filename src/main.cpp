@@ -29,6 +29,9 @@ game::Party CrearPartyDeEjemplo(game::Vec2 posicionInicial) {
     miembros.emplace_back("Sara", Role::Soporte,
         Stats{ /*hpMax*/16, /*hp*/16, /*recursoMax*/25, /*recurso*/25, /*ataque*/3, /*defensa*/3, /*velocidad*/100.0f },
         posicionInicial);
+    miembros.emplace_back("Milo", Role::Control,
+        Stats{ /*hpMax*/15, /*hp*/15, /*recursoMax*/18, /*recurso*/18, /*ataque*/5, /*defensa*/3, /*velocidad*/95.0f },
+        posicionInicial);
 
     return game::Party(std::move(miembros));
 }

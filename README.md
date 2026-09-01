@@ -64,20 +64,23 @@ absorbe primero.
 Habilidad de rol (cuesta recurso, salvo la del Tanque):
 - **Tanque — Golpe Provocador**: como un ataque básico, y si impacta
   aplica **Marcado** al enemigo (pensado para futuros encuentros con
-  varios enemigos, donde va a hacer que prioricen atacarlo a él).
+  varios enemigos, donde va a hacer que prioricen atacarlo a él). Además,
+  se cubre a sí mismo con **Escudo** al usarla (impacte o no).
 - **Daño — Golpe Certero**: tira con ventaja (2d20, se queda con el mejor)
-  y hace más daño (1d8 en vez de 1d6).
+  y hace más daño (1d8 en vez de 1d6). Si sale crítico (20 natural),
+  además aplica **Veneno** al enemigo.
 - **Soporte — Curar**: sana 1d8+2 de vida al aliado con menos HP, sin
   tirada de ataque (no puede fallar).
-- **Control**: todavía no hay ningún personaje de este rol en el party de
-  ejemplo, así que su habilidad queda pendiente.
+- **Control — Grito Debilitante**: ataque menor (1d4) que, si impacta,
+  aplica **Debilitado** al enemigo (resta a su bono de ataque mientras
+  dura). El party de ejemplo ya incluye un personaje de este rol (Milo).
 
 Efectos de estado ya soportados por el sistema (`game/effects.h`):
 Aturdido (pierde el turno), Veneno (daño por turno), Escudo (absorbe
-daño), Debilitado (resta al ataque) y Marcado (aggro). Por ahora solo
-Marcado se aplica en el juego real (vía Golpe Provocador); los demás están
-implementados y testeados pero esperando que se conecten a más
-habilidades/enemigos.
+daño), Debilitado (resta al ataque) y Marcado (aggro). Los cuatro últimos
+ya están conectados a habilidades reales del party; Aturdido está
+implementado y testeado pero todavía sin ninguna fuente en el juego real
+(pensado para un futuro enemigo o habilidad que lo aplique).
 
 Hay un enemigo de prueba fijo en la mazmorra ("Esqueleto Errante") para
 poder probar el combate — la generación de encuentros reales es un paso
@@ -87,16 +90,17 @@ futuro.
 
 1. ✅ Proyecto base: ventana raylib (1280x720), loop principal, grilla de
    tiles de referencia, panel de party de ejemplo (Bruna/tanque,
-   Kael/daño, Sara/soporte).
+   Kael/daño, Sara/soporte, Milo/control).
 2. ✅ Movimiento libre/continuo con colisión contra paredes (rectángulos).
-3. ✅ Sistema de party básico: líder controlado, dos seguidores en
-   formación, panel con HP/rol.
+3. ✅ Sistema de party básico: líder controlado, seguidores en formación,
+   panel con HP/rol (compacto o expandido con TAB).
 4. ✅ Combate por turnos contra un enemigo: orden por velocidad, ataque +
-   habilidad por rol, dados (d20 para impactar, dados de daño, ventaja,
-   críticos) y efectos de estado.
-5. Pendiente: más enemigos / encuentros, y que Marcado, Veneno, Escudo y
-   Debilitado se usen desde más habilidades (hoy están implementados pero
-   casi sin conectar al contenido real).
+   habilidad por cada uno de los 4 roles, dados (d20 para impactar, dados
+   de daño, ventaja, críticos) y los cinco efectos de estado, ya
+   conectados a habilidades reales (Marcado y Escudo desde el Tanque,
+   Veneno desde un crítico del Daño, Debilitado desde el Control).
+5. Pendiente: más enemigos / encuentros — ahí Marcado empieza a importar
+   de verdad, y tendría sentido que algún enemigo aplique Aturdido.
 6. Pendiente: generación de mazmorra por salas conectadas.
 7. Pendiente: pantalla de derrota/game over como corresponde (hoy, si
    pierde el party, se vuelve a la exploración igual que si se gana).

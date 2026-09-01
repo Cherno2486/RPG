@@ -30,7 +30,7 @@ const char* NombreHabilidadDeRol(Role rol) {
         case Role::Tanque:  return "Golpe Provocador";
         case Role::Danio:   return "Golpe Certero";
         case Role::Soporte: return "Curar";
-        case Role::Control: return "(sin habilidad todavia)";
+        case Role::Control: return "Grito Debilitante";
     }
     return "?";
 }
@@ -105,6 +105,10 @@ ResultadoHabilidad EjecutarHabilidadDeRol(Combatiente& atacante, Combatiente& ob
                 objetivoEnemigo.estado->AgregarEfecto(EfectoActivo{TipoEfecto::Marcado, 2, 1});
                 r.texto += " Queda marcado.";
             }
+            // Se expone para provocar, pero tambien se cubre: gana Escudo
+            // propio (independiente de si el golpe conecto o no).
+            atacante.estado->AgregarEfecto(EfectoActivo{TipoEfecto::Escudo, 99, 4});
+            r.texto += " " + atacante.nombre + " se cubre (Escudo 4).";
             break;
         }
         case Role::Danio: {
@@ -118,6 +122,10 @@ ResultadoHabilidad EjecutarHabilidadDeRol(Combatiente& atacante, Combatiente& ob
             r.accion = ResolverAtaque(atacante, objetivoEnemigo, 1, 8, true, NombreHabilidadDeRol(Role::Danio));
             r.ejecutada = true;
             r.texto = r.accion.texto;
+            if (r.accion.impacto && r.accion.critico) {
+                objetivoEnemigo.estado->AgregarEfecto(EfectoActivo{TipoEfecto::Veneno, 3, 3});
+                r.texto += " La herida sangra: " + objetivoEnemigo.nombre + " queda envenenado.";
+            }
             break;
         }
         case Role::Soporte: {
@@ -138,8 +146,20 @@ ResultadoHabilidad EjecutarHabilidadDeRol(Combatiente& atacante, Combatiente& ob
             break;
         }
         case Role::Control: {
-            r.ejecutada = false;
-            r.texto = atacante.nombre + " no tiene una habilidad de Control implementada todavia.";
+            const int costo = 6;
+            if (!PuedeUsarHabilidad(atacante, costo)) {
+                r.ejecutada = false;
+                r.texto = atacante.nombre + " no tiene energia suficiente para " + NombreHabilidadDeRol(Role::Control) + ".";
+                break;
+            }
+            atacante.stats->recurso -= costo;
+            r.accion = ResolverAtaque(atacante, objetivoEnemigo, 1, 4, false, NombreHabilidadDeRol(Role::Control));
+            r.ejecutada = true;
+            r.texto = r.accion.texto;
+            if (r.accion.impacto) {
+                objetivoEnemigo.estado->AgregarEfecto(EfectoActivo{TipoEfecto::Debilitado, 2, 2});
+                r.texto += " " + objetivoEnemigo.nombre + " queda debilitado.";
+            }
             break;
         }
     }

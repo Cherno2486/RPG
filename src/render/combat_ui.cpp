@@ -22,7 +22,14 @@ void DibujarEfectos(const game::EstadoCombate& combate, int x, int y) {
     int filaY = y;
     for (const auto& efecto : combate.Efectos()) {
         char texto[64];
-        std::snprintf(texto, sizeof(texto), "%s (%d)", game::NombreEfecto(efecto.tipo), efecto.duracionTurnos);
+        if (efecto.tipo == game::TipoEfecto::Escudo) {
+            // El Escudo no "dura" turnos: se consume por daño. Mostrar la
+            // duracion interna (que usa un numero grande como centinela)
+            // confundiria; en cambio se muestran los puntos que le quedan.
+            std::snprintf(texto, sizeof(texto), "%s (%d pts)", game::NombreEfecto(efecto.tipo), efecto.magnitud);
+        } else {
+            std::snprintf(texto, sizeof(texto), "%s (%d)", game::NombreEfecto(efecto.tipo), efecto.duracionTurnos);
+        }
         DrawText(texto, x, filaY, 12, Color{ 230, 200, 120, 255 });
         filaY += 14;
     }
