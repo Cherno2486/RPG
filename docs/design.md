@@ -29,7 +29,17 @@ El movimiento del personaje dentro de la mazmorra es **libre/continuo** (no por 
 
 ## Sistema de combate
 
-Propuesta inicial: combate por turnos, con orden determinado por la velocidad de cada unidad (jugador y enemigos intercalados según stat de velocidad, no "todo el equipo primero"). Esto da profundidad táctica sin la complejidad de implementar combate en tiempo real con pausa. Es un punto de diseño abierto — se puede ajustar una vez que haya un prototipo jugable y se sienta cómo funciona el ritmo de combate.
+Por turnos, con orden determinado por la velocidad de cada unidad (jugador y enemigos intercalados según stat de velocidad, no "todo el equipo primero"). Esto da profundidad táctica sin la complejidad de implementar combate en tiempo real con pausa.
+
+Decisión de diseño (tomada al implementar el primer combate jugable): el combate es **basado en dados y efectos de estado, estilo Baldur's Gate 3 / D&D**, no en daño determinístico. Cada ataque tira un d20 + bono de ataque (derivado del stat de ataque) contra una "clase de defensa" del objetivo (10 + su stat de defensa): 1 natural es pifia automática, 20 natural es crítico (dobla los dados de daño). El daño en sí se tira con dados (1d6 para ataque básico, 1d8 para la habilidad del rol de Daño, con ventaja — 2d20, mejor de los dos). Encima de eso hay efectos de estado con duración en turnos: Aturdido (pierde el turno), Veneno (daño por turno), Escudo (absorbe daño antes que la vida), Debilitado (resta al bono de ataque) y Marcado (pensado para que los enemigos prioricen atacar al Tanque una vez que haya encuentros con más de un enemigo).
+
+Cada rol tiene una habilidad propia (además del ataque básico, disponible siempre):
+- **Tanque — Golpe Provocador**: ataque que además aplica Marcado.
+- **Daño — Golpe Certero**: ataque con ventaja y más daño, cuesta recurso.
+- **Soporte — Curar**: cura al aliado con menos vida, sin tirada (no falla), cuesta recurso.
+- **Control**: pendiente — todavía no hay un personaje de este rol en el party de ejemplo.
+
+El primer encuentro implementado es contra un único enemigo fijo en la mazmorra de prueba, para validar el ciclo completo (enganchar combate, elegir acciones, terminar en victoria o derrota) antes de construir generación de encuentros real.
 
 ## Arquitectura de código (pensando en la portabilidad a Unreal)
 
@@ -51,13 +61,18 @@ rpg-mazmorras/
 │   ├── game/            # capa de lógica: independiente de raylib
 │   │   ├── character.h/.cpp
 │   │   ├── party.h/.cpp
-│   │   ├── combat.h/.cpp
+│   │   ├── enemy.h/.cpp
+│   │   ├── combat.h/.cpp        # resolución de ataques/habilidades, turnos
+│   │   ├── combat_state.h/.cpp  # efectos activos, aplicar daño/curación
+│   │   ├── effects.h/.cpp       # tipos de efecto de estado
+│   │   ├── dice.h/.cpp          # tiradas de dados (d20, dN+mod)
 │   │   ├── dungeon.h/.cpp
 │   │   └── inventory.h/.cpp
 │   └── render/           # capa de presentación: usa raylib
 │       ├── renderer.h/.cpp
 │       ├── input.h/.cpp
-│       └── ui.h/.cpp
+│       ├── ui.h/.cpp
+│       └── combat_ui.h/.cpp
 ├── assets/
 │   ├── sprites/
 │   ├── audio/
@@ -70,10 +85,12 @@ rpg-mazmorras/
 
 1. ✅ **Proyecto base**: ventana con raylib (1280x720), loop principal, grilla de tiles de referencia y panel con la party de ejemplo (Bruna/tanque, Kael/daño, Sara/soporte). Compilando y corriendo en Windows vía VS Code + CMake + GCC/MinGW.
 2. ✅ **Movimiento**: personaje controlable con movimiento libre/continuo (no por grilla) dentro de una mazmorra de prueba (una sola sala), con colisión contra las paredes. Probado: direcciones, diagonales normalizadas, colisión de frente y en ángulo, todo OK.
-3. 🔧 **En curso — Sistema de party básico**: 2–3 personajes con stats y un rol cada uno, sin combate todavía. Un personaje "líder" controlado directamente, los otros dos siguiéndolo en formación (estilo tren/conga) para verlos en pantalla durante la exploración; UI simple mostrando HP/rol de cada uno.
-4. Combate por turnos mínimo: un encuentro contra un enemigo, orden por velocidad, una habilidad por rol.
-5. Generación de mazmorra por salas conectadas (aunque sea con 3–4 room templates).
-6. Iterar sobre balance, UI de combate, y recién ahí evaluar el salto a mobile (build de Android vía NDK).
+3. ✅ **Sistema de party básico**: 3 personajes con stats y un rol cada uno. Un personaje "líder" controlado directamente, los otros dos siguiéndolo en formación (estilo tren/conga); UI mostrando HP/rol de cada uno.
+4. ✅ **Combate por turnos contra un enemigo**: orden por velocidad, ataque básico + habilidad de rol, sistema de dados (d20 para impactar, dados de daño, ventaja, críticos) y efectos de estado (Aturdido, Veneno, Escudo, Debilitado, Marcado). Un enemigo de prueba fijo en la mazmorra para poder engancharlo y probar el ciclo completo.
+5. Conectar los efectos que todavía no se usan (Veneno, Escudo, Debilitado) a más habilidades, y sumar la habilidad de Control (no hay personaje de ese rol todavía en el party de ejemplo).
+6. Generación de mazmorra por salas conectadas (aunque sea con 3–4 room templates), y encuentros reales en vez del enemigo fijo de prueba — ahí es donde Marcado empieza a importar (varios enemigos a la vez).
+7. Pantalla de derrota/game over como corresponde (hoy, perder el combate vuelve a la exploración igual que ganar).
+8. Iterar sobre balance, UI de combate, y recién ahí evaluar el salto a mobile (build de Android vía NDK).
 
 ## Notas sobre la futura migración a Unreal
 

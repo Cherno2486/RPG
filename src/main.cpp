@@ -1,12 +1,16 @@
 #include "raylib.h"
 #include <vector>
 #include <utility>
+#include <memory>
 
 #include "game/character.h"
 #include "game/party.h"
 #include "game/dungeon.h"
+#include "game/enemy.h"
+#include "game/combat.h"
 #include "render/renderer.h"
 #include "render/input.h"
+#include "render/combat_ui.h"
 
 namespace {
 
@@ -29,6 +33,12 @@ game::Party CrearPartyDeEjemplo(game::Vec2 posicionInicial) {
     return game::Party(std::move(miembros));
 }
 
+enum class EstadoJuego { Exploracion, Combate };
+
+// Distancia (en pixeles) a la que hay que estar del enemigo para poder
+// engancharlo en combate con [E].
+constexpr float kDistanciaInteraccion = 90.0f;
+
 } // namespace
 
 int main() {
@@ -39,7 +49,17 @@ int main() {
     game::Vec2 posicionInicial{ anchoVentana / 2.0f, altoVentana / 2.0f };
     game::Party party = CrearPartyDeEjemplo(posicionInicial);
 
+    // Posicion lejos del panel de party (que vive arriba a la izquierda) y de
+    // las paredes, para que se vea siempre.
+    game::Enemy enemigo("Esqueleto Errante",
+        game::Stats{ /*hpMax*/22, /*hp*/22, /*recursoMax*/0, /*recurso*/0, /*ataque*/7, /*defensa*/3, /*velocidad*/80.0f },
+        game::Vec2{ 760.0f, 420.0f });
+
     render::Renderer renderer(anchoVentana, altoVentana, "RPG Mazmorras - Prototipo");
+
+    EstadoJuego estado = EstadoJuego::Exploracion;
+    std::unique_ptr<game::CombatEncounter> encuentro;
+    bool panelExpandido = false;  // arranca compacto; TAB lo expande/oculta
 
     while (!WindowShouldClose()) {
         float dt = GetFrameTime();
@@ -49,20 +69,59 @@ int main() {
         // por frame queda acotado.
         if (dt > 1.0f / 30.0f) dt = 1.0f / 30.0f;
 
-        game::Vec2 direccion = input::LeerDireccionMovimiento();
-        game::Character& lider = party.Lider();
+        if (estado == EstadoJuego::Exploracion) {
+            game::Vec2 direccion = input::LeerDireccionMovimiento();
+            game::Character& lider = party.Lider();
 
-        float velocidadPxPorSeg = lider.GetStats().velocidad;
-        game::Vec2 posicionActual = lider.Posicion();
-        game::Vec2 posicionDeseada = posicionActual + direccion * (velocidadPxPorSeg * dt);
+            float velocidadPxPorSeg = lider.GetStats().velocidad;
+            game::Vec2 posicionActual = lider.Posicion();
+            game::Vec2 posicionDeseada = posicionActual + direccion * (velocidadPxPorSeg * dt);
 
-        game::Vec2 posicionResuelta = mazmorra.ResolverColision(
-            lider.Colisionador(), posicionActual, posicionDeseada);
-        lider.SetPosicion(posicionResuelta);
+            game::Vec2 posicionResuelta = mazmorra.ResolverColision(
+                lider.Colisionador(), posicionActual, posicionDeseada);
+            lider.SetPosicion(posicionResuelta);
 
-        party.ActualizarFormacion(dt);
+            party.ActualizarFormacion(dt);
 
-        renderer.DibujarFrame(mazmorra, party);
+            if (IsKeyPressed(KEY_TAB)) panelExpandido = !panelExpandido;
+
+            // Enganchar combate: cerca del enemigo (vivo) y se aprieta E.
+            if (!enemigo.Vencido()) {
+                float distancia = game::Length(lider.Posicion() - enemigo.Posicion());
+                if (distancia < kDistanciaInteraccion && IsKeyPressed(KEY_E)) {
+                    encuentro = std::make_unique<game::CombatEncounter>(party, enemigo);
+                    estado = EstadoJuego::Combate;
+                }
+            }
+
+            renderer.DibujarFrame(mazmorra, party, &enemigo, panelExpandido);
+        } else {  // EstadoJuego::Combate
+            encuentro->Actualizar(dt);
+
+            if (encuentro->Fase() == game::FaseCombate::TurnoAliado) {
+                if (IsKeyPressed(KEY_ONE)) {
+                    encuentro->AccionAtaqueBasico();
+                } else if (IsKeyPressed(KEY_TWO)) {
+                    encuentro->AccionHabilidadDeRol();
+                }
+            } else if (encuentro->Fase() == game::FaseCombate::Ganado ||
+                       encuentro->Fase() == game::FaseCombate::Perdido) {
+                if (GetKeyPressed() != 0) {
+                    estado = EstadoJuego::Exploracion;
+                    encuentro.reset();
+                }
+            }
+
+            BeginDrawing();
+            ClearBackground(BLACK);
+            // Se dibuja la mazmorra "congelada" de fondo para dar contexto, y
+            // encima la pantalla de combate (que ya trae su propio overlay oscuro).
+            renderer.DibujarEscenarioSinUI(mazmorra, party, &enemigo);
+            if (encuentro) {
+                ui::DibujarCombate(*encuentro, anchoVentana, altoVentana);
+            }
+            EndDrawing();
+        }
     }
 
     return 0;

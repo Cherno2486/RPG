@@ -26,9 +26,15 @@ add_executable(rpg_mazmorras
     src/game/character.cpp
     src/game/party.cpp
     src/game/dungeon.cpp
+    src/game/dice.cpp
+    src/game/effects.cpp
+    src/game/combat_state.cpp
+    src/game/enemy.cpp
+    src/game/combat.cpp
     src/render/renderer.cpp
     src/render/input.cpp
     src/render/ui.cpp
+    src/render/combat_ui.cpp
 )
 
 target_link_libraries(rpg_mazmorras PRIVATE raylib)

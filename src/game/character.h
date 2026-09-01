@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include "mathtypes.h"
+#include "combat_state.h"
 
 namespace game {
 
@@ -30,6 +31,7 @@ public:
     const std::string& Nombre() const { return nombre_; }
     Role Rol() const { return rol_; }
     const Stats& GetStats() const { return stats_; }
+    Stats& GetStatsMut() { return stats_; }
 
     Vec2 Posicion() const { return posicion_; }
     void SetPosicion(Vec2 pos) { posicion_ = pos; }
@@ -37,11 +39,22 @@ public:
     // Rect de colision centrado en la posicion del personaje.
     Rect Colisionador() const;
 
+    // --- Combate ---
+    EstadoCombate& Combate() { return combate_; }
+    const EstadoCombate& Combate() const { return combate_; }
+
+    bool EstaVivo() const { return stats_.hp > 0; }
+    // Aplica dano (consumiendo escudo si tiene) y devuelve el dano real a la vida.
+    int RecibirDano(int cantidad);
+    // Cura vida sin pasarse del maximo y devuelve lo curado.
+    int Curar(int cantidad);
+
 private:
     std::string nombre_;
     Role rol_;
     Stats stats_;
     Vec2 posicion_;
+    EstadoCombate combate_;
     static constexpr float kRadioColision = 14.0f;
 };
 

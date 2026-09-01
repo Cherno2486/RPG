@@ -146,11 +146,86 @@ CMakeFiles/rpg_mazmorras.dir/src/game/dungeon.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/rpg_mazmorras.dir/src/game/dungeon.cpp.s"
 	C:\Users\ama5185\scoop\apps\mingw\current\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\dungeon.cpp -o CMakeFiles\rpg_mazmorras.dir\src\game\dungeon.cpp.s
 
+CMakeFiles/rpg_mazmorras.dir/src/game/dice.cpp.obj: CMakeFiles/rpg_mazmorras.dir/flags.make
+CMakeFiles/rpg_mazmorras.dir/src/game/dice.cpp.obj: CMakeFiles/rpg_mazmorras.dir/includes_CXX.rsp
+CMakeFiles/rpg_mazmorras.dir/src/game/dice.cpp.obj: C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/dice.cpp
+CMakeFiles/rpg_mazmorras.dir/src/game/dice.cpp.obj: CMakeFiles/rpg_mazmorras.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/rpg_mazmorras.dir/src/game/dice.cpp.obj"
+	C:\Users\ama5185\scoop\apps\mingw\current\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/rpg_mazmorras.dir/src/game/dice.cpp.obj -MF CMakeFiles\rpg_mazmorras.dir\src\game\dice.cpp.obj.d -o CMakeFiles\rpg_mazmorras.dir\src\game\dice.cpp.obj -c C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\dice.cpp
+
+CMakeFiles/rpg_mazmorras.dir/src/game/dice.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/rpg_mazmorras.dir/src/game/dice.cpp.i"
+	C:\Users\ama5185\scoop\apps\mingw\current\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\dice.cpp > CMakeFiles\rpg_mazmorras.dir\src\game\dice.cpp.i
+
+CMakeFiles/rpg_mazmorras.dir/src/game/dice.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/rpg_mazmorras.dir/src/game/dice.cpp.s"
+	C:\Users\ama5185\scoop\apps\mingw\current\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\dice.cpp -o CMakeFiles\rpg_mazmorras.dir\src\game\dice.cpp.s
+
+CMakeFiles/rpg_mazmorras.dir/src/game/effects.cpp.obj: CMakeFiles/rpg_mazmorras.dir/flags.make
+CMakeFiles/rpg_mazmorras.dir/src/game/effects.cpp.obj: CMakeFiles/rpg_mazmorras.dir/includes_CXX.rsp
+CMakeFiles/rpg_mazmorras.dir/src/game/effects.cpp.obj: C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/effects.cpp
+CMakeFiles/rpg_mazmorras.dir/src/game/effects.cpp.obj: CMakeFiles/rpg_mazmorras.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/rpg_mazmorras.dir/src/game/effects.cpp.obj"
+	C:\Users\ama5185\scoop\apps\mingw\current\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/rpg_mazmorras.dir/src/game/effects.cpp.obj -MF CMakeFiles\rpg_mazmorras.dir\src\game\effects.cpp.obj.d -o CMakeFiles\rpg_mazmorras.dir\src\game\effects.cpp.obj -c C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\effects.cpp
+
+CMakeFiles/rpg_mazmorras.dir/src/game/effects.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/rpg_mazmorras.dir/src/game/effects.cpp.i"
+	C:\Users\ama5185\scoop\apps\mingw\current\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\effects.cpp > CMakeFiles\rpg_mazmorras.dir\src\game\effects.cpp.i
+
+CMakeFiles/rpg_mazmorras.dir/src/game/effects.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/rpg_mazmorras.dir/src/game/effects.cpp.s"
+	C:\Users\ama5185\scoop\apps\mingw\current\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\effects.cpp -o CMakeFiles\rpg_mazmorras.dir\src\game\effects.cpp.s
+
+CMakeFiles/rpg_mazmorras.dir/src/game/combat_state.cpp.obj: CMakeFiles/rpg_mazmorras.dir/flags.make
+CMakeFiles/rpg_mazmorras.dir/src/game/combat_state.cpp.obj: CMakeFiles/rpg_mazmorras.dir/includes_CXX.rsp
+CMakeFiles/rpg_mazmorras.dir/src/game/combat_state.cpp.obj: C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/combat_state.cpp
+CMakeFiles/rpg_mazmorras.dir/src/game/combat_state.cpp.obj: CMakeFiles/rpg_mazmorras.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/rpg_mazmorras.dir/src/game/combat_state.cpp.obj"
+	C:\Users\ama5185\scoop\apps\mingw\current\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/rpg_mazmorras.dir/src/game/combat_state.cpp.obj -MF CMakeFiles\rpg_mazmorras.dir\src\game\combat_state.cpp.obj.d -o CMakeFiles\rpg_mazmorras.dir\src\game\combat_state.cpp.obj -c C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\combat_state.cpp
+
+CMakeFiles/rpg_mazmorras.dir/src/game/combat_state.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/rpg_mazmorras.dir/src/game/combat_state.cpp.i"
+	C:\Users\ama5185\scoop\apps\mingw\current\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\combat_state.cpp > CMakeFiles\rpg_mazmorras.dir\src\game\combat_state.cpp.i
+
+CMakeFiles/rpg_mazmorras.dir/src/game/combat_state.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/rpg_mazmorras.dir/src/game/combat_state.cpp.s"
+	C:\Users\ama5185\scoop\apps\mingw\current\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\combat_state.cpp -o CMakeFiles\rpg_mazmorras.dir\src\game\combat_state.cpp.s
+
+CMakeFiles/rpg_mazmorras.dir/src/game/enemy.cpp.obj: CMakeFiles/rpg_mazmorras.dir/flags.make
+CMakeFiles/rpg_mazmorras.dir/src/game/enemy.cpp.obj: CMakeFiles/rpg_mazmorras.dir/includes_CXX.rsp
+CMakeFiles/rpg_mazmorras.dir/src/game/enemy.cpp.obj: C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/enemy.cpp
+CMakeFiles/rpg_mazmorras.dir/src/game/enemy.cpp.obj: CMakeFiles/rpg_mazmorras.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/rpg_mazmorras.dir/src/game/enemy.cpp.obj"
+	C:\Users\ama5185\scoop\apps\mingw\current\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/rpg_mazmorras.dir/src/game/enemy.cpp.obj -MF CMakeFiles\rpg_mazmorras.dir\src\game\enemy.cpp.obj.d -o CMakeFiles\rpg_mazmorras.dir\src\game\enemy.cpp.obj -c C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\enemy.cpp
+
+CMakeFiles/rpg_mazmorras.dir/src/game/enemy.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/rpg_mazmorras.dir/src/game/enemy.cpp.i"
+	C:\Users\ama5185\scoop\apps\mingw\current\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\enemy.cpp > CMakeFiles\rpg_mazmorras.dir\src\game\enemy.cpp.i
+
+CMakeFiles/rpg_mazmorras.dir/src/game/enemy.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/rpg_mazmorras.dir/src/game/enemy.cpp.s"
+	C:\Users\ama5185\scoop\apps\mingw\current\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\enemy.cpp -o CMakeFiles\rpg_mazmorras.dir\src\game\enemy.cpp.s
+
+CMakeFiles/rpg_mazmorras.dir/src/game/combat.cpp.obj: CMakeFiles/rpg_mazmorras.dir/flags.make
+CMakeFiles/rpg_mazmorras.dir/src/game/combat.cpp.obj: CMakeFiles/rpg_mazmorras.dir/includes_CXX.rsp
+CMakeFiles/rpg_mazmorras.dir/src/game/combat.cpp.obj: C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/combat.cpp
+CMakeFiles/rpg_mazmorras.dir/src/game/combat.cpp.obj: CMakeFiles/rpg_mazmorras.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/rpg_mazmorras.dir/src/game/combat.cpp.obj"
+	C:\Users\ama5185\scoop\apps\mingw\current\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/rpg_mazmorras.dir/src/game/combat.cpp.obj -MF CMakeFiles\rpg_mazmorras.dir\src\game\combat.cpp.obj.d -o CMakeFiles\rpg_mazmorras.dir\src\game\combat.cpp.obj -c C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\combat.cpp
+
+CMakeFiles/rpg_mazmorras.dir/src/game/combat.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/rpg_mazmorras.dir/src/game/combat.cpp.i"
+	C:\Users\ama5185\scoop\apps\mingw\current\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\combat.cpp > CMakeFiles\rpg_mazmorras.dir\src\game\combat.cpp.i
+
+CMakeFiles/rpg_mazmorras.dir/src/game/combat.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/rpg_mazmorras.dir/src/game/combat.cpp.s"
+	C:\Users\ama5185\scoop\apps\mingw\current\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\combat.cpp -o CMakeFiles\rpg_mazmorras.dir\src\game\combat.cpp.s
+
 CMakeFiles/rpg_mazmorras.dir/src/render/renderer.cpp.obj: CMakeFiles/rpg_mazmorras.dir/flags.make
 CMakeFiles/rpg_mazmorras.dir/src/render/renderer.cpp.obj: CMakeFiles/rpg_mazmorras.dir/includes_CXX.rsp
 CMakeFiles/rpg_mazmorras.dir/src/render/renderer.cpp.obj: C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/render/renderer.cpp
 CMakeFiles/rpg_mazmorras.dir/src/render/renderer.cpp.obj: CMakeFiles/rpg_mazmorras.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/rpg_mazmorras.dir/src/render/renderer.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/rpg_mazmorras.dir/src/render/renderer.cpp.obj"
 	C:\Users\ama5185\scoop\apps\mingw\current\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/rpg_mazmorras.dir/src/render/renderer.cpp.obj -MF CMakeFiles\rpg_mazmorras.dir\src\render\renderer.cpp.obj.d -o CMakeFiles\rpg_mazmorras.dir\src\render\renderer.cpp.obj -c C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\render\renderer.cpp
 
 CMakeFiles/rpg_mazmorras.dir/src/render/renderer.cpp.i: cmake_force
@@ -165,7 +240,7 @@ CMakeFiles/rpg_mazmorras.dir/src/render/input.cpp.obj: CMakeFiles/rpg_mazmorras.
 CMakeFiles/rpg_mazmorras.dir/src/render/input.cpp.obj: CMakeFiles/rpg_mazmorras.dir/includes_CXX.rsp
 CMakeFiles/rpg_mazmorras.dir/src/render/input.cpp.obj: C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/render/input.cpp
 CMakeFiles/rpg_mazmorras.dir/src/render/input.cpp.obj: CMakeFiles/rpg_mazmorras.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/rpg_mazmorras.dir/src/render/input.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object CMakeFiles/rpg_mazmorras.dir/src/render/input.cpp.obj"
 	C:\Users\ama5185\scoop\apps\mingw\current\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/rpg_mazmorras.dir/src/render/input.cpp.obj -MF CMakeFiles\rpg_mazmorras.dir\src\render\input.cpp.obj.d -o CMakeFiles\rpg_mazmorras.dir\src\render\input.cpp.obj -c C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\render\input.cpp
 
 CMakeFiles/rpg_mazmorras.dir/src/render/input.cpp.i: cmake_force
@@ -180,7 +255,7 @@ CMakeFiles/rpg_mazmorras.dir/src/render/ui.cpp.obj: CMakeFiles/rpg_mazmorras.dir
 CMakeFiles/rpg_mazmorras.dir/src/render/ui.cpp.obj: CMakeFiles/rpg_mazmorras.dir/includes_CXX.rsp
 CMakeFiles/rpg_mazmorras.dir/src/render/ui.cpp.obj: C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/render/ui.cpp
 CMakeFiles/rpg_mazmorras.dir/src/render/ui.cpp.obj: CMakeFiles/rpg_mazmorras.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/rpg_mazmorras.dir/src/render/ui.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building CXX object CMakeFiles/rpg_mazmorras.dir/src/render/ui.cpp.obj"
 	C:\Users\ama5185\scoop\apps\mingw\current\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/rpg_mazmorras.dir/src/render/ui.cpp.obj -MF CMakeFiles\rpg_mazmorras.dir\src\render\ui.cpp.obj.d -o CMakeFiles\rpg_mazmorras.dir\src\render\ui.cpp.obj -c C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\render\ui.cpp
 
 CMakeFiles/rpg_mazmorras.dir/src/render/ui.cpp.i: cmake_force
@@ -191,6 +266,21 @@ CMakeFiles/rpg_mazmorras.dir/src/render/ui.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/rpg_mazmorras.dir/src/render/ui.cpp.s"
 	C:\Users\ama5185\scoop\apps\mingw\current\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\render\ui.cpp -o CMakeFiles\rpg_mazmorras.dir\src\render\ui.cpp.s
 
+CMakeFiles/rpg_mazmorras.dir/src/render/combat_ui.cpp.obj: CMakeFiles/rpg_mazmorras.dir/flags.make
+CMakeFiles/rpg_mazmorras.dir/src/render/combat_ui.cpp.obj: CMakeFiles/rpg_mazmorras.dir/includes_CXX.rsp
+CMakeFiles/rpg_mazmorras.dir/src/render/combat_ui.cpp.obj: C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/render/combat_ui.cpp
+CMakeFiles/rpg_mazmorras.dir/src/render/combat_ui.cpp.obj: CMakeFiles/rpg_mazmorras.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building CXX object CMakeFiles/rpg_mazmorras.dir/src/render/combat_ui.cpp.obj"
+	C:\Users\ama5185\scoop\apps\mingw\current\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/rpg_mazmorras.dir/src/render/combat_ui.cpp.obj -MF CMakeFiles\rpg_mazmorras.dir\src\render\combat_ui.cpp.obj.d -o CMakeFiles\rpg_mazmorras.dir\src\render\combat_ui.cpp.obj -c C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\render\combat_ui.cpp
+
+CMakeFiles/rpg_mazmorras.dir/src/render/combat_ui.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/rpg_mazmorras.dir/src/render/combat_ui.cpp.i"
+	C:\Users\ama5185\scoop\apps\mingw\current\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\render\combat_ui.cpp > CMakeFiles\rpg_mazmorras.dir\src\render\combat_ui.cpp.i
+
+CMakeFiles/rpg_mazmorras.dir/src/render/combat_ui.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/rpg_mazmorras.dir/src/render/combat_ui.cpp.s"
+	C:\Users\ama5185\scoop\apps\mingw\current\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\render\combat_ui.cpp -o CMakeFiles\rpg_mazmorras.dir\src\render\combat_ui.cpp.s
+
 # Object files for target rpg_mazmorras
 rpg_mazmorras_OBJECTS = \
 "CMakeFiles/rpg_mazmorras.dir/src/main.cpp.obj" \
@@ -198,9 +288,15 @@ rpg_mazmorras_OBJECTS = \
 "CMakeFiles/rpg_mazmorras.dir/src/game/character.cpp.obj" \
 "CMakeFiles/rpg_mazmorras.dir/src/game/party.cpp.obj" \
 "CMakeFiles/rpg_mazmorras.dir/src/game/dungeon.cpp.obj" \
+"CMakeFiles/rpg_mazmorras.dir/src/game/dice.cpp.obj" \
+"CMakeFiles/rpg_mazmorras.dir/src/game/effects.cpp.obj" \
+"CMakeFiles/rpg_mazmorras.dir/src/game/combat_state.cpp.obj" \
+"CMakeFiles/rpg_mazmorras.dir/src/game/enemy.cpp.obj" \
+"CMakeFiles/rpg_mazmorras.dir/src/game/combat.cpp.obj" \
 "CMakeFiles/rpg_mazmorras.dir/src/render/renderer.cpp.obj" \
 "CMakeFiles/rpg_mazmorras.dir/src/render/input.cpp.obj" \
-"CMakeFiles/rpg_mazmorras.dir/src/render/ui.cpp.obj"
+"CMakeFiles/rpg_mazmorras.dir/src/render/ui.cpp.obj" \
+"CMakeFiles/rpg_mazmorras.dir/src/render/combat_ui.cpp.obj"
 
 # External object files for target rpg_mazmorras
 rpg_mazmorras_EXTERNAL_OBJECTS =
@@ -210,15 +306,21 @@ rpg_mazmorras.exe: CMakeFiles/rpg_mazmorras.dir/src/game/mathtypes.cpp.obj
 rpg_mazmorras.exe: CMakeFiles/rpg_mazmorras.dir/src/game/character.cpp.obj
 rpg_mazmorras.exe: CMakeFiles/rpg_mazmorras.dir/src/game/party.cpp.obj
 rpg_mazmorras.exe: CMakeFiles/rpg_mazmorras.dir/src/game/dungeon.cpp.obj
+rpg_mazmorras.exe: CMakeFiles/rpg_mazmorras.dir/src/game/dice.cpp.obj
+rpg_mazmorras.exe: CMakeFiles/rpg_mazmorras.dir/src/game/effects.cpp.obj
+rpg_mazmorras.exe: CMakeFiles/rpg_mazmorras.dir/src/game/combat_state.cpp.obj
+rpg_mazmorras.exe: CMakeFiles/rpg_mazmorras.dir/src/game/enemy.cpp.obj
+rpg_mazmorras.exe: CMakeFiles/rpg_mazmorras.dir/src/game/combat.cpp.obj
 rpg_mazmorras.exe: CMakeFiles/rpg_mazmorras.dir/src/render/renderer.cpp.obj
 rpg_mazmorras.exe: CMakeFiles/rpg_mazmorras.dir/src/render/input.cpp.obj
 rpg_mazmorras.exe: CMakeFiles/rpg_mazmorras.dir/src/render/ui.cpp.obj
+rpg_mazmorras.exe: CMakeFiles/rpg_mazmorras.dir/src/render/combat_ui.cpp.obj
 rpg_mazmorras.exe: CMakeFiles/rpg_mazmorras.dir/build.make
 rpg_mazmorras.exe: C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/external/raylib-build/raylib/libraylib.a
 rpg_mazmorras.exe: CMakeFiles/rpg_mazmorras.dir/linkLibs.rsp
 rpg_mazmorras.exe: CMakeFiles/rpg_mazmorras.dir/objects1.rsp
 rpg_mazmorras.exe: CMakeFiles/rpg_mazmorras.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Linking CXX executable rpg_mazmorras.exe"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Linking CXX executable rpg_mazmorras.exe"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles\rpg_mazmorras.dir\link.txt --verbose=$(VERBOSE)
 	C:\Users\ama5185\scoop\apps\cmake\current\bin\cmake.exe -E copy_directory C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/assets C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/build/assets
 

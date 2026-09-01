@@ -30,8 +30,7 @@ Renderer::~Renderer() {
     CloseWindow();
 }
 
-void Renderer::DibujarFrame(const game::Dungeon& mazmorra, const game::Party& party) {
-    BeginDrawing();
+void Renderer::DibujarEscenarioSinUI(const game::Dungeon& mazmorra, const game::Party& party, const game::Enemy* enemigo) {
     ClearBackground(ColorDePiso());
 
     // Grilla de tiles de referencia (el movimiento es libre, esto es solo visual)
@@ -51,6 +50,16 @@ void Renderer::DibujarFrame(const game::Dungeon& mazmorra, const game::Party& pa
         DrawRectangle((int)pared.x, (int)pared.y, (int)pared.width, (int)pared.height, ColorDePared());
     }
 
+    // Enemigo (si hay uno vivo en la mazmorra): un marcador simple, distinto
+    // de los del party, con su nombre arriba para saber que es interactuable.
+    if (enemigo != nullptr && !enemigo->Vencido()) {
+        Vector2 posEnemigo = { enemigo->Posicion().x, enemigo->Posicion().y };
+        DrawCircleV(posEnemigo, 16.0f, Color{ 160, 40, 40, 255 });
+        DrawCircleLines((int)posEnemigo.x, (int)posEnemigo.y, 16.0f, BLACK);
+        int anchoTexto = MeasureText(enemigo->Nombre().c_str(), 12);
+        DrawText(enemigo->Nombre().c_str(), (int)posEnemigo.x - anchoTexto / 2, (int)posEnemigo.y - 32, 12, RAYWHITE);
+    }
+
     // Party: se dibuja del ultimo al primero para que el lider quede arriba de los demas
     const auto& miembros = party.Miembros();
     for (size_t i = miembros.size(); i-- > 0; ) {
@@ -59,8 +68,23 @@ void Renderer::DibujarFrame(const game::Dungeon& mazmorra, const game::Party& pa
         DrawCircleV(pos, 14.0f, ColorDeRol(personaje.Rol()));
         DrawCircleLines((int)pos.x, (int)pos.y, 14.0f, BLACK);
     }
+}
 
-    ui::DibujarPanelParty(party);
+void Renderer::DibujarFrame(const game::Dungeon& mazmorra, const game::Party& party, const game::Enemy* enemigo, bool panelExpandido) {
+    BeginDrawing();
+
+    DibujarEscenarioSinUI(mazmorra, party, enemigo);
+
+    ui::DibujarPanelParty(party, panelExpandido);
+
+    if (enemigo != nullptr && !enemigo->Vencido()) {
+        float distancia = game::Length(party.Lider().Posicion() - enemigo->Posicion());
+        if (distancia < 90.0f) {
+            const char* texto = "[E] Atacar";
+            int anchoTexto = MeasureText(texto, 16);
+            DrawText(texto, (anchoVentana_ - anchoTexto) / 2, altoVentana_ - 40, 16, Color{ 255, 235, 180, 255 });
+        }
+    }
 
     DrawFPS(anchoVentana_ - 90, 10);
 

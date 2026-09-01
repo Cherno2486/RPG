@@ -14,9 +14,8 @@ Color ColorDeRol(game::Role rol) {
     }
     return WHITE;
 }
-} // namespace
 
-void DibujarPanelParty(const game::Party& party) {
+void DibujarPanelExpandido(const game::Party& party) {
     const int panelX = 16;
     const int panelY = 16;
     const int anchoPanel = 220;
@@ -24,7 +23,7 @@ void DibujarPanelParty(const game::Party& party) {
 
     const auto& miembros = party.Miembros();
     int altoPanel = 12 + altoFila * (int)miembros.size();
-    DrawRectangle(panelX, panelY, anchoPanel, altoPanel, Color{ 20, 20, 25, 200 });
+    DrawRectangle(panelX, panelY, anchoPanel, altoPanel, Color{ 20, 20, 25, 220 });
     DrawRectangleLines(panelX, panelY, anchoPanel, altoPanel, Color{ 80, 80, 90, 255 });
 
     int filaY = panelY + 8;
@@ -50,6 +49,46 @@ void DibujarPanelParty(const game::Party& party) {
         DrawRectangle(panelX + 40, filaY + 36, (int)(150 * ratio), 6, Color{ 200, 60, 60, 255 });
 
         filaY += altoFila;
+    }
+
+    DrawText("[TAB] ocultar", panelX + 8, panelY + altoPanel + 6, 12, Color{ 180, 180, 190, 255 });
+}
+
+void DibujarPanelCompacto(const game::Party& party) {
+    const int x = 16;
+    const int y = 16;
+    const auto& miembros = party.Miembros();
+    const int anchoItem = 46;
+    int ancho = anchoItem * (int)miembros.size() + 8;
+
+    DrawRectangle(x, y, ancho, 54, Color{ 20, 20, 25, 180 });
+    DrawRectangleLines(x, y, ancho, 54, Color{ 80, 80, 90, 200 });
+
+    for (size_t i = 0; i < miembros.size(); ++i) {
+        const auto& personaje = miembros[i];
+        const auto& stats = personaje.GetStats();
+        int cx = x + 8 + (int)i * anchoItem + 14;
+
+        DrawCircle(cx, y + 20, 12.0f, ColorDeRol(personaje.Rol()));
+        if (!personaje.EstaVivo()) {
+            DrawLine(cx - 10, y + 10, cx + 10, y + 30, Color{ 220, 60, 60, 255 });
+        }
+
+        float ratio = stats.hpMax > 0 ? (float)stats.hp / (float)stats.hpMax : 0.0f;
+        DrawRectangle(cx - 15, y + 36, 30, 5, Color{ 60, 20, 20, 255 });
+        DrawRectangle(cx - 15, y + 36, (int)(30 * ratio), 5, Color{ 200, 60, 60, 255 });
+    }
+
+    DrawText("[TAB]", x + 8, y + 58, 12, Color{ 180, 180, 190, 255 });
+}
+
+} // namespace
+
+void DibujarPanelParty(const game::Party& party, bool expandido) {
+    if (expandido) {
+        DibujarPanelExpandido(party);
+    } else {
+        DibujarPanelCompacto(party);
     }
 }
 

@@ -24,4 +24,12 @@ Rect Character::Colisionador() const {
     };
 }
 
+int Character::RecibirDano(int cantidad) {
+    return AplicarDano(stats_, combate_, cantidad);
+}
+
+int Character::Curar(int cantidad) {
+    return AplicarCuracion(stats_, cantidad);
+}
+
 } // namespace game

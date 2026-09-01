@@ -269,6 +269,78 @@ src/game/character.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/game/character.cpp.s
 .PHONY : src/game/character.cpp.s
 
+src/game/combat.obj: src/game/combat.cpp.obj
+.PHONY : src/game/combat.obj
+
+# target to build an object file
+src/game/combat.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/game/combat.cpp.obj
+.PHONY : src/game/combat.cpp.obj
+
+src/game/combat.i: src/game/combat.cpp.i
+.PHONY : src/game/combat.i
+
+# target to preprocess a source file
+src/game/combat.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/game/combat.cpp.i
+.PHONY : src/game/combat.cpp.i
+
+src/game/combat.s: src/game/combat.cpp.s
+.PHONY : src/game/combat.s
+
+# target to generate assembly for a file
+src/game/combat.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/game/combat.cpp.s
+.PHONY : src/game/combat.cpp.s
+
+src/game/combat_state.obj: src/game/combat_state.cpp.obj
+.PHONY : src/game/combat_state.obj
+
+# target to build an object file
+src/game/combat_state.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/game/combat_state.cpp.obj
+.PHONY : src/game/combat_state.cpp.obj
+
+src/game/combat_state.i: src/game/combat_state.cpp.i
+.PHONY : src/game/combat_state.i
+
+# target to preprocess a source file
+src/game/combat_state.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/game/combat_state.cpp.i
+.PHONY : src/game/combat_state.cpp.i
+
+src/game/combat_state.s: src/game/combat_state.cpp.s
+.PHONY : src/game/combat_state.s
+
+# target to generate assembly for a file
+src/game/combat_state.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/game/combat_state.cpp.s
+.PHONY : src/game/combat_state.cpp.s
+
+src/game/dice.obj: src/game/dice.cpp.obj
+.PHONY : src/game/dice.obj
+
+# target to build an object file
+src/game/dice.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/game/dice.cpp.obj
+.PHONY : src/game/dice.cpp.obj
+
+src/game/dice.i: src/game/dice.cpp.i
+.PHONY : src/game/dice.i
+
+# target to preprocess a source file
+src/game/dice.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/game/dice.cpp.i
+.PHONY : src/game/dice.cpp.i
+
+src/game/dice.s: src/game/dice.cpp.s
+.PHONY : src/game/dice.s
+
+# target to generate assembly for a file
+src/game/dice.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/game/dice.cpp.s
+.PHONY : src/game/dice.cpp.s
+
 src/game/dungeon.obj: src/game/dungeon.cpp.obj
 .PHONY : src/game/dungeon.obj
 
@@ -292,6 +364,54 @@ src/game/dungeon.s: src/game/dungeon.cpp.s
 src/game/dungeon.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/game/dungeon.cpp.s
 .PHONY : src/game/dungeon.cpp.s
+
+src/game/effects.obj: src/game/effects.cpp.obj
+.PHONY : src/game/effects.obj
+
+# target to build an object file
+src/game/effects.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/game/effects.cpp.obj
+.PHONY : src/game/effects.cpp.obj
+
+src/game/effects.i: src/game/effects.cpp.i
+.PHONY : src/game/effects.i
+
+# target to preprocess a source file
+src/game/effects.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/game/effects.cpp.i
+.PHONY : src/game/effects.cpp.i
+
+src/game/effects.s: src/game/effects.cpp.s
+.PHONY : src/game/effects.s
+
+# target to generate assembly for a file
+src/game/effects.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/game/effects.cpp.s
+.PHONY : src/game/effects.cpp.s
+
+src/game/enemy.obj: src/game/enemy.cpp.obj
+.PHONY : src/game/enemy.obj
+
+# target to build an object file
+src/game/enemy.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/game/enemy.cpp.obj
+.PHONY : src/game/enemy.cpp.obj
+
+src/game/enemy.i: src/game/enemy.cpp.i
+.PHONY : src/game/enemy.i
+
+# target to preprocess a source file
+src/game/enemy.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/game/enemy.cpp.i
+.PHONY : src/game/enemy.cpp.i
+
+src/game/enemy.s: src/game/enemy.cpp.s
+.PHONY : src/game/enemy.s
+
+# target to generate assembly for a file
+src/game/enemy.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/game/enemy.cpp.s
+.PHONY : src/game/enemy.cpp.s
 
 src/game/mathtypes.obj: src/game/mathtypes.cpp.obj
 .PHONY : src/game/mathtypes.obj
@@ -364,6 +484,30 @@ src/main.s: src/main.cpp.s
 src/main.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/main.cpp.s
 .PHONY : src/main.cpp.s
+
+src/render/combat_ui.obj: src/render/combat_ui.cpp.obj
+.PHONY : src/render/combat_ui.obj
+
+# target to build an object file
+src/render/combat_ui.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/render/combat_ui.cpp.obj
+.PHONY : src/render/combat_ui.cpp.obj
+
+src/render/combat_ui.i: src/render/combat_ui.cpp.i
+.PHONY : src/render/combat_ui.i
+
+# target to preprocess a source file
+src/render/combat_ui.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/render/combat_ui.cpp.i
+.PHONY : src/render/combat_ui.cpp.i
+
+src/render/combat_ui.s: src/render/combat_ui.cpp.s
+.PHONY : src/render/combat_ui.s
+
+# target to generate assembly for a file
+src/render/combat_ui.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/render/combat_ui.cpp.s
+.PHONY : src/render/combat_ui.cpp.s
 
 src/render/input.obj: src/render/input.cpp.obj
 .PHONY : src/render/input.obj
@@ -459,9 +603,24 @@ help:
 	@echo ... src/game/character.obj
 	@echo ... src/game/character.i
 	@echo ... src/game/character.s
+	@echo ... src/game/combat.obj
+	@echo ... src/game/combat.i
+	@echo ... src/game/combat.s
+	@echo ... src/game/combat_state.obj
+	@echo ... src/game/combat_state.i
+	@echo ... src/game/combat_state.s
+	@echo ... src/game/dice.obj
+	@echo ... src/game/dice.i
+	@echo ... src/game/dice.s
 	@echo ... src/game/dungeon.obj
 	@echo ... src/game/dungeon.i
 	@echo ... src/game/dungeon.s
+	@echo ... src/game/effects.obj
+	@echo ... src/game/effects.i
+	@echo ... src/game/effects.s
+	@echo ... src/game/enemy.obj
+	@echo ... src/game/enemy.i
+	@echo ... src/game/enemy.s
 	@echo ... src/game/mathtypes.obj
 	@echo ... src/game/mathtypes.i
 	@echo ... src/game/mathtypes.s
@@ -471,6 +630,9 @@ help:
 	@echo ... src/main.obj
 	@echo ... src/main.i
 	@echo ... src/main.s
+	@echo ... src/render/combat_ui.obj
+	@echo ... src/render/combat_ui.i
+	@echo ... src/render/combat_ui.s
 	@echo ... src/render/input.obj
 	@echo ... src/render/input.i
 	@echo ... src/render/input.s
