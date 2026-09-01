@@ -30,4 +30,11 @@ void Party::ActualizarFormacion(float /*deltaSeconds*/) {
     }
 }
 
+void Party::ReiniciarFormacion(Vec2 posicion) {
+    for (auto& m : miembros_) {
+        m.SetPosicion(posicion);
+    }
+    historialLider_.clear();
+}
+
 } // namespace game

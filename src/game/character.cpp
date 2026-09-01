@@ -32,4 +32,10 @@ int Character::Curar(int cantidad) {
     return AplicarCuracion(stats_, cantidad);
 }
 
+void Character::Revivir() {
+    stats_.hp = stats_.hpMax;
+    stats_.recurso = stats_.recursoMax;
+    combate_.LimpiarTodo();
+}
+
 } // namespace game

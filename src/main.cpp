@@ -125,9 +125,22 @@ int main() {
                 } else if (IsKeyPressed(KEY_TWO)) {
                     encuentro->AccionHabilidadDeRol();
                 }
-            } else if (encuentro->Fase() == game::FaseCombate::Ganado ||
-                       encuentro->Fase() == game::FaseCombate::Perdido) {
+            } else if (encuentro->Fase() == game::FaseCombate::Ganado) {
                 if (GetKeyPressed() != 0) {
+                    estado = EstadoJuego::Exploracion;
+                    encuentro.reset();
+                }
+            } else if (encuentro->Fase() == game::FaseCombate::Perdido) {
+                if (GetKeyPressed() != 0) {
+                    // Game over "de verdad": si solo volvieramos a explorar,
+                    // el party quedaria con HP 0 para siempre (el proximo
+                    // combate terminaria en derrota instantanea). En vez de
+                    // eso, revive a todos a full HP/recurso, les limpia los
+                    // efectos, y los manda de vuelta al punto de partida.
+                    for (auto& miembro : party.Miembros()) {
+                        miembro.Revivir();
+                    }
+                    party.ReiniciarFormacion(posicionInicial);
                     estado = EstadoJuego::Exploracion;
                     encuentro.reset();
                 }

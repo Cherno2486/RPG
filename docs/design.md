@@ -48,6 +48,12 @@ Hay tres tipos de enemigo de prueba, repartidos por la mazmorra (todavía fija, 
 
 El primer encuentro implementado fue contra un único enemigo fijo en la mazmorra de prueba, para validar el ciclo completo (enganchar combate, elegir acciones, terminar en victoria o derrota) antes de construir generación de encuentros real; ahora hay tres, pero siguen siendo peleas de 1 enemigo a la vez.
 
+### Qué pasa al ganar o perder
+
+Al ganar (`FaseCombate::Ganado`), se vuelve a la exploración tal cual — el party sigue con el HP/recurso que le quedó, y el enemigo derrotado queda marcado (`Enemy::Vencido()`) y no se puede volver a enganchar.
+
+Al perder (`FaseCombate::Perdido`) se ve una pantalla de Game Over distinta a la de victoria, y al apretar una tecla el party **revive**: `Character::Revivir()` restaura HP y recurso al máximo y limpia todos los efectos de combate, y `Party::ReiniciarFormacion()` teletransporta a todo el party de vuelta al punto de partida de la mazmorra (y limpia el rastro de formación, para que los seguidores no "corran" desde el rastro viejo). Sin esto, perder dejaba al party con HP 0 para siempre — el próximo combate terminaba en derrota instantánea sin que el jugador pudiera hacer nada (softlock).
+
 ## Arquitectura de código (pensando en la portabilidad a Unreal)
 
 Para que la migración futura a Unreal sea lo más parecida a "portar lógica" y no "reescribir el juego", conviene separar desde el principio:
@@ -95,8 +101,8 @@ rpg-mazmorras/
 3. ✅ **Sistema de party básico**: 4 personajes con stats y un rol cada uno (uno por rol). Un personaje "líder" controlado directamente, los demás siguiéndolo en formación (estilo tren/conga); UI mostrando HP/rol de cada uno, con modo compacto/expandido (TAB) para no tapar el mapa.
 4. ✅ **Combate por turnos contra un enemigo**: orden por velocidad, ataque básico + habilidad de rol (una por cada uno de los 4 roles, Control incluido), sistema de dados (d20 para impactar, dados de daño, ventaja, críticos) y los cinco efectos de estado (Aturdido, Veneno, Escudo, Debilitado, Marcado) conectados a contenido real, tanto del party como de un enemigo.
 5. ✅ **Variedad de enemigos**: tres tipos con stats e IA distintos (Esqueleto Errante, Rata Gigante, Bandido Aturdidor), repartidos por la mazmorra de prueba y enganchables por separado.
-6. Generación de mazmorra por salas conectadas (aunque sea con 3–4 room templates), y encuentros reales con varios enemigos a la vez en vez de enemigos fijos sueltos — ahí es donde Marcado empieza a importar de verdad.
-7. Pantalla de derrota/game over como corresponde (hoy, perder el combate vuelve a la exploración igual que ganar).
+6. ✅ **Pantalla de Game Over**: perder ya no deja al party en HP 0 para siempre — se ve una pantalla distinta a la de victoria y, al apretar una tecla, el party revive a full HP/recurso (sin efectos) y vuelve al punto de partida.
+7. Generación de mazmorra por salas conectadas (aunque sea con 3–4 room templates), y encuentros reales con varios enemigos a la vez en vez de enemigos fijos sueltos — ahí es donde Marcado empieza a importar de verdad.
 8. Iterar sobre balance, UI de combate, y recién ahí evaluar el salto a mobile (build de Android vía NDK).
 
 ## Notas sobre la futura migración a Unreal

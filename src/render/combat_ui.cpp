@@ -149,9 +149,17 @@ void DibujarCombate(game::CombatEncounter& encuentro, int anchoVentana, int alto
         int anchoTexto = MeasureText(texto, 26);
         DrawText(texto, (anchoVentana - anchoTexto) / 2, altoVentana / 2 - 100, 26, Color{ 140, 230, 140, 255 });
     } else if (encuentro.Fase() == game::FaseCombate::Perdido) {
-        const char* texto = "DERROTA  -  presiona cualquier tecla para continuar";
-        int anchoTexto = MeasureText(texto, 26);
-        DrawText(texto, (anchoVentana - anchoTexto) / 2, altoVentana / 2 - 100, 26, Color{ 230, 120, 120, 255 });
+        const char* titulo = "GAME OVER";
+        int anchoTitulo = MeasureText(titulo, 46);
+        DrawText(titulo, (anchoVentana - anchoTitulo) / 2, altoVentana / 2 - 130, 46, Color{ 220, 60, 60, 255 });
+
+        const char* subtitulo = "El party ha caido...";
+        int anchoSub = MeasureText(subtitulo, 20);
+        DrawText(subtitulo, (anchoVentana - anchoSub) / 2, altoVentana / 2 - 68, 20, Color{ 230, 150, 150, 255 });
+
+        const char* prompt = "presiona cualquier tecla para revivir y volver al punto de partida";
+        int anchoPrompt = MeasureText(prompt, 18);
+        DrawText(prompt, (anchoVentana - anchoPrompt) / 2, altoVentana / 2 - 34, 18, Color{ 210, 210, 210, 255 });
     }
 }
 

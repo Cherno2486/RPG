@@ -21,6 +21,12 @@ public:
     // para que los tres se vean en pantalla durante la exploracion.
     void ActualizarFormacion(float deltaSeconds);
 
+    // Teletransporta a todo el party a 'posicion' y borra el rastro de
+    // formacion. Sin esto, un teletransporte (por ejemplo al revivir tras
+    // una derrota) dejaria a los seguidores "corriendo" desde el rastro
+    // viejo en vez de aparecer ya formados en el punto nuevo.
+    void ReiniciarFormacion(Vec2 posicion);
+
 private:
     std::vector<Character> miembros_;
     std::deque<Vec2> historialLider_;

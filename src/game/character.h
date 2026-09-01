@@ -49,6 +49,12 @@ public:
     // Cura vida sin pasarse del maximo y devuelve lo curado.
     int Curar(int cantidad);
 
+    // Revive al personaje a HP/recurso completo y limpia sus efectos de
+    // combate (Aturdido, Veneno, etc). Pensado para reiniciar el party
+    // despues de una derrota, para que un game over no deje al party
+    // muerto para siempre (ver CombatEncounter::FaseCombate::Perdido).
+    void Revivir();
+
 private:
     std::string nombre_;
     Role rol_;

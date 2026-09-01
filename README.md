@@ -48,8 +48,10 @@ siguientes veces es mucho más rápido.
   del objetivo).
 - **2**: habilidad de rol del personaje en turno (distinta por rol — ver
   "Sistema de combate" abajo).
-- Cualquier tecla, al terminar el combate (victoria o derrota): vuelve a
-  la exploración.
+- Cualquier tecla, al ganar: vuelve a la exploración.
+- Cualquier tecla, al perder (pantalla de **Game Over**): revive a todo el
+  party a HP/recurso completo, sin efectos, y los manda de vuelta al punto
+  de partida de la mazmorra.
 
 ## Sistema de combate (estilo BG3: dados + efectos)
 
@@ -113,11 +115,13 @@ se los engancha a ellos.
 5. ✅ Variedad de enemigos: tres tipos con stats e IA distintos (Esqueleto
    Errante, Rata Gigante, Bandido Aturdidor), repartidos por la mazmorra
    de prueba, cada uno enganchable por separado.
-6. Pendiente: generación de mazmorra por salas conectadas y encuentros
+6. ✅ Pantalla de Game Over: al perder un combate, se ve una pantalla
+   distinta a la de victoria y, al apretar una tecla, el party revive a
+   full HP/recurso (sin efectos) y vuelve al punto de partida — antes,
+   perder dejaba al party en HP 0 para siempre (softlock).
+7. Pendiente: generación de mazmorra por salas conectadas y encuentros
    reales con varios enemigos a la vez — ahí Marcado empieza a importar
    de verdad.
-7. Pendiente: pantalla de derrota/game over como corresponde (hoy, si
-   pierde el party, se vuelve a la exploración igual que si se gana).
 8. Pendiente: balance, y recién ahí evaluar build de Android.
 
 Ver `docs/design.md` para el detalle completo de arquitectura y roadmap.
