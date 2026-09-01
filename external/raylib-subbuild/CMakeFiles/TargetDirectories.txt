@@ -1,0 +1,3 @@
+C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/external/raylib-subbuild/CMakeFiles/raylib-populate.dir
+C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/external/raylib-subbuild/CMakeFiles/edit_cache.dir
+C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/external/raylib-subbuild/CMakeFiles/rebuild_cache.dir

@@ -1,0 +1,11 @@
+{
+	"InstallScripts" : 
+	[
+		"C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/build/cmake_install.cmake",
+		"C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/external/raylib-build/cmake_install.cmake",
+		"C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/external/raylib-build/raylib/cmake_install.cmake",
+		"C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/external/raylib-build/raylib/external/glfw/cmake_install.cmake",
+		"C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/external/raylib-build/raylib/external/glfw/src/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

@@ -1,0 +1,27 @@
+file(REMOVE_RECURSE
+  "CMakeFiles/rpg_mazmorras.dir/src/game/character.cpp.obj"
+  "CMakeFiles/rpg_mazmorras.dir/src/game/character.cpp.obj.d"
+  "CMakeFiles/rpg_mazmorras.dir/src/game/dungeon.cpp.obj"
+  "CMakeFiles/rpg_mazmorras.dir/src/game/dungeon.cpp.obj.d"
+  "CMakeFiles/rpg_mazmorras.dir/src/game/mathtypes.cpp.obj"
+  "CMakeFiles/rpg_mazmorras.dir/src/game/mathtypes.cpp.obj.d"
+  "CMakeFiles/rpg_mazmorras.dir/src/game/party.cpp.obj"
+  "CMakeFiles/rpg_mazmorras.dir/src/game/party.cpp.obj.d"
+  "CMakeFiles/rpg_mazmorras.dir/src/main.cpp.obj"
+  "CMakeFiles/rpg_mazmorras.dir/src/main.cpp.obj.d"
+  "CMakeFiles/rpg_mazmorras.dir/src/render/input.cpp.obj"
+  "CMakeFiles/rpg_mazmorras.dir/src/render/input.cpp.obj.d"
+  "CMakeFiles/rpg_mazmorras.dir/src/render/renderer.cpp.obj"
+  "CMakeFiles/rpg_mazmorras.dir/src/render/renderer.cpp.obj.d"
+  "CMakeFiles/rpg_mazmorras.dir/src/render/ui.cpp.obj"
+  "CMakeFiles/rpg_mazmorras.dir/src/render/ui.cpp.obj.d"
+  "librpg_mazmorras.dll.a"
+  "rpg_mazmorras.exe"
+  "rpg_mazmorras.exe.manifest"
+  "rpg_mazmorras.pdb"
+)
+
+# Per-language clean rules from dependency scanning.
+foreach(lang CXX)
+  include(CMakeFiles/rpg_mazmorras.dir/cmake_clean_${lang}.cmake OPTIONAL)
+endforeach()

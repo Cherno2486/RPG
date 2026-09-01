@@ -1,0 +1,3 @@
+# Hashes of file build rules.
+99d00147034e5400a8a7181a871a7af1 C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/external/raylib-build/CMakeFiles/uninstall
+f88e201189dca7818173bcd715ea94f5 C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/external/raylib-build/raylib/external/glfw/src/CMakeFiles/update_mappings
