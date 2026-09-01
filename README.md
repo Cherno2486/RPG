@@ -48,6 +48,9 @@ siguientes veces es mucho más rápido.
   del objetivo).
 - **2**: habilidad de rol del personaje en turno (distinta por rol — ver
   "Sistema de combate" abajo).
+- **TAB** (solo si hay más de un enemigo vivo): cambia a cuál de los
+  enemigos le apuntan las acciones del aliado en turno — se marca con "▶"
+  y un borde dorado en su ficha.
 - Cualquier tecla, al ganar: vuelve a la exploración.
 - Cualquier tecla, al perder (pantalla de **Game Over**): revive a todo el
   party a HP/recurso completo, sin efectos, y los manda de vuelta al punto
@@ -81,12 +84,17 @@ Efectos de estado ya soportados por el sistema (`game/effects.h`):
 Aturdido (pierde el turno), Veneno (daño por turno), Escudo (absorbe
 daño), Debilitado (resta al ataque) y Marcado (aggro). Los cinco ya están
 conectados a contenido real: los cuatro primeros desde habilidades del
-party, y Aturdido desde el Golpe Aturdidor del Bandido Aturdidor.
+party, y Aturdido desde el Golpe Aturdidor del Bandido Aturdidor. Marcado
+ahora tiene un efecto observable de verdad: un enemigo marcado prioriza
+atacar al Tanque en su turno en vez de al aliado con menos vida (antes,
+con un solo enemigo posible en pantalla, "a quién prioriza" nunca se
+notaba).
 
-La mazmorra ahora es procedural (ver "Generación de mazmorra" más abajo):
-cada sala con contenido tiene un enemigo de un tipo elegido al azar entre
-los tres siguientes — la generación de encuentros reales (varios enemigos
-a la vez en una misma sala) es un paso futuro:
+Cada sala con contenido de la mazmorra procedural (ver "Generación de
+mazmorra" más abajo) tiene un **grupo de 1 a 3 enemigos**, de tipos
+elegidos al azar entre los tres siguientes (pueden repetirse — si hay dos
+del mismo tipo en la sala, se distinguen con un sufijo, "Rata Gigante
+II"):
 - **Esqueleto Errante**: el original, parejo, solo ataque básico.
 - **Rata Gigante**: rápida y frágil (poca vida y defensa), ataque básico
   nomás — un combate corto y fácil.
@@ -95,9 +103,13 @@ a la vez en una misma sala) es un paso futuro:
   **Aturdido** (pierde el turno) — la primera fuente real de ese efecto en
   el juego.
 
-Cada uno se engancha por separado (se acerca el líder y se aprieta E sobre
-el más cercano); los otros dos quedan de fondo, sin participar, hasta que
-se los engancha a ellos.
+Al acercarse y apretar E sobre cualquiera de los enemigos de una sala, se
+engancha un solo combate contra **todo el grupo de esa sala** (no uno por
+uno): el orden de turnos intercala a los 4 del party con todos los
+enemigos vivos según velocidad, cada enemigo actúa por separado en su
+turno, y la victoria requiere derrotarlos a todos. Las salas de otras
+partes de la mazmorra quedan de fondo, sin participar, hasta que se las
+engancha.
 
 ## Estado actual
 
@@ -114,8 +126,7 @@ se los engancha a ellos.
    Veneno desde un crítico del Daño, Debilitado desde el Control, Aturdido
    desde el Bandido Aturdidor).
 5. ✅ Variedad de enemigos: tres tipos con stats e IA distintos (Esqueleto
-   Errante, Rata Gigante, Bandido Aturdidor), uno por sala (tipo al azar),
-   cada uno enganchable por separado.
+   Errante, Rata Gigante, Bandido Aturdidor).
 6. ✅ Pantalla de Game Over: al perder un combate, se ve una pantalla
    distinta a la de victoria y, al apretar una tecla, el party revive a
    full HP/recurso (sin efectos) y vuelve al punto de partida — antes,
@@ -124,10 +135,14 @@ se los engancha a ellos.
    cada partida arma una cadena de 5 salas (una inicial sin enemigo + 4
    con contenido) de tamaños variados, unidas por pasillos, con una
    cámara que sigue al líder para poder navegar el layout completo (ver
-   "Generación de mazmorra" abajo). Encuentros con varios enemigos a la
-   vez en una misma sala sigue pendiente — ahí Marcado empieza a importar
-   de verdad.
-8. Pendiente: balance, y recién ahí evaluar build de Android.
+   "Generación de mazmorra" abajo).
+8. ✅ Encuentros con varios enemigos a la vez: cada sala con contenido
+   tiene un grupo de 1 a 3 enemigos (tipos al azar, pueden repetirse) que
+   se engancha entero en un solo combate — turnos intercalados entre todo
+   el party y todos los enemigos vivos, selector de objetivo con TAB, y
+   Marcado ahora hace que un enemigo marcado priorice atacar al Tanque en
+   vez de al aliado más débil.
+9. Pendiente: balance general, y recién ahí evaluar build de Android.
 
 Ver `docs/design.md` para el detalle completo de arquitectura y roadmap.
 
@@ -138,8 +153,8 @@ Cada partida arma la mazmorra de cero (`game::Dungeon`, en
 entre 4 "templates" de tamaño (chica, grande, alargada, mediana), donde
 cada sala se ubica pegada a la anterior extendiéndose al Este o al Sur (al
 azar), conectada por un pasillo de 3 tiles de ancho. La sala 0 es siempre
-el punto de partida del party (sin enemigo); las otras 4 tienen un
-enemigo de tipo aleatorio cada una.
+el punto de partida del party (sin enemigos); las otras 4 tienen un grupo
+de 1 a 3 enemigos de tipo aleatorio cada una.
 
 Las paredes se calculan solas: se arma primero el conjunto completo de
 tiles de piso (salas + pasillos) y, al final, cualquier tile del área

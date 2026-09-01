@@ -168,28 +168,42 @@ ResultadoHabilidad EjecutarHabilidadDeRol(Combatiente& atacante, Combatiente& ob
 
 // --- CombatEncounter ---
 
-CombatEncounter::CombatEncounter(Party& party, Enemy& enemigo)
-    : party_(party), enemigo_(enemigo) {
+CombatEncounter::CombatEncounter(Party& party, std::vector<Enemy*> enemigos)
+    : party_(party), enemigos_(std::move(enemigos)) {
     for (size_t i = 0; i < party_.Miembros().size(); ++i) {
         orden_.push_back(EntradaTurno{true, static_cast<int>(i)});
     }
-    orden_.push_back(EntradaTurno{false, 0});
+    for (size_t i = 0; i < enemigos_.size(); ++i) {
+        orden_.push_back(EntradaTurno{false, static_cast<int>(i)});
+    }
 
     std::sort(orden_.begin(), orden_.end(), [this](const EntradaTurno& a, const EntradaTurno& b) {
-        float velA = a.esAliado ? party_.Miembros()[a.indice].GetStats().velocidad : enemigo_.GetStats().velocidad;
-        float velB = b.esAliado ? party_.Miembros()[b.indice].GetStats().velocidad : enemigo_.GetStats().velocidad;
+        float velA = a.esAliado ? party_.Miembros()[a.indice].GetStats().velocidad : enemigos_[a.indice]->GetStats().velocidad;
+        float velB = b.esAliado ? party_.Miembros()[b.indice].GetStats().velocidad : enemigos_[b.indice]->GetStats().velocidad;
         return velA > velB;
     });
 
-    log_.push_back("¡Comienza el combate contra " + enemigo_.Nombre() + "!");
+    if (enemigos_.size() == 1) {
+        log_.push_back("¡Comienza el combate contra " + enemigos_[0]->Nombre() + "!");
+    } else {
+        std::string nombres;
+        for (size_t i = 0; i < enemigos_.size(); ++i) {
+            nombres += enemigos_[i]->Nombre();
+            if (i + 1 < enemigos_.size()) nombres += ", ";
+        }
+        char cabecera[256];
+        std::snprintf(cabecera, sizeof(cabecera), "¡Comienza el combate contra %zu enemigos: ", enemigos_.size());
+        log_.push_back(std::string(cabecera) + nombres + "!");
+    }
     std::string ordenTexto = "Orden de turnos: ";
     for (size_t i = 0; i < orden_.size(); ++i) {
-        ordenTexto += orden_[i].esAliado ? party_.Miembros()[orden_[i].indice].Nombre() : enemigo_.Nombre();
+        ordenTexto += orden_[i].esAliado ? party_.Miembros()[orden_[i].indice].Nombre() : enemigos_[orden_[i].indice]->Nombre();
         if (i + 1 < orden_.size()) ordenTexto += " > ";
     }
     log_.push_back(ordenTexto);
 
     turnoActual_ = 0;
+    AsegurarObjetivoValido();
     if (!ChequearFinDeCombate()) {
         ProcesarInicioDeTurnoActual();
     }
@@ -197,6 +211,35 @@ CombatEncounter::CombatEncounter(Party& party, Enemy& enemigo)
 
 void CombatEncounter::AvanzarIndice() {
     turnoActual_ = (turnoActual_ + 1) % orden_.size();
+}
+
+void CombatEncounter::AsegurarObjetivoValido() {
+    if (objetivoActual_ >= 0 && objetivoActual_ < (int)enemigos_.size() && enemigos_[objetivoActual_]->EstaVivo()) {
+        return;  // el objetivo actual sigue siendo valido
+    }
+    objetivoActual_ = -1;
+    for (size_t i = 0; i < enemigos_.size(); ++i) {
+        if (enemigos_[i]->EstaVivo()) {
+            objetivoActual_ = (int)i;
+            break;
+        }
+    }
+}
+
+void CombatEncounter::CiclarObjetivo() {
+    if (enemigos_.empty()) return;
+    int vivos = 0;
+    for (auto* e : enemigos_) if (e->EstaVivo()) vivos++;
+    if (vivos <= 1) return;
+
+    int siguiente = objetivoActual_;
+    for (size_t paso = 0; paso < enemigos_.size(); ++paso) {
+        siguiente = (siguiente + 1) % (int)enemigos_.size();
+        if (enemigos_[siguiente]->EstaVivo()) {
+            objetivoActual_ = siguiente;
+            return;
+        }
+    }
 }
 
 void CombatEncounter::ProcesarInicioDeTurnoActual() {
@@ -225,27 +268,29 @@ void CombatEncounter::ProcesarInicioDeTurnoActual() {
                 AvanzarIndice();
                 continue;
             }
+            AsegurarObjetivoValido();
             fase_ = FaseCombate::TurnoAliado;
             return;
         } else {
-            if (!enemigo_.EstaVivo()) {
+            Enemy& en = *enemigos_[e.indice];
+            if (!en.EstaVivo()) {
                 AvanzarIndice();
                 continue;
             }
-            auto tick = enemigo_.Combate().TickInicioDeTurno();
+            auto tick = en.Combate().TickInicioDeTurno();
             if (tick.danoVeneno > 0) {
-                int recibido = enemigo_.RecibirDano(tick.danoVeneno);
-                log_.push_back(enemigo_.Nombre() + " sufre " + std::to_string(recibido) + " de daño por veneno.");
-                if (!enemigo_.EstaVivo()) {
-                    enemigo_.MarcarVencido();
-                    log_.push_back(enemigo_.Nombre() + " ha sido derrotado.");
+                int recibido = en.RecibirDano(tick.danoVeneno);
+                log_.push_back(en.Nombre() + " sufre " + std::to_string(recibido) + " de daño por veneno.");
+                if (!en.EstaVivo()) {
+                    en.MarcarVencido();
+                    log_.push_back(en.Nombre() + " ha sido derrotado.");
                     if (ChequearFinDeCombate()) return;
                     AvanzarIndice();
                     continue;
                 }
             }
             if (tick.aturdido) {
-                log_.push_back(enemigo_.Nombre() + " esta aturdido y pierde el turno.");
+                log_.push_back(en.Nombre() + " esta aturdido y pierde el turno.");
                 AvanzarIndice();
                 continue;
             }
@@ -257,7 +302,11 @@ void CombatEncounter::ProcesarInicioDeTurnoActual() {
 }
 
 bool CombatEncounter::ChequearFinDeCombate() {
-    if (!enemigo_.EstaVivo()) {
+    bool algunEnemigoVivo = false;
+    for (auto* e : enemigos_) {
+        if (e->EstaVivo()) { algunEnemigoVivo = true; break; }
+    }
+    if (!algunEnemigoVivo) {
         fase_ = FaseCombate::Ganado;
         log_.push_back("¡Victoria!");
         return true;
@@ -279,28 +328,40 @@ Character* CombatEncounter::AliadoEnTurno() {
     return &party_.Miembros()[orden_[turnoActual_].indice];
 }
 
+Enemy* CombatEncounter::EnemigoEnTurno() {
+    if (fase_ != FaseCombate::TurnoEnemigo) return nullptr;
+    return enemigos_[orden_[turnoActual_].indice];
+}
+
 void CombatEncounter::AccionAtaqueBasico() {
     if (fase_ != FaseCombate::TurnoAliado) return;
+    AsegurarObjetivoValido();
+    if (objetivoActual_ < 0) return;
     Character& atacante = party_.Miembros()[orden_[turnoActual_].indice];
+    Enemy& objetivo = *enemigos_[objetivoActual_];
 
     Combatiente cAtacante{atacante.Nombre(), &atacante.GetStatsMut(), &atacante.Combate(), true, atacante.Rol()};
-    Combatiente cEnemigo{enemigo_.Nombre(), &enemigo_.GetStatsMut(), &enemigo_.Combate(), false, Role::Tanque};
+    Combatiente cEnemigo{objetivo.Nombre(), &objetivo.GetStatsMut(), &objetivo.Combate(), false, Role::Tanque};
 
     ResultadoAccion r = EjecutarAtaqueBasico(cAtacante, cEnemigo);
     log_.push_back(r.texto);
-    if (!enemigo_.EstaVivo()) enemigo_.MarcarVencido();
+    if (!objetivo.EstaVivo()) objetivo.MarcarVencido();
 
     if (ChequearFinDeCombate()) return;
+    AsegurarObjetivoValido();
     AvanzarIndice();
     ProcesarInicioDeTurnoActual();
 }
 
 void CombatEncounter::AccionHabilidadDeRol() {
     if (fase_ != FaseCombate::TurnoAliado) return;
+    AsegurarObjetivoValido();
+    if (objetivoActual_ < 0) return;
     Character& atacante = party_.Miembros()[orden_[turnoActual_].indice];
+    Enemy& objetivo = *enemigos_[objetivoActual_];
 
     Combatiente cAtacante{atacante.Nombre(), &atacante.GetStatsMut(), &atacante.Combate(), true, atacante.Rol()};
-    Combatiente cEnemigo{enemigo_.Nombre(), &enemigo_.GetStatsMut(), &enemigo_.Combate(), false, Role::Tanque};
+    Combatiente cEnemigo{objetivo.Nombre(), &objetivo.GetStatsMut(), &objetivo.Combate(), false, Role::Tanque};
 
     Combatiente aliadoTemp;
     Combatiente* objetivoAliado = nullptr;
@@ -318,7 +379,7 @@ void CombatEncounter::AccionHabilidadDeRol() {
 
     ResultadoHabilidad r = EjecutarHabilidadDeRol(cAtacante, cEnemigo, objetivoAliado);
     log_.push_back(r.texto);
-    if (!enemigo_.EstaVivo()) enemigo_.MarcarVencido();
+    if (!objetivo.EstaVivo()) objetivo.MarcarVencido();
 
     if (!r.ejecutada) {
         // No se pudo usar (p.ej. sin recurso): no se consume el turno.
@@ -326,6 +387,7 @@ void CombatEncounter::AccionHabilidadDeRol() {
     }
 
     if (ChequearFinDeCombate()) return;
+    AsegurarObjetivoValido();
     AvanzarIndice();
     ProcesarInicioDeTurnoActual();
 }
@@ -335,23 +397,36 @@ void CombatEncounter::Actualizar(float deltaSeconds) {
     timerIA_ += deltaSeconds;
     if (timerIA_ < kEsperaTurnoIA) return;
 
+    Enemy& atacante = *enemigos_[orden_[turnoActual_].indice];
+
+    // Si este enemigo esta Marcado (provocado por el Golpe Provocador del
+    // Tanque), prioriza atacar al Tanque en vez de a quien tenga menos vida
+    // — es la unica forma en la que Marcado cambia algo observable: con un
+    // solo enemigo en pantalla nunca importaba a quien "prioriza" atacar.
     Character* objetivo = nullptr;
-    for (auto& m : party_.Miembros()) {
-        if (!m.EstaVivo()) continue;
-        if (objetivo == nullptr || m.GetStats().hp < objetivo->GetStats().hp) objetivo = &m;
+    if (atacante.Combate().TieneEfecto(TipoEfecto::Marcado)) {
+        for (auto& m : party_.Miembros()) {
+            if (m.EstaVivo() && m.Rol() == Role::Tanque) { objetivo = &m; break; }
+        }
+    }
+    if (objetivo == nullptr) {
+        for (auto& m : party_.Miembros()) {
+            if (!m.EstaVivo()) continue;
+            if (objetivo == nullptr || m.GetStats().hp < objetivo->GetStats().hp) objetivo = &m;
+        }
     }
     if (objetivo == nullptr) {
         ChequearFinDeCombate();
         return;
     }
 
-    Combatiente cEnemigo{enemigo_.Nombre(), &enemigo_.GetStatsMut(), &enemigo_.Combate(), false, Role::Tanque};
+    Combatiente cEnemigo{atacante.Nombre(), &atacante.GetStatsMut(), &atacante.Combate(), false, Role::Tanque};
     Combatiente cObjetivo{objetivo->Nombre(), &objetivo->GetStatsMut(), &objetivo->Combate(), true, objetivo->Rol()};
 
     ResultadoAccion r;
     // El Bandido Aturdidor a veces, en vez de un ataque basico, usa un
     // golpe mas debil pero que aturde (le hace perder el turno al objetivo).
-    if (enemigo_.Tipo() == TipoEnemigo::BanditoAturdidor && Roll(2) == 1) {
+    if (atacante.Tipo() == TipoEnemigo::BanditoAturdidor && Roll(2) == 1) {
         r = ResolverAtaque(cEnemigo, cObjetivo, 1, 4, false, "Golpe Aturdidor");
         if (r.impacto) {
             cObjetivo.estado->AgregarEfecto(EfectoActivo{TipoEfecto::Aturdido, 1, 0});
@@ -363,6 +438,7 @@ void CombatEncounter::Actualizar(float deltaSeconds) {
     log_.push_back(r.texto);
 
     if (ChequearFinDeCombate()) return;
+    AsegurarObjetivoValido();
     AvanzarIndice();
     ProcesarInicioDeTurnoActual();
 }

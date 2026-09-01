@@ -75,6 +75,46 @@ void DibujarFichaAliado(const game::Character& personaje, bool esSuTurno, int x,
     DibujarEfectos(personaje.Combate(), x + ancho - 90, y + 4);
 }
 
+// Dibuja la ficha de un enemigo. 'esSuTurno' resalta cuando la IA lo esta
+// jugando; 'esObjetivo' resalta (con otro color) cuando es a quien le van a
+// pegar las acciones del aliado en turno — con mas de un enemigo a la vez,
+// el jugador necesita saber a cual le esta apuntando.
+void DibujarFichaEnemigo(const game::Enemy& enemigo, bool esSuTurno, bool esObjetivo, int x, int y, int ancho) {
+    int alto = 70;
+
+    Color fondo = esSuTurno ? Color{ 45, 25, 25, 230 } : Color{ 20, 20, 25, 200 };
+    Color borde = esSuTurno ? Color{ 220, 90, 90, 255 } : (esObjetivo ? Color{ 230, 200, 90, 255 } : Color{ 80, 80, 90, 255 });
+    if (enemigo.Vencido()) {
+        fondo = Color{ 15, 15, 18, 160 };
+    }
+    DrawRectangle(x, y, ancho, alto, fondo);
+    DrawRectangleLines(x, y, ancho, alto, borde);
+    if (esObjetivo && !esSuTurno && !enemigo.Vencido()) {
+        // Borde extra para que el marcador de objetivo se note incluso con
+        // varias fichas una debajo de otra.
+        DrawRectangleLines(x - 1, y - 1, ancho + 2, alto + 2, Color{ 230, 200, 90, 180 });
+    }
+
+    char nombre[80];
+    std::snprintf(nombre, sizeof(nombre), "%s%s%s", esObjetivo && !enemigo.Vencido() ? "> " : "",
+                  enemigo.Nombre().c_str(), esSuTurno ? " <-- turno" : "");
+    DrawText(nombre, x + 12, y + 8, 16, enemigo.Vencido() ? GRAY : RAYWHITE);
+
+    if (enemigo.Vencido()) {
+        DrawText("DERROTADO", x + ancho - 110, y + 8, 14, Color{ 140, 140, 140, 255 });
+        return;
+    }
+
+    const auto& stats = enemigo.GetStats();
+    float ratioHp = stats.hpMax > 0 ? (float)stats.hp / (float)stats.hpMax : 0.0f;
+    DibujarBarra(x + 12, y + 32, ancho - 24, 10, ratioHp, Color{ 200, 60, 60, 255 }, Color{ 60, 20, 20, 255 });
+    char textoHp[32];
+    std::snprintf(textoHp, sizeof(textoHp), "HP %d/%d", stats.hp, stats.hpMax);
+    DrawText(textoHp, x + 12, y + 46, 12, LIGHTGRAY);
+
+    DibujarEfectos(enemigo.Combate(), x + ancho - 100, y + 4);
+}
+
 } // namespace
 
 void DibujarCombate(game::CombatEncounter& encuentro, int anchoVentana, int altoVentana) {
@@ -92,28 +132,20 @@ void DibujarCombate(game::CombatEncounter& encuentro, int anchoVentana, int alto
         y += (personaje.GetStats().recursoMax > 0 ? 78 : 60) + 10;
     }
 
-    // --- Enemigo, arriba a la derecha ---
-    const game::Enemy& enemigo = encuentro.EnemyRef();
+    // --- Enemigos, columna derecha (uno o varios, uno debajo del otro) ---
+    const auto& enemigos = encuentro.Enemigos();
     int anchoEnemigo = 280;
     int xEnemigo = anchoVentana - anchoEnemigo - 24;
     int yEnemigo = 24;
-    bool esTurnoEnemigo = (encuentro.Fase() == game::FaseCombate::TurnoEnemigo);
-    DrawRectangle(xEnemigo, yEnemigo, anchoEnemigo, 70,
-                  esTurnoEnemigo ? Color{ 45, 25, 25, 230 } : Color{ 20, 20, 25, 200 });
-    DrawRectangleLines(xEnemigo, yEnemigo, anchoEnemigo, 70,
-                        esTurnoEnemigo ? Color{ 220, 90, 90, 255 } : Color{ 80, 80, 90, 255 });
-    char nombreEnemigo[64];
-    std::snprintf(nombreEnemigo, sizeof(nombreEnemigo), "%s%s",
-                   enemigo.Nombre().c_str(), esTurnoEnemigo ? " <-- turno" : "");
-    DrawText(nombreEnemigo, xEnemigo + 12, yEnemigo + 8, 16, RAYWHITE);
-    const auto& statsEnemigo = enemigo.GetStats();
-    float ratioHpEnemigo = statsEnemigo.hpMax > 0 ? (float)statsEnemigo.hp / (float)statsEnemigo.hpMax : 0.0f;
-    DibujarBarra(xEnemigo + 12, yEnemigo + 32, anchoEnemigo - 24, 10, ratioHpEnemigo,
-                 Color{ 200, 60, 60, 255 }, Color{ 60, 20, 20, 255 });
-    char textoHpEnemigo[32];
-    std::snprintf(textoHpEnemigo, sizeof(textoHpEnemigo), "HP %d/%d", statsEnemigo.hp, statsEnemigo.hpMax);
-    DrawText(textoHpEnemigo, xEnemigo + 12, yEnemigo + 46, 12, LIGHTGRAY);
-    DibujarEfectos(enemigo.Combate(), xEnemigo + anchoEnemigo - 100, yEnemigo + 4);
+    game::Enemy* enemigoEnTurno = encuentro.EnemigoEnTurno();
+    int indiceObjetivo = encuentro.IndiceObjetivo();
+    for (size_t i = 0; i < enemigos.size(); ++i) {
+        const game::Enemy* enemigo = enemigos[i];
+        bool esSuTurno = (enemigoEnTurno == enemigo);
+        bool esObjetivo = (encuentro.Fase() == game::FaseCombate::TurnoAliado && (int)i == indiceObjetivo);
+        DibujarFichaEnemigo(*enemigo, esSuTurno, esObjetivo, xEnemigo, yEnemigo, anchoEnemigo);
+        yEnemigo += 70 + 10;
+    }
 
     // --- Log de combate, abajo ---
     const auto& log = encuentro.Log();
@@ -132,9 +164,17 @@ void DibujarCombate(game::CombatEncounter& encuentro, int anchoVentana, int alto
 
     // --- Menu de accion / mensaje de fin ---
     if (encuentro.Fase() == game::FaseCombate::TurnoAliado && enTurno != nullptr) {
-        char menu[160];
-        std::snprintf(menu, sizeof(menu), "Turno de %s  -  [1] Atacar    [2] %s",
-                      enTurno->Nombre().c_str(), game::NombreHabilidadDeRol(enTurno->Rol()));
+        int enemigosVivos = 0;
+        for (auto* e : enemigos) if (e->EstaVivo()) enemigosVivos++;
+
+        char menu[200];
+        if (enemigosVivos > 1) {
+            std::snprintf(menu, sizeof(menu), "Turno de %s  -  [1] Atacar    [2] %s    [TAB] Cambiar objetivo",
+                          enTurno->Nombre().c_str(), game::NombreHabilidadDeRol(enTurno->Rol()));
+        } else {
+            std::snprintf(menu, sizeof(menu), "Turno de %s  -  [1] Atacar    [2] %s",
+                          enTurno->Nombre().c_str(), game::NombreHabilidadDeRol(enTurno->Rol()));
+        }
         int anchoTexto = MeasureText(menu, 20);
         int xMenu = (anchoVentana - anchoTexto) / 2 - 16;
         DrawRectangle(xMenu, yLog - 44, anchoTexto + 32, 34, Color{ 45, 45, 30, 230 });

@@ -23,7 +23,7 @@ Cada personaje tiene stats base (vida, recursos, ataque, defensa, velocidad) má
 
 ## Sistema de mazmorras
 
-Mazmorras en 2D, vista cenital, basadas en grilla/tiles. La generación es procedural por cadena de salas (`game::Dungeon`, en `src/game/dungeon.cpp`): en vez de una sola sala fija, cada partida arma una secuencia de 5 salas, cada una elegida al azar entre 4 "room templates" de tamaño (chica 8x8, grande 14x10, alargada 6x14, mediana 10x10), donde cada sala nueva se ubica pegada a la anterior extendiéndose al Este o al Sur (elegido al azar), conectada por un pasillo de 3 tiles de ancho centrado en el solape entre ambas. La sala 0 es siempre el punto de partida del party, sin enemigo; las otras 4 tienen contenido (un enemigo de tipo aleatorio cada una).
+Mazmorras en 2D, vista cenital, basadas en grilla/tiles. La generación es procedural por cadena de salas (`game::Dungeon`, en `src/game/dungeon.cpp`): en vez de una sola sala fija, cada partida arma una secuencia de 5 salas, cada una elegida al azar entre 4 "room templates" de tamaño (chica 8x8, grande 14x10, alargada 6x14, mediana 10x10), donde cada sala nueva se ubica pegada a la anterior extendiéndose al Este o al Sur (elegido al azar), conectada por un pasillo de 3 tiles de ancho centrado en el solape entre ambas. La sala 0 es siempre el punto de partida del party, sin enemigos; las otras 4 tienen contenido (un grupo de 1 a 3 enemigos de tipo aleatorio cada una — ver "Encuentros multi-enemigo" más abajo).
 
 Las paredes se calculan de forma indirecta y robusta: primero se arma el conjunto completo de tiles de piso (unión de todas las salas más los pasillos que las conectan), y recién al final cualquier tile dentro del área total ocupada que no sea piso se convierte en una pared (un `Rect` de 1 tile por celda — más pared de la estrictamente necesaria comparado con fusionar rects, pero mucho más simple y difícil de romper a esta escala). Esto evita calcular "aberturas" a mano donde un pasillo conecta con una sala: al ser piso de los dos lados, ya no queda pared en el medio.
 
@@ -37,7 +37,9 @@ Este generador procedural fue validado con fuzz-testing: un test standalone (`te
 
 Por turnos, con orden determinado por la velocidad de cada unidad (jugador y enemigos intercalados según stat de velocidad, no "todo el equipo primero"). Esto da profundidad táctica sin la complejidad de implementar combate en tiempo real con pausa.
 
-Decisión de diseño (tomada al implementar el primer combate jugable): el combate es **basado en dados y efectos de estado, estilo Baldur's Gate 3 / D&D**, no en daño determinístico. Cada ataque tira un d20 + bono de ataque (derivado del stat de ataque) contra una "clase de defensa" del objetivo (10 + su stat de defensa): 1 natural es pifia automática, 20 natural es crítico (dobla los dados de daño). El daño en sí se tira con dados (1d6 para ataque básico, 1d8 para la habilidad del rol de Daño, con ventaja — 2d20, mejor de los dos). Encima de eso hay efectos de estado con duración en turnos: Aturdido (pierde el turno), Veneno (daño por turno), Escudo (absorbe daño antes que la vida), Debilitado (resta al bono de ataque) y Marcado (pensado para que los enemigos prioricen atacar al Tanque una vez que haya encuentros con más de un enemigo).
+Decisión de diseño (tomada al implementar el primer combate jugable): el combate es **basado en dados y efectos de estado, estilo Baldur's Gate 3 / D&D**, no en daño determinístico. Cada ataque tira un d20 + bono de ataque (derivado del stat de ataque) contra una "clase de defensa" del objetivo (10 + su stat de defensa): 1 natural es pifia automática, 20 natural es crítico (dobla los dados de daño). El daño en sí se tira con dados (1d6 para ataque básico, 1d8 para la habilidad del rol de Daño, con ventaja — 2d20, mejor de los dos). Encima de eso hay efectos de estado con duración en turnos: Aturdido (pierde el turno), Veneno (daño por turno), Escudo (absorbe daño antes que la vida), Debilitado (resta al bono de ataque) y Marcado.
+
+Marcado ahora tiene un efecto observable de verdad: en `CombatEncounter::Actualizar` (la resolución del turno de un enemigo), si el enemigo en turno tiene el efecto Marcado activo, su IA prioriza atacar al miembro del party con `Role::Tanque` (si sigue con vida) en vez de al aliado con menos HP, que es el criterio default. Antes de los encuentros multi-enemigo esto era código sin efecto observable: con un único enemigo posible en pantalla, "a quién prioriza atacar" nunca se notaba porque solo había un objetivo posible.
 
 Cada rol tiene una habilidad propia (además del ataque básico, disponible siempre):
 - **Tanque — Golpe Provocador**: ataque que además aplica Marcado al enemigo, y le da Escudo a si mismo (se cubre mientras provoca) — conecta Marcado y Escudo al mismo tiempo.
@@ -47,12 +49,20 @@ Cada rol tiene una habilidad propia (además del ataque básico, disponible siem
 
 Con esto los cinco efectos de estado (Aturdido, Veneno, Escudo, Debilitado, Marcado) están conectados a contenido real del juego. Aturdido en particular no viene de ninguna habilidad del party, sino de un enemigo: el Bandido Aturdidor (ver más abajo) a veces usa "Golpe Aturdidor" en vez de un ataque normal.
 
-Hay tres tipos de enemigo, uno por cada sala con contenido de la mazmorra generada (tipo elegido al azar), cada uno enganchable por separado — no hay combates simultáneos contra varios enemigos todavía, eso depende de la generación de encuentros real dentro de una misma sala (roadmap):
+Hay tres tipos de enemigo, que pueblan las salas con contenido de la mazmorra generada:
 - **Esqueleto Errante**: el original, stats parejas, solo ataque básico.
 - **Rata Gigante**: rápida (mayor velocidad que todo el party) y frágil (poca vida y defensa) — un combate corto pensado como el más fácil de los tres.
 - **Bandido Aturdidor**: más vida y ataque que los otros dos; en su turno, con 50% de probabilidad, usa "Golpe Aturdidor" (daño menor, 1d4) en vez del ataque básico, y si impacta aplica Aturdido a quien golpeó.
 
-El primer encuentro implementado fue contra un único enemigo fijo en una mazmorra de una sola sala, para validar el ciclo completo (enganchar combate, elegir acciones, terminar en victoria o derrota) antes de construir generación de mazmorra y de encuentros real; ahora hay tres tipos de enemigo repartidos por una mazmorra procedural de varias salas, pero siguen siendo peleas de 1 enemigo a la vez.
+### Encuentros multi-enemigo
+
+Cada sala con contenido tiene un **grupo de 1 a 3 enemigos** (`main.cpp::CrearGrupoDeSala`), de tipos elegidos al azar entre los tres de arriba — pueden repetirse; si hay más de uno del mismo tipo en la sala, se le agrega un sufijo al nombre (" II", " III") para distinguirlos en el log y en las fichas de combate. Cada `Enemy` sabe a qué sala pertenece (`Enemy::Sala()`), asignado al crearlo.
+
+Al enganchar combate (tecla E cerca de cualquier enemigo vivo), `main.cpp` reúne a TODOS los enemigos vivos con la misma `Sala()` que el más cercano y arma un único `CombatEncounter` con ese grupo — un combate por sala, no por enemigo individual. `CombatEncounter` pasó de guardar una referencia a un solo `Enemy` a guardar `std::vector<Enemy*>`; el orden de turnos ahora intercala a los 4 del party con TODOS los enemigos del grupo según velocidad (antes era "los 4 del party + 1 enemigo"), y la victoria (`FaseCombate::Ganado`) requiere que **todos** los enemigos del grupo estén derrotados, no solo el primero.
+
+Como puede haber más de un enemigo vivo a la vez, las acciones del aliado en turno (ataque básico, habilidad de rol) necesitan saber a cuál de ellos apuntar: `CombatEncounter` mantiene un `objetivoActual_` (índice dentro del grupo), que arranca en el primer enemigo vivo y se recalcula solo si el objetivo actual muere (`AsegurarObjetivoValido`). El jugador puede cambiarlo manualmente con **TAB** durante su turno (`CiclarObjetivo`), y la UI de combate (`combat_ui.cpp`) marca la ficha del objetivo actual con un borde dorado y "▶" delante del nombre, separado del resaltado rojo que indica de quién es el turno.
+
+El primer encuentro implementado (antes de la mazmorra procedural) fue contra un único enemigo fijo, para validar el ciclo completo (enganchar combate, elegir acciones, terminar en victoria o derrota) antes de construir generación de mazmorra y de encuentros reales; ese camino sigue intacto (`CombatEncounter` con un vector de un solo elemento funciona igual que antes), pero ahora es el caso particular de un grupo de tamaño 1, no un tipo de dato distinto.
 
 ### Qué pasa al ganar o perder
 
@@ -106,10 +116,11 @@ rpg-mazmorras/
 2. ✅ **Movimiento**: personaje controlable con movimiento libre/continuo (no por grilla), con colisión contra las paredes. Probado: direcciones, diagonales normalizadas, colisión de frente y en ángulo, todo OK.
 3. ✅ **Sistema de party básico**: 4 personajes con stats y un rol cada uno (uno por rol). Un personaje "líder" controlado directamente, los demás siguiéndolo en formación (estilo tren/conga); UI mostrando HP/rol de cada uno, con modo compacto/expandido (TAB) para no tapar el mapa.
 4. ✅ **Combate por turnos contra un enemigo**: orden por velocidad, ataque básico + habilidad de rol (una por cada uno de los 4 roles, Control incluido), sistema de dados (d20 para impactar, dados de daño, ventaja, críticos) y los cinco efectos de estado (Aturdido, Veneno, Escudo, Debilitado, Marcado) conectados a contenido real, tanto del party como de un enemigo.
-5. ✅ **Variedad de enemigos**: tres tipos con stats e IA distintos (Esqueleto Errante, Rata Gigante, Bandido Aturdidor), uno por sala con contenido, enganchables por separado.
+5. ✅ **Variedad de enemigos**: tres tipos con stats e IA distintos (Esqueleto Errante, Rata Gigante, Bandido Aturdidor).
 6. ✅ **Pantalla de Game Over**: perder ya no deja al party en HP 0 para siempre — se ve una pantalla distinta a la de victoria y, al apretar una tecla, el party revive a full HP/recurso (sin efectos) y vuelve al punto de partida.
-7. ✅ **Generación de mazmorra por salas conectadas**: cadena de 5 salas (4 room templates de tamaño, extensión Este/Sur al azar, pasillos de conexión), paredes calculadas por diferencia contra el piso, cámara que sigue al líder para navegar el layout completo. Encuentros reales con varios enemigos a la vez en una misma sala sigue pendiente — ahí es donde Marcado empieza a importar de verdad.
-8. Iterar sobre balance, UI de combate, y recién ahí evaluar el salto a mobile (build de Android vía NDK).
+7. ✅ **Generación de mazmorra por salas conectadas**: cadena de 5 salas (4 room templates de tamaño, extensión Este/Sur al azar, pasillos de conexión), paredes calculadas por diferencia contra el piso, cámara que sigue al líder para navegar el layout completo.
+8. ✅ **Encuentros multi-enemigo**: cada sala con contenido tiene un grupo de 1 a 3 enemigos que se engancha entero en un solo `CombatEncounter` (turnos intercalados entre todo el party y todos los enemigos vivos, selector de objetivo con TAB, victoria solo cuando cae todo el grupo). Marcado pasó de ser un efecto sin consecuencia observable a hacer que el enemigo marcado priorice atacar al Tanque.
+9. Pendiente: iterar sobre balance general (stats, dificultad de los grupos de enemigos según tamaño), y recién ahí evaluar el salto a mobile (build de Android vía NDK). También pendiente: inventario/loot (el stub `inventory.h` sigue vacío).
 
 ## Notas sobre la futura migración a Unreal
 

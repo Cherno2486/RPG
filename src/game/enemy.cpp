@@ -2,8 +2,8 @@
 
 namespace game {
 
-Enemy::Enemy(std::string nombre, TipoEnemigo tipo, Stats stats, Vec2 posicionInicial)
-    : nombre_(std::move(nombre)), tipo_(tipo), stats_(stats), posicion_(posicionInicial) {}
+Enemy::Enemy(std::string nombre, TipoEnemigo tipo, Stats stats, Vec2 posicionInicial, int salaIndice)
+    : nombre_(std::move(nombre)), tipo_(tipo), stats_(stats), posicion_(posicionInicial), sala_(salaIndice) {}
 
 Rect Enemy::Colisionador() const {
     return Rect{

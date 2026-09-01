@@ -2,6 +2,7 @@
 #include <vector>
 #include <utility>
 #include <memory>
+#include <string>
 
 #include "game/character.h"
 #include "game/party.h"
@@ -37,30 +38,69 @@ game::Party CrearPartyDeEjemplo(game::Vec2 posicionInicial) {
     return game::Party(std::move(miembros));
 }
 
-// Elige uno de los tres tipos de enemigo al azar, con sus stats de siempre,
-// para poblar una sala de la mazmorra generada. Cada partida termina con
-// una mezcla distinta de encuentros.
-game::Enemy CrearEnemigoAleatorio(game::Vec2 posicion) {
+game::TipoEnemigo TipoAleatorio() {
     switch (game::Roll(3)) {
-        case 1:
-            return game::Enemy("Esqueleto Errante", game::TipoEnemigo::EsqueletoErrante,
-                game::Stats{ /*hpMax*/22, /*hp*/22, /*recursoMax*/0, /*recurso*/0, /*ataque*/7, /*defensa*/3, /*velocidad*/80.0f },
-                posicion);
-        case 2:
-            return game::Enemy("Rata Gigante", game::TipoEnemigo::RataGigante,
-                game::Stats{ /*hpMax*/12, /*hp*/12, /*recursoMax*/0, /*recurso*/0, /*ataque*/5, /*defensa*/1, /*velocidad*/130.0f },
-                posicion);
-        default:
-            return game::Enemy("Bandido Aturdidor", game::TipoEnemigo::BanditoAturdidor,
-                game::Stats{ /*hpMax*/26, /*hp*/26, /*recursoMax*/0, /*recurso*/0, /*ataque*/8, /*defensa*/4, /*velocidad*/85.0f },
-                posicion);
+        case 1:  return game::TipoEnemigo::EsqueletoErrante;
+        case 2:  return game::TipoEnemigo::RataGigante;
+        default: return game::TipoEnemigo::BanditoAturdidor;
     }
+}
+
+// Arma un enemigo del tipo pedido, con sus stats de siempre, ubicado en
+// 'posicion' y etiquetado con la sala a la que pertenece (para poder
+// agrupar a todos los de una sala en un solo encuentro al engancharlos).
+// 'ocurrencia' es el numero de orden de este enemigo entre los de su mismo
+// tipo dentro de la sala (1, 2, 3...) — si hay mas de uno del mismo tipo en
+// la misma sala, se le agrega un sufijo al nombre (" II", " III") para que
+// se puedan distinguir en el log y en las fichas de combate.
+game::Enemy CrearEnemigoDeTipo(game::TipoEnemigo tipo, game::Vec2 posicion, int salaIndice, int ocurrencia) {
+    const char* sufijo = (ocurrencia == 2) ? " II" : (ocurrencia == 3) ? " III" : "";
+
+    switch (tipo) {
+        case game::TipoEnemigo::EsqueletoErrante:
+            return game::Enemy(std::string("Esqueleto Errante") + sufijo, tipo,
+                game::Stats{ /*hpMax*/22, /*hp*/22, /*recursoMax*/0, /*recurso*/0, /*ataque*/7, /*defensa*/3, /*velocidad*/80.0f },
+                posicion, salaIndice);
+        case game::TipoEnemigo::RataGigante:
+            return game::Enemy(std::string("Rata Gigante") + sufijo, tipo,
+                game::Stats{ /*hpMax*/12, /*hp*/12, /*recursoMax*/0, /*recurso*/0, /*ataque*/5, /*defensa*/1, /*velocidad*/130.0f },
+                posicion, salaIndice);
+        default:
+            return game::Enemy(std::string("Bandido Aturdidor") + sufijo, tipo,
+                game::Stats{ /*hpMax*/26, /*hp*/26, /*recursoMax*/0, /*recurso*/0, /*ataque*/8, /*defensa*/4, /*velocidad*/85.0f },
+                posicion, salaIndice);
+    }
+}
+
+// Arma el grupo de enemigos de una sala con contenido: entre 1 y 3, de
+// tipos elegidos al azar (pueden repetirse), separados un poco entre si
+// para que no queden todos superpuestos en el mismo punto. El margen mas
+// chico entre salas (la alargada, 6 tiles = 288px de ancho) deja de sobra
+// para hasta 3 enemigos separados 70px del centro sin acercarse a la pared.
+std::vector<game::Enemy> CrearGrupoDeSala(game::Vec2 centro, int salaIndice) {
+    int cantidad = game::Roll(3);  // 1, 2 o 3 enemigos en esta sala
+    std::vector<game::Enemy> grupo;
+    int vistos[3] = {0, 0, 0};  // contador por TipoEnemigo, para el sufijo
+
+    for (int j = 0; j < cantidad; ++j) {
+        game::TipoEnemigo tipo = TipoAleatorio();
+        int& ocurrencias = vistos[static_cast<int>(tipo)];
+        ocurrencias += 1;
+
+        float dx = (cantidad > 1) ? (j - (cantidad - 1) / 2.0f) * 70.0f : 0.0f;
+        float dy = (cantidad > 1 && j % 2 == 1) ? 18.0f : (cantidad > 2 && j == 2 ? -18.0f : 0.0f);
+        game::Vec2 posicion = centro + game::Vec2{dx, dy};
+
+        grupo.push_back(CrearEnemigoDeTipo(tipo, posicion, salaIndice, ocurrencias));
+    }
+    return grupo;
 }
 
 enum class EstadoJuego { Exploracion, Combate };
 
-// Distancia (en pixeles) a la que hay que estar del enemigo para poder
-// engancharlo en combate con [E].
+// Distancia (en pixeles) a la que hay que estar del enemigo mas cercano
+// para poder engancharlo (a el y a todo el resto de su sala) en combate
+// con [E].
 constexpr float kDistanciaInteraccion = 90.0f;
 
 } // namespace
@@ -70,8 +110,9 @@ int main() {
     const int altoVentana = 720;
 
     // Mazmorra procedural: una cadena de salas conectadas por pasillos (ver
-    // game/dungeon.cpp). La sala 0 es donde arranca el party, sin enemigo;
-    // cada sala siguiente tiene un enemigo de tipo aleatorio.
+    // game/dungeon.cpp). La sala 0 es donde arranca el party, sin enemigos;
+    // cada sala siguiente tiene un grupo de 1 a 3 enemigos de tipo
+    // aleatorio, que se enganchan todos juntos en un mismo combate.
     game::Dungeon mazmorra;
     game::Vec2 posicionInicial = mazmorra.CentroDeSala(0);
     game::Party party = CrearPartyDeEjemplo(posicionInicial);
@@ -79,7 +120,8 @@ int main() {
     std::vector<game::Enemy> enemigos;
     const auto& salas = mazmorra.Habitaciones();
     for (size_t i = 1; i < salas.size(); ++i) {
-        enemigos.push_back(CrearEnemigoAleatorio(mazmorra.CentroDeSala(i)));
+        std::vector<game::Enemy> grupo = CrearGrupoDeSala(mazmorra.CentroDeSala(i), static_cast<int>(i));
+        for (auto& e : grupo) enemigos.push_back(std::move(e));
     }
 
     render::Renderer renderer(anchoVentana, altoVentana, "RPG Mazmorras - Prototipo");
@@ -113,7 +155,10 @@ int main() {
             if (IsKeyPressed(KEY_TAB)) panelExpandido = !panelExpandido;
 
             // Enganchar combate: el enemigo vivo mas cercano, si esta a
-            // distancia de interaccion y se aprieta E.
+            // distancia de interaccion y se aprieta E. Al engancharlo se
+            // suma al combate TODO el resto de su sala (todos los enemigos
+            // vivos con la misma Sala()), no solo a el — un combate por
+            // sala, no por enemigo individual.
             game::Enemy* enemigoCercano = nullptr;
             float distanciaCercana = kDistanciaInteraccion;
             for (auto& e : enemigos) {
@@ -125,7 +170,11 @@ int main() {
                 }
             }
             if (enemigoCercano != nullptr && IsKeyPressed(KEY_E)) {
-                encuentro = std::make_unique<game::CombatEncounter>(party, *enemigoCercano);
+                std::vector<game::Enemy*> grupo;
+                for (auto& e : enemigos) {
+                    if (!e.Vencido() && e.Sala() == enemigoCercano->Sala()) grupo.push_back(&e);
+                }
+                encuentro = std::make_unique<game::CombatEncounter>(party, std::move(grupo));
                 estado = EstadoJuego::Combate;
             }
 
@@ -138,6 +187,10 @@ int main() {
                     encuentro->AccionAtaqueBasico();
                 } else if (IsKeyPressed(KEY_TWO)) {
                     encuentro->AccionHabilidadDeRol();
+                } else if (IsKeyPressed(KEY_TAB)) {
+                    // Con mas de un enemigo vivo, cambia a quien le apuntan
+                    // las acciones del aliado en turno (ver combat_ui.cpp).
+                    encuentro->CiclarObjetivo();
                 }
             } else if (encuentro->Fase() == game::FaseCombate::Ganado) {
                 if (GetKeyPressed() != 0) {

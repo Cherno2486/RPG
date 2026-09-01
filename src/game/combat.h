@@ -57,40 +57,58 @@ enum class FaseCombate {
     Perdido,
 };
 
-// Maneja un encuentro de combate contra un unico enemigo: orden de turnos por
-// velocidad, efectos de estado, y las acciones del jugador y del enemigo.
+// Maneja un encuentro de combate contra uno o mas enemigos a la vez (todos
+// los de una misma sala de la mazmorra, tipicamente): orden de turnos por
+// velocidad entre TODOS los combatientes (aliados y enemigos intercalados),
+// efectos de estado, y las acciones del jugador y de cada enemigo.
 class CombatEncounter {
 public:
-    CombatEncounter(Party& party, Enemy& enemigo);
+    // 'enemigos' no puede estar vacio. Los punteros deben seguir siendo
+    // validos durante toda la vida del encuentro (apuntan a los Enemy reales
+    // de la mazmorra).
+    CombatEncounter(Party& party, std::vector<Enemy*> enemigos);
 
     FaseCombate Fase() const { return fase_; }
     const std::vector<std::string>& Log() const { return log_; }
 
     Party& PartyRef() { return party_; }
-    Enemy& EnemyRef() { return enemigo_; }
+    const std::vector<Enemy*>& Enemigos() const { return enemigos_; }
 
     // Personaje del party cuyo turno es ahora (nullptr si Fase() != TurnoAliado).
     Character* AliadoEnTurno();
+    // Enemigo cuyo turno es ahora (nullptr si Fase() != TurnoEnemigo).
+    Enemy* EnemigoEnTurno();
 
-    // Acciones del aliado en turno. Si la habilidad no se pudo ejecutar (p.ej.
-    // sin recurso), el turno NO se consume, para que el jugador elija otra cosa.
+    // Indice (en Enemigos()) del enemigo actualmente seleccionado como
+    // objetivo de las acciones del aliado en turno. Se autocorrige si el
+    // objetivo previo murio o todavia no se eligio ninguno (apunta al
+    // primer enemigo vivo). -1 si no queda ningun enemigo vivo.
+    int IndiceObjetivo() const { return objetivoActual_; }
+    // Cambia el objetivo al siguiente enemigo vivo (para cuando hay mas de
+    // uno). No hace nada si hay 0 o 1 enemigos vivos.
+    void CiclarObjetivo();
+
+    // Acciones del aliado en turno, contra el enemigo en IndiceObjetivo().
+    // Si la habilidad no se pudo ejecutar (p.ej. sin recurso), el turno NO
+    // se consume, para que el jugador elija otra cosa.
     void AccionAtaqueBasico();
     void AccionHabilidadDeRol();
 
-    // Llamar cada frame: si es turno del enemigo, hace avanzar un pequeño
+    // Llamar cada frame: si es turno de un enemigo, hace avanzar un pequeño
     // temporizador y cuando se cumple resuelve su turno solo.
     void Actualizar(float deltaSeconds);
 
 private:
     struct EntradaTurno {
         bool esAliado;
-        int indice;  // indice en party_.Miembros(); ignorado si !esAliado (un solo enemigo)
+        int indice;  // indice en party_.Miembros() o en enemigos_, segun esAliado
     };
 
     Party& party_;
-    Enemy& enemigo_;
+    std::vector<Enemy*> enemigos_;
     std::vector<EntradaTurno> orden_;
     size_t turnoActual_ = 0;
+    int objetivoActual_ = 0;
     FaseCombate fase_ = FaseCombate::TurnoAliado;
     float timerIA_ = 0.0f;
     std::vector<std::string> log_;
@@ -104,6 +122,9 @@ private:
     // muerto, avanza sola al siguiente.
     void ProcesarInicioDeTurnoActual();
     bool ChequearFinDeCombate();  // devuelve true si el combate termino (Ganado/Perdido)
+    // Deja objetivoActual_ apuntando a un enemigo vivo (el mismo si ya lo
+    // estaba, o el primero vivo que encuentre); -1 si no queda ninguno.
+    void AsegurarObjetivoValido();
 };
 
 } // namespace game

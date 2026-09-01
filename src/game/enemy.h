@@ -23,12 +23,17 @@ enum class TipoEnemigo {
 // segun el tipo, la resuelve la capa de combate).
 class Enemy {
 public:
-    Enemy(std::string nombre, TipoEnemigo tipo, Stats stats, Vec2 posicionInicial);
+    // 'salaIndice' identifica a que sala de la mazmorra pertenece este
+    // enemigo (ver game::Dungeon), para poder agrupar a todos los de una
+    // misma sala en un solo encuentro de combate al engancharlos. -1 (el
+    // default) para enemigos de prueba fuera de una mazmorra real.
+    Enemy(std::string nombre, TipoEnemigo tipo, Stats stats, Vec2 posicionInicial, int salaIndice = -1);
 
     const std::string& Nombre() const { return nombre_; }
     TipoEnemigo Tipo() const { return tipo_; }
     const Stats& GetStats() const { return stats_; }
     Stats& GetStatsMut() { return stats_; }
+    int Sala() const { return sala_; }
 
     Vec2 Posicion() const { return posicion_; }
     void SetPosicion(Vec2 pos) { posicion_ = pos; }
@@ -54,6 +59,7 @@ private:
     Vec2 posicion_;
     EstadoCombate combate_;
     bool vencido_ = false;
+    int sala_ = -1;
     static constexpr float kRadioColision = 16.0f;
 };
 
