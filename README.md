@@ -83,9 +83,10 @@ daño), Debilitado (resta al ataque) y Marcado (aggro). Los cinco ya están
 conectados a contenido real: los cuatro primeros desde habilidades del
 party, y Aturdido desde el Golpe Aturdidor del Bandido Aturdidor.
 
-Hay tres enemigos de prueba fijos en la mazmorra, de tipos distintos, para
-poder probar variedad de combates — la generación de encuentros reales
-(varios enemigos a la vez) es un paso futuro:
+La mazmorra ahora es procedural (ver "Generación de mazmorra" más abajo):
+cada sala con contenido tiene un enemigo de un tipo elegido al azar entre
+los tres siguientes — la generación de encuentros reales (varios enemigos
+a la vez en una misma sala) es un paso futuro:
 - **Esqueleto Errante**: el original, parejo, solo ataque básico.
 - **Rata Gigante**: rápida y frágil (poca vida y defensa), ataque básico
   nomás — un combate corto y fácil.
@@ -113,18 +114,43 @@ se los engancha a ellos.
    Veneno desde un crítico del Daño, Debilitado desde el Control, Aturdido
    desde el Bandido Aturdidor).
 5. ✅ Variedad de enemigos: tres tipos con stats e IA distintos (Esqueleto
-   Errante, Rata Gigante, Bandido Aturdidor), repartidos por la mazmorra
-   de prueba, cada uno enganchable por separado.
+   Errante, Rata Gigante, Bandido Aturdidor), uno por sala (tipo al azar),
+   cada uno enganchable por separado.
 6. ✅ Pantalla de Game Over: al perder un combate, se ve una pantalla
    distinta a la de victoria y, al apretar una tecla, el party revive a
    full HP/recurso (sin efectos) y vuelve al punto de partida — antes,
    perder dejaba al party en HP 0 para siempre (softlock).
-7. Pendiente: generación de mazmorra por salas conectadas y encuentros
-   reales con varios enemigos a la vez — ahí Marcado empieza a importar
+7. ✅ Generación de mazmorra por salas conectadas: en vez de una sala fija,
+   cada partida arma una cadena de 5 salas (una inicial sin enemigo + 4
+   con contenido) de tamaños variados, unidas por pasillos, con una
+   cámara que sigue al líder para poder navegar el layout completo (ver
+   "Generación de mazmorra" abajo). Encuentros con varios enemigos a la
+   vez en una misma sala sigue pendiente — ahí Marcado empieza a importar
    de verdad.
 8. Pendiente: balance, y recién ahí evaluar build de Android.
 
 Ver `docs/design.md` para el detalle completo de arquitectura y roadmap.
+
+## Generación de mazmorra
+
+Cada partida arma la mazmorra de cero (`game::Dungeon`, en
+`src/game/dungeon.cpp`): una cadena de 5 salas, cada una elegida al azar
+entre 4 "templates" de tamaño (chica, grande, alargada, mediana), donde
+cada sala se ubica pegada a la anterior extendiéndose al Este o al Sur (al
+azar), conectada por un pasillo de 3 tiles de ancho. La sala 0 es siempre
+el punto de partida del party (sin enemigo); las otras 4 tienen un
+enemigo de tipo aleatorio cada una.
+
+Las paredes se calculan solas: se arma primero el conjunto completo de
+tiles de piso (salas + pasillos) y, al final, cualquier tile del área
+total que no sea piso se convierte en pared — así una sala y su pasillo
+quedan automáticamente "abiertos" entre sí, sin tener que calcular a mano
+dónde va cada puerta.
+
+Como el layout generado es más grande que la ventana (1280x720), la
+cámara (`Camera2D` en `render/renderer.cpp`) sigue al líder del party;
+la grilla de referencia se dibuja sólo dentro de cada sala, no en los
+pasillos ni fuera del layout.
 
 ## Por qué está armado así
 

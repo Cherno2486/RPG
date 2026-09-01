@@ -166,6 +166,7 @@ CMakeFiles/rpg_mazmorras.dir/src/main.cpp.obj: \
  C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game/dungeon.h \
  C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game/enemy.h \
  C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game/combat.h \
+ C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game/dice.h \
  C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\render/renderer.h \
  C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\render/input.h \
  C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\render/combat_ui.h

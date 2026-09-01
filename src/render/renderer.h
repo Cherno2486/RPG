@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include "raylib.h"
 #include "../game/dungeon.h"
 #include "../game/party.h"
 #include "../game/enemy.h"
@@ -21,11 +22,17 @@ public:
     // cartel de "[E] Atacar"), y sin BeginDrawing/EndDrawing propios. La usa
     // main.cpp para pintar la mazmorra "de fondo" cuando se esta en la
     // pantalla de combate (que ya trae su propio overlay encima).
+    //
+    // Centra la camara en el lider del party y dibuja el mundo (grilla,
+    // paredes, enemigos, party) dentro de ese espacio de camara — la
+    // mazmorra generada por salas es mas grande que la ventana, asi que sin
+    // esto no se veria nada al alejarse de la sala inicial.
     void DibujarEscenarioSinUI(const game::Dungeon& mazmorra, const game::Party& party, const std::vector<game::Enemy>& enemigos);
 
 private:
     int anchoVentana_;
     int altoVentana_;
+    Camera2D camara_;
 };
 
 } // namespace render

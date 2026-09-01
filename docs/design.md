@@ -23,9 +23,15 @@ Cada personaje tiene stats base (vida, recursos, ataque, defensa, velocidad) má
 
 ## Sistema de mazmorras
 
-Mazmorras en 2D, vista cenital, basadas en grilla/tiles. Para el prototipo conviene generación semi-procedural: layouts armados a partir de "salas" prediseñadas (room templates) que se conectan proceduralmente, en vez de generación 100% procedural desde el vacío — es más controlable para el diseño de encuentros y más fácil de balancear al principio. Cada sala puede tener combate, un puzzle simple, un cofre/recurso, o ser puramente de conexión. Esto también deja la puerta abierta a mezclar salas armadas a mano con conexiones proceduralas cuando el sistema esté más maduro.
+Mazmorras en 2D, vista cenital, basadas en grilla/tiles. La generación es procedural por cadena de salas (`game::Dungeon`, en `src/game/dungeon.cpp`): en vez de una sola sala fija, cada partida arma una secuencia de 5 salas, cada una elegida al azar entre 4 "room templates" de tamaño (chica 8x8, grande 14x10, alargada 6x14, mediana 10x10), donde cada sala nueva se ubica pegada a la anterior extendiéndose al Este o al Sur (elegido al azar), conectada por un pasillo de 3 tiles de ancho centrado en el solape entre ambas. La sala 0 es siempre el punto de partida del party, sin enemigo; las otras 4 tienen contenido (un enemigo de tipo aleatorio cada una).
 
-El movimiento del personaje dentro de la mazmorra es **libre/continuo** (no por grilla): el personaje se desplaza en cualquier ángulo, con colisión contra las paredes resuelta por rectángulos en vez de solo la celda destino. Se eligió así pensando en que se sienta más natural, sobre todo en mobile con un joystick virtual más adelante.
+Las paredes se calculan de forma indirecta y robusta: primero se arma el conjunto completo de tiles de piso (unión de todas las salas más los pasillos que las conectan), y recién al final cualquier tile dentro del área total ocupada que no sea piso se convierte en una pared (un `Rect` de 1 tile por celda — más pared de la estrictamente necesaria comparado con fusionar rects, pero mucho más simple y difícil de romper a esta escala). Esto evita calcular "aberturas" a mano donde un pasillo conecta con una sala: al ser piso de los dos lados, ya no queda pared en el medio.
+
+Como el layout generado es más grande que la ventana (1280x720), la capa de presentación agrega una cámara (`Camera2D` en `render/renderer.cpp`) que sigue al líder del party; la grilla de referencia se dibuja sólo dentro de los límites de cada sala, no en los pasillos ni fuera del layout ocupado.
+
+El movimiento del personaje dentro de la mazmorra sigue siendo **libre/continuo** (no por grilla): el personaje se desplaza en cualquier ángulo, con colisión contra las paredes resuelta por rectángulos (eje por eje) en vez de solo la celda destino. Se eligió así pensando en que se sienta más natural, sobre todo en mobile con un joystick virtual más adelante.
+
+Este generador procedural fue validado con fuzz-testing: un test standalone (`test_game_layer.cpp`, fuera del build de raylib) construye muchas mazmorras con semillas al azar y verifica que el centro de cada sala generada quede en piso transitable (no solapado con una pared) y que la colisión contra la pared izquierda de la sala inicial se comporte de forma consistente. Un hallazgo de ese proceso: con el movimiento en pasos discretos (velocidad × delta-tiempo por frame), la posición final contra una pared puede quedar hasta un paso entero más allá del borde exacto — no es un bug de colisión ni de generación, así que el test tolera ese margen en vez de exigir precisión sub-píxel.
 
 ## Sistema de combate
 
@@ -41,12 +47,12 @@ Cada rol tiene una habilidad propia (además del ataque básico, disponible siem
 
 Con esto los cinco efectos de estado (Aturdido, Veneno, Escudo, Debilitado, Marcado) están conectados a contenido real del juego. Aturdido en particular no viene de ninguna habilidad del party, sino de un enemigo: el Bandido Aturdidor (ver más abajo) a veces usa "Golpe Aturdidor" en vez de un ataque normal.
 
-Hay tres tipos de enemigo de prueba, repartidos por la mazmorra (todavía fija, una sola sala), cada uno enganchable por separado — no hay combates simultáneos contra varios enemigos todavía, eso depende de la generación de encuentros real (roadmap):
+Hay tres tipos de enemigo, uno por cada sala con contenido de la mazmorra generada (tipo elegido al azar), cada uno enganchable por separado — no hay combates simultáneos contra varios enemigos todavía, eso depende de la generación de encuentros real dentro de una misma sala (roadmap):
 - **Esqueleto Errante**: el original, stats parejas, solo ataque básico.
 - **Rata Gigante**: rápida (mayor velocidad que todo el party) y frágil (poca vida y defensa) — un combate corto pensado como el más fácil de los tres.
 - **Bandido Aturdidor**: más vida y ataque que los otros dos; en su turno, con 50% de probabilidad, usa "Golpe Aturdidor" (daño menor, 1d4) en vez del ataque básico, y si impacta aplica Aturdido a quien golpeó.
 
-El primer encuentro implementado fue contra un único enemigo fijo en la mazmorra de prueba, para validar el ciclo completo (enganchar combate, elegir acciones, terminar en victoria o derrota) antes de construir generación de encuentros real; ahora hay tres, pero siguen siendo peleas de 1 enemigo a la vez.
+El primer encuentro implementado fue contra un único enemigo fijo en una mazmorra de una sola sala, para validar el ciclo completo (enganchar combate, elegir acciones, terminar en victoria o derrota) antes de construir generación de mazmorra y de encuentros real; ahora hay tres tipos de enemigo repartidos por una mazmorra procedural de varias salas, pero siguen siendo peleas de 1 enemigo a la vez.
 
 ### Qué pasa al ganar o perder
 
@@ -59,9 +65,9 @@ Al perder (`FaseCombate::Perdido`) se ve una pantalla de Game Over distinta a la
 Para que la migración futura a Unreal sea lo más parecida a "portar lógica" y no "reescribir el juego", conviene separar desde el principio:
 
 - **Capa de lógica de juego** (game layer): stats, sistema de turnos, IA de combate, inventario, generación de mazmorras, guardado, posición/colisión de entidades. Esta capa no debería depender directamente de raylib — trabaja con sus propias estructuras de datos y expone funciones/eventos.
-- **Capa de presentación** (render layer): todo lo que sí depende de raylib — dibujar sprites, manejar input, reproducir audio, UI. Esta capa consume la capa de lógica, nunca al revés.
+- **Capa de presentación** (render layer): todo lo que sí depende de raylib — dibujar sprites, manejar input, reproducir audio, UI, la cámara. Esta capa consume la capa de lógica, nunca al revés.
 
-Esta separación es la diferencia entre "reemplazar raylib por Unreal en la capa de presentación" y "reescribir todo el juego". No hace falta una arquitectura perfecta desde el día uno, pero sí mantener esa frontera clara desde los primeros archivos.
+Esta separación es la diferencia entre "reemplazar raylib por Unreal en la capa de presentación" y "reescribir todo el juego". No hace falta una arquitectura perfecta desde el día uno, pero sí mantener esa frontera clara desde los primeros archivos — la generación de mazmorra procedural, por ejemplo, vive enteramente en `game/dungeon.cpp` sin tocar raylib; lo único que la capa de render agrega encima es la cámara que sigue al líder.
 
 ## Estructura de carpetas
 
@@ -79,10 +85,10 @@ rpg-mazmorras/
 │   │   ├── combat_state.h/.cpp  # efectos activos, aplicar daño/curación
 │   │   ├── effects.h/.cpp       # tipos de efecto de estado
 │   │   ├── dice.h/.cpp          # tiradas de dados (d20, dN+mod)
-│   │   ├── dungeon.h/.cpp
+│   │   ├── dungeon.h/.cpp       # generación procedural por cadena de salas
 │   │   └── inventory.h/.cpp
 │   └── render/           # capa de presentación: usa raylib
-│       ├── renderer.h/.cpp
+│       ├── renderer.h/.cpp      # incluye la Camera2D que sigue al líder
 │       ├── input.h/.cpp
 │       ├── ui.h/.cpp
 │       └── combat_ui.h/.cpp
@@ -97,14 +103,14 @@ rpg-mazmorras/
 ## Roadmap y estado actual
 
 1. ✅ **Proyecto base**: ventana con raylib (1280x720), loop principal, grilla de tiles de referencia y panel con la party de ejemplo (Bruna/tanque, Kael/daño, Sara/soporte, Milo/control). Compilando y corriendo en Windows vía VS Code + CMake + GCC/MinGW.
-2. ✅ **Movimiento**: personaje controlable con movimiento libre/continuo (no por grilla) dentro de una mazmorra de prueba (una sola sala), con colisión contra las paredes. Probado: direcciones, diagonales normalizadas, colisión de frente y en ángulo, todo OK.
+2. ✅ **Movimiento**: personaje controlable con movimiento libre/continuo (no por grilla), con colisión contra las paredes. Probado: direcciones, diagonales normalizadas, colisión de frente y en ángulo, todo OK.
 3. ✅ **Sistema de party básico**: 4 personajes con stats y un rol cada uno (uno por rol). Un personaje "líder" controlado directamente, los demás siguiéndolo en formación (estilo tren/conga); UI mostrando HP/rol de cada uno, con modo compacto/expandido (TAB) para no tapar el mapa.
 4. ✅ **Combate por turnos contra un enemigo**: orden por velocidad, ataque básico + habilidad de rol (una por cada uno de los 4 roles, Control incluido), sistema de dados (d20 para impactar, dados de daño, ventaja, críticos) y los cinco efectos de estado (Aturdido, Veneno, Escudo, Debilitado, Marcado) conectados a contenido real, tanto del party como de un enemigo.
-5. ✅ **Variedad de enemigos**: tres tipos con stats e IA distintos (Esqueleto Errante, Rata Gigante, Bandido Aturdidor), repartidos por la mazmorra de prueba y enganchables por separado.
+5. ✅ **Variedad de enemigos**: tres tipos con stats e IA distintos (Esqueleto Errante, Rata Gigante, Bandido Aturdidor), uno por sala con contenido, enganchables por separado.
 6. ✅ **Pantalla de Game Over**: perder ya no deja al party en HP 0 para siempre — se ve una pantalla distinta a la de victoria y, al apretar una tecla, el party revive a full HP/recurso (sin efectos) y vuelve al punto de partida.
-7. Generación de mazmorra por salas conectadas (aunque sea con 3–4 room templates), y encuentros reales con varios enemigos a la vez en vez de enemigos fijos sueltos — ahí es donde Marcado empieza a importar de verdad.
+7. ✅ **Generación de mazmorra por salas conectadas**: cadena de 5 salas (4 room templates de tamaño, extensión Este/Sur al azar, pasillos de conexión), paredes calculadas por diferencia contra el piso, cámara que sigue al líder para navegar el layout completo. Encuentros reales con varios enemigos a la vez en una misma sala sigue pendiente — ahí es donde Marcado empieza a importar de verdad.
 8. Iterar sobre balance, UI de combate, y recién ahí evaluar el salto a mobile (build de Android vía NDK).
 
 ## Notas sobre la futura migración a Unreal
 
-Cuando llegue el momento, lo que se traslada más directo es la capa de lógica de juego (si se mantuvo separada de raylib como se describe arriba): stats, reglas de combate, generación de mazmorras. Lo que se descarta o rehace por completo es la capa de presentación (sprites, tilemap 2D casero) — en Unreal eso pasa a resolverse con sus propios sistemas (Blueprints/C++, Niagara, el editor de niveles, etc.), y ahí también se decide si el salto es a 2D dentro de Unreal (Paper2D) o directamente a 3D.
+Cuando llegue el momento, lo que se traslada más directo es la capa de lógica de juego (si se mantuvo separada de raylib como se describe arriba): stats, reglas de combate, generación de mazmorras. Lo que se descarta o rehace por completo es la capa de presentación (sprites, tilemap 2D casero, la cámara) — en Unreal eso pasa a resolverse con sus propios sistemas (Blueprints/C++, Niagara, el editor de niveles, etc.), y ahí también se decide si el salto es a 2D dentro de Unreal (Paper2D) o directamente a 3D.

@@ -8,6 +8,7 @@
 #include "game/dungeon.h"
 #include "game/enemy.h"
 #include "game/combat.h"
+#include "game/dice.h"
 #include "render/renderer.h"
 #include "render/input.h"
 #include "render/combat_ui.h"
@@ -36,6 +37,26 @@ game::Party CrearPartyDeEjemplo(game::Vec2 posicionInicial) {
     return game::Party(std::move(miembros));
 }
 
+// Elige uno de los tres tipos de enemigo al azar, con sus stats de siempre,
+// para poblar una sala de la mazmorra generada. Cada partida termina con
+// una mezcla distinta de encuentros.
+game::Enemy CrearEnemigoAleatorio(game::Vec2 posicion) {
+    switch (game::Roll(3)) {
+        case 1:
+            return game::Enemy("Esqueleto Errante", game::TipoEnemigo::EsqueletoErrante,
+                game::Stats{ /*hpMax*/22, /*hp*/22, /*recursoMax*/0, /*recurso*/0, /*ataque*/7, /*defensa*/3, /*velocidad*/80.0f },
+                posicion);
+        case 2:
+            return game::Enemy("Rata Gigante", game::TipoEnemigo::RataGigante,
+                game::Stats{ /*hpMax*/12, /*hp*/12, /*recursoMax*/0, /*recurso*/0, /*ataque*/5, /*defensa*/1, /*velocidad*/130.0f },
+                posicion);
+        default:
+            return game::Enemy("Bandido Aturdidor", game::TipoEnemigo::BanditoAturdidor,
+                game::Stats{ /*hpMax*/26, /*hp*/26, /*recursoMax*/0, /*recurso*/0, /*ataque*/8, /*defensa*/4, /*velocidad*/85.0f },
+                posicion);
+    }
+}
+
 enum class EstadoJuego { Exploracion, Combate };
 
 // Distancia (en pixeles) a la que hay que estar del enemigo para poder
@@ -48,25 +69,18 @@ int main() {
     const int anchoVentana = 1280;
     const int altoVentana = 720;
 
-    game::Dungeon mazmorra(/*anchoTiles*/20, /*altoTiles*/12);
-    game::Vec2 posicionInicial{ anchoVentana / 2.0f, altoVentana / 2.0f };
+    // Mazmorra procedural: una cadena de salas conectadas por pasillos (ver
+    // game/dungeon.cpp). La sala 0 es donde arranca el party, sin enemigo;
+    // cada sala siguiente tiene un enemigo de tipo aleatorio.
+    game::Dungeon mazmorra;
+    game::Vec2 posicionInicial = mazmorra.CentroDeSala(0);
     game::Party party = CrearPartyDeEjemplo(posicionInicial);
 
-    // Tres enemigos de tipos distintos repartidos por la sala de prueba,
-    // lejos del panel de party (que vive arriba a la izquierda) y de las
-    // paredes, para que se vean siempre. Cada uno se engancha por separado
-    // (todavia no hay combates de varios enemigos a la vez, eso queda para
-    // cuando haya generacion real de encuentros).
     std::vector<game::Enemy> enemigos;
-    enemigos.emplace_back("Esqueleto Errante", game::TipoEnemigo::EsqueletoErrante,
-        game::Stats{ /*hpMax*/22, /*hp*/22, /*recursoMax*/0, /*recurso*/0, /*ataque*/7, /*defensa*/3, /*velocidad*/80.0f },
-        game::Vec2{ 760.0f, 420.0f });
-    enemigos.emplace_back("Rata Gigante", game::TipoEnemigo::RataGigante,
-        game::Stats{ /*hpMax*/12, /*hp*/12, /*recursoMax*/0, /*recurso*/0, /*ataque*/5, /*defensa*/1, /*velocidad*/130.0f },
-        game::Vec2{ 300.0f, 450.0f });
-    enemigos.emplace_back("Bandido Aturdidor", game::TipoEnemigo::BanditoAturdidor,
-        game::Stats{ /*hpMax*/26, /*hp*/26, /*recursoMax*/0, /*recurso*/0, /*ataque*/8, /*defensa*/4, /*velocidad*/85.0f },
-        game::Vec2{ 860.0f, 180.0f });
+    const auto& salas = mazmorra.Habitaciones();
+    for (size_t i = 1; i < salas.size(); ++i) {
+        enemigos.push_back(CrearEnemigoAleatorio(mazmorra.CentroDeSala(i)));
+    }
 
     render::Renderer renderer(anchoVentana, altoVentana, "RPG Mazmorras - Prototipo");
 

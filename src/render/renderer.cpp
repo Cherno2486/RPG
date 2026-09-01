@@ -42,6 +42,11 @@ Renderer::Renderer(int anchoVentana, int altoVentana, const char* titulo)
     : anchoVentana_(anchoVentana), altoVentana_(altoVentana) {
     InitWindow(anchoVentana_, altoVentana_, titulo);
     SetTargetFPS(60);
+
+    camara_.offset = Vector2{ anchoVentana_ / 2.0f, altoVentana_ / 2.0f };
+    camara_.target = Vector2{ 0.0f, 0.0f };
+    camara_.rotation = 0.0f;
+    camara_.zoom = 1.0f;
 }
 
 Renderer::~Renderer() {
@@ -51,16 +56,28 @@ Renderer::~Renderer() {
 void Renderer::DibujarEscenarioSinUI(const game::Dungeon& mazmorra, const game::Party& party, const std::vector<game::Enemy>& enemigos) {
     ClearBackground(ColorDePiso());
 
-    // Grilla de tiles de referencia (el movimiento es libre, esto es solo visual)
-    int anchoPx = mazmorra.AnchoTiles() * (int)game::kTileSize;
-    int altoPx = mazmorra.AltoTiles() * (int)game::kTileSize;
-    for (int x = 0; x <= mazmorra.AnchoTiles(); ++x) {
-        int px = x * (int)game::kTileSize;
-        DrawLine(px, 0, px, altoPx, ColorDeGrilla());
-    }
-    for (int y = 0; y <= mazmorra.AltoTiles(); ++y) {
-        int py = y * (int)game::kTileSize;
-        DrawLine(0, py, anchoPx, py, ColorDeGrilla());
+    // La camara sigue al lider: la mazmorra generada por salas es mas
+    // grande que la ventana, asi que sin esto no se veria nada apenas se
+    // sale de la sala inicial.
+    camara_.target = Vector2{ party.Lider().Posicion().x, party.Lider().Posicion().y };
+
+    BeginMode2D(camara_);
+
+    // Grilla de tiles de referencia (solo dentro de cada sala, no en los
+    // pasillos ni fuera del layout — es solo un apoyo visual).
+    for (const auto& sala : mazmorra.Habitaciones()) {
+        int x0 = sala.x * (int)game::kTileSize;
+        int y0 = sala.y * (int)game::kTileSize;
+        int x1 = (sala.x + sala.ancho) * (int)game::kTileSize;
+        int y1 = (sala.y + sala.alto) * (int)game::kTileSize;
+        for (int x = sala.x; x <= sala.x + sala.ancho; ++x) {
+            int px = x * (int)game::kTileSize;
+            DrawLine(px, y0, px, y1, ColorDeGrilla());
+        }
+        for (int y = sala.y; y <= sala.y + sala.alto; ++y) {
+            int py = y * (int)game::kTileSize;
+            DrawLine(x0, py, x1, py, ColorDeGrilla());
+        }
     }
 
     // Paredes
@@ -88,6 +105,8 @@ void Renderer::DibujarEscenarioSinUI(const game::Dungeon& mazmorra, const game::
         DrawCircleV(pos, 14.0f, ColorDeRol(personaje.Rol()));
         DrawCircleLines((int)pos.x, (int)pos.y, 14.0f, BLACK);
     }
+
+    EndMode2D();
 }
 
 void Renderer::DibujarFrame(const game::Dungeon& mazmorra, const game::Party& party, const std::vector<game::Enemy>& enemigos, bool panelExpandido) {
