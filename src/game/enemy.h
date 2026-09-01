@@ -6,14 +6,27 @@
 
 namespace game {
 
+// Variedad de enemigos: por ahora solo cambia el set de stats y, para
+// Bandido, la IA en combate (ver CombatEncounter::Actualizar en combat.cpp,
+// que a veces usa "Golpe Aturdidor" en vez de un ataque basico). Pensado
+// para crecer cuando haya generacion real de encuentros con mas de un
+// enemigo a la vez.
+enum class TipoEnemigo {
+    EsqueletoErrante,  // el original: stats parejas, solo ataque basico.
+    RataGigante,       // rapida y fragil, ataque basico nomas.
+    BanditoAturdidor,  // mas dura; a veces en vez de atacar usa un golpe
+                        // que aplica Aturdido (hace perder el turno).
+};
+
 // Enemigo simple: mismos stats base que un personaje, pero sin rol ni
-// habilidades propias del party (su "habilidad" es un ataque basico como
-// cualquier otro combatiente, resuelto por la capa de combate).
+// habilidades propias del party (su "habilidad", si tiene una especial
+// segun el tipo, la resuelve la capa de combate).
 class Enemy {
 public:
-    Enemy(std::string nombre, Stats stats, Vec2 posicionInicial);
+    Enemy(std::string nombre, TipoEnemigo tipo, Stats stats, Vec2 posicionInicial);
 
     const std::string& Nombre() const { return nombre_; }
+    TipoEnemigo Tipo() const { return tipo_; }
     const Stats& GetStats() const { return stats_; }
     Stats& GetStatsMut() { return stats_; }
 
@@ -36,6 +49,7 @@ public:
 
 private:
     std::string nombre_;
+    TipoEnemigo tipo_;
     Stats stats_;
     Vec2 posicion_;
     EstadoCombate combate_;

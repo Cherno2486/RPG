@@ -348,7 +348,18 @@ void CombatEncounter::Actualizar(float deltaSeconds) {
     Combatiente cEnemigo{enemigo_.Nombre(), &enemigo_.GetStatsMut(), &enemigo_.Combate(), false, Role::Tanque};
     Combatiente cObjetivo{objetivo->Nombre(), &objetivo->GetStatsMut(), &objetivo->Combate(), true, objetivo->Rol()};
 
-    ResultadoAccion r = EjecutarAtaqueBasico(cEnemigo, cObjetivo);
+    ResultadoAccion r;
+    // El Bandido Aturdidor a veces, en vez de un ataque basico, usa un
+    // golpe mas debil pero que aturde (le hace perder el turno al objetivo).
+    if (enemigo_.Tipo() == TipoEnemigo::BanditoAturdidor && Roll(2) == 1) {
+        r = ResolverAtaque(cEnemigo, cObjetivo, 1, 4, false, "Golpe Aturdidor");
+        if (r.impacto) {
+            cObjetivo.estado->AgregarEfecto(EfectoActivo{TipoEfecto::Aturdido, 1, 0});
+            r.texto += " " + cObjetivo.nombre + " queda aturdido.";
+        }
+    } else {
+        r = EjecutarAtaqueBasico(cEnemigo, cObjetivo);
+    }
     log_.push_back(r.texto);
 
     if (ChequearFinDeCombate()) return;

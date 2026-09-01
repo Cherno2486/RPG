@@ -52,11 +52,21 @@ int main() {
     game::Vec2 posicionInicial{ anchoVentana / 2.0f, altoVentana / 2.0f };
     game::Party party = CrearPartyDeEjemplo(posicionInicial);
 
-    // Posicion lejos del panel de party (que vive arriba a la izquierda) y de
-    // las paredes, para que se vea siempre.
-    game::Enemy enemigo("Esqueleto Errante",
+    // Tres enemigos de tipos distintos repartidos por la sala de prueba,
+    // lejos del panel de party (que vive arriba a la izquierda) y de las
+    // paredes, para que se vean siempre. Cada uno se engancha por separado
+    // (todavia no hay combates de varios enemigos a la vez, eso queda para
+    // cuando haya generacion real de encuentros).
+    std::vector<game::Enemy> enemigos;
+    enemigos.emplace_back("Esqueleto Errante", game::TipoEnemigo::EsqueletoErrante,
         game::Stats{ /*hpMax*/22, /*hp*/22, /*recursoMax*/0, /*recurso*/0, /*ataque*/7, /*defensa*/3, /*velocidad*/80.0f },
         game::Vec2{ 760.0f, 420.0f });
+    enemigos.emplace_back("Rata Gigante", game::TipoEnemigo::RataGigante,
+        game::Stats{ /*hpMax*/12, /*hp*/12, /*recursoMax*/0, /*recurso*/0, /*ataque*/5, /*defensa*/1, /*velocidad*/130.0f },
+        game::Vec2{ 300.0f, 450.0f });
+    enemigos.emplace_back("Bandido Aturdidor", game::TipoEnemigo::BanditoAturdidor,
+        game::Stats{ /*hpMax*/26, /*hp*/26, /*recursoMax*/0, /*recurso*/0, /*ataque*/8, /*defensa*/4, /*velocidad*/85.0f },
+        game::Vec2{ 860.0f, 180.0f });
 
     render::Renderer renderer(anchoVentana, altoVentana, "RPG Mazmorras - Prototipo");
 
@@ -88,16 +98,24 @@ int main() {
 
             if (IsKeyPressed(KEY_TAB)) panelExpandido = !panelExpandido;
 
-            // Enganchar combate: cerca del enemigo (vivo) y se aprieta E.
-            if (!enemigo.Vencido()) {
-                float distancia = game::Length(lider.Posicion() - enemigo.Posicion());
-                if (distancia < kDistanciaInteraccion && IsKeyPressed(KEY_E)) {
-                    encuentro = std::make_unique<game::CombatEncounter>(party, enemigo);
-                    estado = EstadoJuego::Combate;
+            // Enganchar combate: el enemigo vivo mas cercano, si esta a
+            // distancia de interaccion y se aprieta E.
+            game::Enemy* enemigoCercano = nullptr;
+            float distanciaCercana = kDistanciaInteraccion;
+            for (auto& e : enemigos) {
+                if (e.Vencido()) continue;
+                float distancia = game::Length(lider.Posicion() - e.Posicion());
+                if (distancia < distanciaCercana) {
+                    distanciaCercana = distancia;
+                    enemigoCercano = &e;
                 }
             }
+            if (enemigoCercano != nullptr && IsKeyPressed(KEY_E)) {
+                encuentro = std::make_unique<game::CombatEncounter>(party, *enemigoCercano);
+                estado = EstadoJuego::Combate;
+            }
 
-            renderer.DibujarFrame(mazmorra, party, &enemigo, panelExpandido);
+            renderer.DibujarFrame(mazmorra, party, enemigos, panelExpandido);
         } else {  // EstadoJuego::Combate
             encuentro->Actualizar(dt);
 
@@ -119,7 +137,7 @@ int main() {
             ClearBackground(BLACK);
             // Se dibuja la mazmorra "congelada" de fondo para dar contexto, y
             // encima la pantalla de combate (que ya trae su propio overlay oscuro).
-            renderer.DibujarEscenarioSinUI(mazmorra, party, &enemigo);
+            renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos);
             if (encuentro) {
                 ui::DibujarCombate(*encuentro, anchoVentana, altoVentana);
             }

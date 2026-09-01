@@ -39,9 +39,14 @@ Cada rol tiene una habilidad propia (además del ataque básico, disponible siem
 - **Soporte — Curar**: cura al aliado con menos vida, sin tirada (no falla), cuesta recurso.
 - **Control — Grito Debilitante**: ataque menor (1d4) que si impacta aplica Debilitado al enemigo (resta a su bono de ataque mientras dura), cuesta recurso. Ya hay un personaje de este rol en el party de ejemplo (Milo).
 
-Con esto los cinco efectos de estado (Aturdido, Veneno, Escudo, Debilitado, Marcado) están conectados a contenido real del juego; Aturdido por ahora solo se aplicaría desde una fuente externa (por ejemplo un enemigo futuro), no desde ninguna habilidad del party todavía.
+Con esto los cinco efectos de estado (Aturdido, Veneno, Escudo, Debilitado, Marcado) están conectados a contenido real del juego. Aturdido en particular no viene de ninguna habilidad del party, sino de un enemigo: el Bandido Aturdidor (ver más abajo) a veces usa "Golpe Aturdidor" en vez de un ataque normal.
 
-El primer encuentro implementado es contra un único enemigo fijo en la mazmorra de prueba, para validar el ciclo completo (enganchar combate, elegir acciones, terminar en victoria o derrota) antes de construir generación de encuentros real.
+Hay tres tipos de enemigo de prueba, repartidos por la mazmorra (todavía fija, una sola sala), cada uno enganchable por separado — no hay combates simultáneos contra varios enemigos todavía, eso depende de la generación de encuentros real (roadmap):
+- **Esqueleto Errante**: el original, stats parejas, solo ataque básico.
+- **Rata Gigante**: rápida (mayor velocidad que todo el party) y frágil (poca vida y defensa) — un combate corto pensado como el más fácil de los tres.
+- **Bandido Aturdidor**: más vida y ataque que los otros dos; en su turno, con 50% de probabilidad, usa "Golpe Aturdidor" (daño menor, 1d4) en vez del ataque básico, y si impacta aplica Aturdido a quien golpeó.
+
+El primer encuentro implementado fue contra un único enemigo fijo en la mazmorra de prueba, para validar el ciclo completo (enganchar combate, elegir acciones, terminar en victoria o derrota) antes de construir generación de encuentros real; ahora hay tres, pero siguen siendo peleas de 1 enemigo a la vez.
 
 ## Arquitectura de código (pensando en la portabilidad a Unreal)
 
@@ -88,10 +93,11 @@ rpg-mazmorras/
 1. ✅ **Proyecto base**: ventana con raylib (1280x720), loop principal, grilla de tiles de referencia y panel con la party de ejemplo (Bruna/tanque, Kael/daño, Sara/soporte, Milo/control). Compilando y corriendo en Windows vía VS Code + CMake + GCC/MinGW.
 2. ✅ **Movimiento**: personaje controlable con movimiento libre/continuo (no por grilla) dentro de una mazmorra de prueba (una sola sala), con colisión contra las paredes. Probado: direcciones, diagonales normalizadas, colisión de frente y en ángulo, todo OK.
 3. ✅ **Sistema de party básico**: 4 personajes con stats y un rol cada uno (uno por rol). Un personaje "líder" controlado directamente, los demás siguiéndolo en formación (estilo tren/conga); UI mostrando HP/rol de cada uno, con modo compacto/expandido (TAB) para no tapar el mapa.
-4. ✅ **Combate por turnos contra un enemigo**: orden por velocidad, ataque básico + habilidad de rol (una por cada uno de los 4 roles, Control incluido), sistema de dados (d20 para impactar, dados de daño, ventaja, críticos) y los cinco efectos de estado (Aturdido, Veneno, Escudo, Debilitado, Marcado) conectados a habilidades reales. Un enemigo de prueba fijo en la mazmorra para poder engancharlo y probar el ciclo completo.
-5. Generación de mazmorra por salas conectadas (aunque sea con 3–4 room templates), y encuentros reales en vez del enemigo fijo de prueba — ahí es donde Marcado empieza a importar de verdad (varios enemigos a la vez) y donde tendría sentido que algún enemigo aplique Aturdido.
-6. Pantalla de derrota/game over como corresponde (hoy, perder el combate vuelve a la exploración igual que ganar).
-7. Iterar sobre balance, UI de combate, y recién ahí evaluar el salto a mobile (build de Android vía NDK).
+4. ✅ **Combate por turnos contra un enemigo**: orden por velocidad, ataque básico + habilidad de rol (una por cada uno de los 4 roles, Control incluido), sistema de dados (d20 para impactar, dados de daño, ventaja, críticos) y los cinco efectos de estado (Aturdido, Veneno, Escudo, Debilitado, Marcado) conectados a contenido real, tanto del party como de un enemigo.
+5. ✅ **Variedad de enemigos**: tres tipos con stats e IA distintos (Esqueleto Errante, Rata Gigante, Bandido Aturdidor), repartidos por la mazmorra de prueba y enganchables por separado.
+6. Generación de mazmorra por salas conectadas (aunque sea con 3–4 room templates), y encuentros reales con varios enemigos a la vez en vez de enemigos fijos sueltos — ahí es donde Marcado empieza a importar de verdad.
+7. Pantalla de derrota/game over como corresponde (hoy, perder el combate vuelve a la exploración igual que ganar).
+8. Iterar sobre balance, UI de combate, y recién ahí evaluar el salto a mobile (build de Android vía NDK).
 
 ## Notas sobre la futura migración a Unreal
 

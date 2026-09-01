@@ -77,14 +77,24 @@ Habilidad de rol (cuesta recurso, salvo la del Tanque):
 
 Efectos de estado ya soportados por el sistema (`game/effects.h`):
 Aturdido (pierde el turno), Veneno (daño por turno), Escudo (absorbe
-daño), Debilitado (resta al ataque) y Marcado (aggro). Los cuatro últimos
-ya están conectados a habilidades reales del party; Aturdido está
-implementado y testeado pero todavía sin ninguna fuente en el juego real
-(pensado para un futuro enemigo o habilidad que lo aplique).
+daño), Debilitado (resta al ataque) y Marcado (aggro). Los cinco ya están
+conectados a contenido real: los cuatro primeros desde habilidades del
+party, y Aturdido desde el Golpe Aturdidor del Bandido Aturdidor.
 
-Hay un enemigo de prueba fijo en la mazmorra ("Esqueleto Errante") para
-poder probar el combate — la generación de encuentros reales es un paso
-futuro.
+Hay tres enemigos de prueba fijos en la mazmorra, de tipos distintos, para
+poder probar variedad de combates — la generación de encuentros reales
+(varios enemigos a la vez) es un paso futuro:
+- **Esqueleto Errante**: el original, parejo, solo ataque básico.
+- **Rata Gigante**: rápida y frágil (poca vida y defensa), ataque básico
+  nomás — un combate corto y fácil.
+- **Bandido Aturdidor**: más resistente y con más ataque; a veces, en vez
+  de un golpe normal, usa **Golpe Aturdidor**, que si impacta aplica
+  **Aturdido** (pierde el turno) — la primera fuente real de ese efecto en
+  el juego.
+
+Cada uno se engancha por separado (se acerca el líder y se aprieta E sobre
+el más cercano); los otros dos quedan de fondo, sin participar, hasta que
+se los engancha a ellos.
 
 ## Estado actual
 
@@ -98,10 +108,14 @@ futuro.
    habilidad por cada uno de los 4 roles, dados (d20 para impactar, dados
    de daño, ventaja, críticos) y los cinco efectos de estado, ya
    conectados a habilidades reales (Marcado y Escudo desde el Tanque,
-   Veneno desde un crítico del Daño, Debilitado desde el Control).
-5. Pendiente: más enemigos / encuentros — ahí Marcado empieza a importar
-   de verdad, y tendría sentido que algún enemigo aplique Aturdido.
-6. Pendiente: generación de mazmorra por salas conectadas.
+   Veneno desde un crítico del Daño, Debilitado desde el Control, Aturdido
+   desde el Bandido Aturdidor).
+5. ✅ Variedad de enemigos: tres tipos con stats e IA distintos (Esqueleto
+   Errante, Rata Gigante, Bandido Aturdidor), repartidos por la mazmorra
+   de prueba, cada uno enganchable por separado.
+6. Pendiente: generación de mazmorra por salas conectadas y encuentros
+   reales con varios enemigos a la vez — ahí Marcado empieza a importar
+   de verdad.
 7. Pendiente: pantalla de derrota/game over como corresponde (hoy, si
    pierde el party, se vuelve a la exploración igual que si se gana).
 8. Pendiente: balance, y recién ahí evaluar build de Android.
