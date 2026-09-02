@@ -144,13 +144,17 @@ de `game::Party`), que apila items iguales en una sola fila con cantidad
   gasta una unidad al usarse — **Poción de Curación Menor** (2d6+2 de
   vida) y **Elixir de Energía** (1d6+4 de recurso).
 - **Mejora**: sube una stat en un monto fijo **para siempre**, pero en vez
-  de gastarse al toque se **equipa** en una ranura del personaje elegido —
-  **Piedra de Fuerza** (Arma, +1 ataque) y **Amuleto de Protección**
-  (Accesorio, +1 defensa). Cada personaje tiene una sola ranura de Arma y
-  una de Accesorio: no se le puede poner "5 espadas" al mismo, la sexta
-  vez que equipa un arma reemplaza a la anterior en vez de sumarse. Si la
-  ranura ya tenía algo puesto, lo reemplazado vuelve solo al inventario
-  compartido (no se pierde) en vez de perderse.
+  de gastarse al toque se **equipa** en una ranura del personaje elegido.
+  Cada ranura tiene dos sabores para elegir, no un solo camino: **Arma**
+  es **Piedra de Fuerza** (+1 ataque) o **Daga Veloz** (+10 velocidad —
+  actuar más seguido en vez de pegar más fuerte); **Accesorio** es
+  **Amuleto de Protección** (+1 defensa) o **Talismán de Vitalidad** (+5
+  vida máxima, que sube la vida actual junto con el máximo — aguantar más
+  golpes en vez de que te conecten menos). Cada personaje tiene una sola
+  ranura de Arma y una de Accesorio: no se le puede poner "5 espadas" al
+  mismo, la sexta vez que equipa un arma reemplaza a la anterior en vez de
+  sumarse. Si la ranura ya tenía algo puesto, lo reemplazado vuelve solo
+  al inventario compartido (no se pierde).
 
 Fuentes de items:
 - **Cofres** (`game::Cofre`): objetos fijos en la mazmorra, dibujados como
@@ -237,10 +241,19 @@ el Arma/Accesorio de cada uno debajo de su barra de HP.
     que el resto del balance: 87.5% de clears totales con items (vs. 91.9%
     antes de agregar el jefe) — más difícil, como corresponde al cierre de
     la run, pero ampliamente superable.
-13. Pendiente: seguir sumando contenido (más enemigos comunes, más
-    variedad de salas o una mazmorra más larga) y balance (curva de poder
-    con mejoras acumuladas a lo largo de una run completa) antes del build
-    de Android.
+13. ✅ Curva de poder investigada: se midió cuánto poder equipado acumula
+    el party a lo largo de una run completa — con la duración actual (4
+    salas + jefe) llega al Capitán Bandido con menos de 1 punto de bono en
+    promedio, sin efecto medible en la tasa de victoria contra él. No hay
+    curva de poder que corregir por ahora — ver `docs/design.md` para el
+    detalle. Sin cambios de código esta vuelta.
+14. ✅ Catálogo de Mejoras ampliado: de 2 a 4 piezas — Daga Veloz (Arma,
+    +10 velocidad) y Talismán de Vitalidad (Accesorio, +5 vida máxima) se
+    suman a Piedra de Fuerza y Amuleto de Protección, dándole a cada
+    ranura dos sabores reales para elegir en vez de un solo camino.
+15. Pendiente: seguir sumando contenido (más enemigos comunes, más
+    variedad de salas o una mazmorra más larga) antes del build de
+    Android.
 
 Ver `docs/design.md` para el detalle completo de arquitectura y roadmap.
 

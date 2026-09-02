@@ -26,11 +26,30 @@ Item AmuletoDeProteccion() {
                 TipoItem::Mejora, EfectoItem::MejorarDefensa, RanuraEquipo::Accesorio, 0, 0, 1};
 }
 
+Item DagaVeloz() {
+    return Item{"Daga Veloz", "Arma: sube la velocidad en 10, para siempre.",
+                TipoItem::Mejora, EfectoItem::MejorarVelocidad, RanuraEquipo::Arma, 0, 0, 10};
+}
+
+Item TalismanDeVitalidad() {
+    return Item{"Talisman de Vitalidad", "Accesorio: sube la vida maxima en 5, para siempre.",
+                TipoItem::Mejora, EfectoItem::MejorarVidaMaxima, RanuraEquipo::Accesorio, 0, 0, 5};
+}
+
+Item MejoraAleatoria() {
+    switch (Roll(4)) {
+        case 1:  return PiedraDeFuerza();
+        case 2:  return AmuletoDeProteccion();
+        case 3:  return DagaVeloz();
+        default: return TalismanDeVitalidad();
+    }
+}
+
 Item ItemAleatorioDeCofre() {
     int tirada = Roll(10);
     if (tirada <= 5) return PocionCuracionMenor();
     if (tirada <= 8) return ElixirDeEnergia();
-    return (Roll(2) == 1) ? PiedraDeFuerza() : AmuletoDeProteccion();
+    return MejoraAleatoria();
 }
 
 ResultadoUsoItem UsarItem(const Item& item, Character& objetivo) {
@@ -91,16 +110,14 @@ ResultadoLoot TirarLootDeEnemigo(TipoEnemigo tipo) {
             // recompensa el riesgo.
             if (Roll(10) <= 7) {
                 r.hay = true;
-                r.item = (Roll(4) == 1)
-                    ? (Roll(2) == 1 ? PiedraDeFuerza() : AmuletoDeProteccion())
-                    : PocionCuracionMenor();
+                r.item = (Roll(4) == 1) ? MejoraAleatoria() : PocionCuracionMenor();
             }
             break;
         case TipoEnemigo::CapitanBandido:
             // El jefe: siempre suelta algo, y siempre una mejora permanente
             // (nunca un consumible) — es el premio grande de la run.
             r.hay = true;
-            r.item = (Roll(2) == 1) ? PiedraDeFuerza() : AmuletoDeProteccion();
+            r.item = MejoraAleatoria();
             break;
     }
     return r;

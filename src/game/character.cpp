@@ -43,14 +43,33 @@ ItemEquipado Character::Equipar(Item nuevo) {
     ItemEquipado anterior = *ranura;
 
     // Revierte el bono de lo que hubiera antes en esa ranura, para no
-    // acumular stats de items que ya no estan puestos.
+    // acumular stats de items que ya no estan puestos. MejorarVidaMaxima es
+    // el unico caso que toca dos campos: baja hpMax y, si hp quedo por
+    // encima del nuevo maximo (nada la bajo mientras tanto), lo recorta —
+    // sin restarle a hp el bono a ciegas, porque pudo haber cambiado por
+    // combate desde que se equipo.
     if (anterior.ocupado) {
         if (anterior.item.efecto == EfectoItem::MejorarAtaque) stats_.ataque -= anterior.item.bono;
         else if (anterior.item.efecto == EfectoItem::MejorarDefensa) stats_.defensa -= anterior.item.bono;
+        else if (anterior.item.efecto == EfectoItem::MejorarVelocidad) stats_.velocidad -= anterior.item.bono;
+        else if (anterior.item.efecto == EfectoItem::MejorarVidaMaxima) {
+            stats_.hpMax -= anterior.item.bono;
+            if (stats_.hpMax < 0) stats_.hpMax = 0;
+            if (stats_.hp > stats_.hpMax) stats_.hp = stats_.hpMax;
+        }
     }
 
+    // Al aplicar MejorarVidaMaxima, la vida actual sube junto con el maximo
+    // (se siente como una mejora real al toque, no solo una barra mas
+    // grande para rellenar despues).
     if (nuevo.efecto == EfectoItem::MejorarAtaque) stats_.ataque += nuevo.bono;
     else if (nuevo.efecto == EfectoItem::MejorarDefensa) stats_.defensa += nuevo.bono;
+    else if (nuevo.efecto == EfectoItem::MejorarVelocidad) stats_.velocidad += nuevo.bono;
+    else if (nuevo.efecto == EfectoItem::MejorarVidaMaxima) {
+        stats_.hpMax += nuevo.bono;
+        stats_.hp += nuevo.bono;
+        if (stats_.hp > stats_.hpMax) stats_.hp = stats_.hpMax;
+    }
 
     *ranura = ItemEquipado{true, std::move(nuevo)};
     return anterior;

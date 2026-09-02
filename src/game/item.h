@@ -20,6 +20,13 @@ Item PocionCuracionMenor();     // Consumible: cura 2d6+2 de vida
 Item ElixirDeEnergia();         // Consumible: restaura 1d6+4 de recurso
 Item PiedraDeFuerza();          // Mejora (ranura Arma): +1 de ataque permanente
 Item AmuletoDeProteccion();     // Mejora (ranura Accesorio): +1 de defensa permanente
+Item DagaVeloz();               // Mejora (ranura Arma): +10 de velocidad permanente
+Item TalismanDeVitalidad();     // Mejora (ranura Accesorio): +5 de vida maxima permanente
+
+// Una Mejora al azar entre las 4 del catalogo (una de cada ranura x sabor),
+// para no repetir la misma logica de sorteo en ItemAleatorioDeCofre y
+// TirarLootDeEnemigo.
+Item MejoraAleatoria();
 
 // Item al azar para el contenido de un cofre (pensado con mas chance de
 // consumibles que de mejoras, para que las mejoras se sientan especiales).

@@ -16,17 +16,22 @@ enum class EfectoItem {
     CurarRecurso,
     MejorarAtaque,
     MejorarDefensa,
+    MejorarVelocidad,    // Mejora de ranura Arma, alternativa a MejorarAtaque
+    MejorarVidaMaxima,   // Mejora de ranura Accesorio, alternativa a MejorarDefensa
 };
 
 // Ranura de equipo donde va un item de tipo Mejora una vez equipado. Cada
 // personaje tiene como mucho un item por ranura (ver Character::Equipar,
 // que devuelve el que hubiera antes para que vuelva al inventario
 // compartido en vez de perderse). Ninguna para los Consumibles, que nunca
-// se equipan.
+// se equipan. Cada ranura tiene dos "sabores" posibles, para que equipar
+// algo sea una eleccion real y no un solo camino: Arma sube ataque
+// (MejorarAtaque) o velocidad (MejorarVelocidad); Accesorio sube defensa
+// (MejorarDefensa) o vida maxima (MejorarVidaMaxima).
 enum class RanuraEquipo {
     Ninguna,
-    Arma,       // mejoras que suben ataque
-    Accesorio,  // mejoras que suben defensa
+    Arma,       // mejoras ofensivas: mas daño o actuar mas seguido
+    Accesorio,  // mejoras defensivas: esquivar mas o aguantar mas golpes
 };
 
 // Definicion de un item del catalogo (ver game/item.h para las instancias
