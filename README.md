@@ -102,26 +102,38 @@ atacar al Tanque en su turno en vez de al aliado con menos vida (antes,
 con un solo enemigo posible en pantalla, "a quién prioriza" nunca se
 notaba).
 
-Cada sala con contenido de la mazmorra procedural (ver "Generación de
-mazmorra" más abajo) tiene un **grupo de 1 a 3 enemigos**, de tipos
-elegidos al azar entre los tres siguientes (pueden repetirse — si hay dos
-del mismo tipo en la sala, se distinguen con un sufijo, "Rata Gigante
-II"):
+Cada sala **intermedia** con contenido de la mazmorra procedural (ver
+"Generación de mazmorra" más abajo) tiene un **grupo de 1 a 3 enemigos**,
+de tipos elegidos al azar entre los tres siguientes (pueden repetirse — si
+hay dos del mismo tipo en la sala, se distinguen con un sufijo, "Rata
+Gigante II"):
 - **Esqueleto Errante**: el original, parejo, solo ataque básico.
 - **Rata Gigante**: rápida y frágil (poca vida y defensa), ataque básico
   nomás — un combate corto y fácil.
-- **Bandido Aturdidor**: más resistente y con más ataque; a veces, en vez
-  de un golpe normal, usa **Golpe Aturdidor**, que si impacta aplica
-  **Aturdido** (pierde el turno) — la primera fuente real de ese efecto en
-  el juego.
+- **Bandido Aturdidor**: el más resistente de los tres comunes (más HP y
+  defensa); a veces, en vez de un golpe normal, usa **Golpe Aturdidor**,
+  que si impacta aplica **Aturdido** (pierde el turno) — la primera fuente
+  real de ese efecto en el juego. Su ataque quedó igualado al del
+  Esqueleto tras un ajuste de balance (ver más abajo) — grupos de 3 eran
+  desproporcionadamente más duros que con cualquier otro enemigo.
+
+La **última sala** con contenido, en cambio, tiene un único **Capitán
+Bandido**: el jefe de la mazmorra. Más HP, ataque y defensa que cualquier
+enemigo común, un círculo bien más grande y oscuro con anillo dorado para
+distinguirlo a simple vista, e IA propia que alterna ataque básico, Golpe
+Aturdidor y **Doble Tajo** (dos golpes en el mismo turno) — por debajo del
+40% de HP entra en furia y usa Doble Tajo siempre. Siempre suelta una
+mejora permanente al caer, y derrotarlo muestra una pantalla de cierre
+distinta ("¡MAZMORRA DESPEJADA!") en vez del cartel genérico de victoria —
+ver "Jefe de mazmorra" en `docs/design.md` para el detalle completo.
 
 Al acercarse y apretar E sobre cualquiera de los enemigos de una sala, se
 engancha un solo combate contra **todo el grupo de esa sala** (no uno por
-uno): el orden de turnos intercala a los 4 del party con todos los
-enemigos vivos según velocidad, cada enemigo actúa por separado en su
-turno, y la victoria requiere derrotarlos a todos. Las salas de otras
-partes de la mazmorra quedan de fondo, sin participar, hasta que se las
-engancha.
+uno, y contra el jefe es 1 contra todo el party igual): el orden de turnos
+intercala a los 4 del party con todos los enemigos vivos según velocidad,
+cada enemigo actúa por separado en su turno, y la victoria requiere
+derrotarlos a todos. Las salas de otras partes de la mazmorra quedan de
+fondo, sin participar, hasta que se las engancha.
 
 ## Sistema de inventario y loot
 
@@ -211,7 +223,24 @@ el Arma/Accesorio de cada uno debajo de su barra de HP.
     sola de cada una), reemplazando lo que hubiera antes en vez de
     acumularse sin límite, y visibles tanto en el inventario como en el
     panel de party expandido.
-11. Pendiente: balance general, y recién ahí evaluar build de Android.
+11. ✅ Balance general (primera pasada): un simulador Monte Carlo sobre
+    combates reales detectó que los grupos de 3x Bandido Aturdidor eran
+    mucho más duros que cualquier otro grupo de 3 (76-79% de victorias y
+    ~59% de HP restante vs. 99-100%/78-88% del resto); se corrigió
+    bajándole ataque (8→7) y HP (26→24), sin tocar su defensa ni el
+    aturdimiento — ver `docs/design.md` para el detalle de la
+    investigación.
+12. ✅ Jefe de mazmorra: la última sala ya no tiene un grupo más — tiene al
+    Capitán Bandido, único, con más stats que cualquier enemigo común, IA
+    propia (Doble Tajo + furia bajo 40% HP), botín garantizado, y una
+    pantalla de cierre distinta ("¡MAZMORRA DESPEJADA!"). Simulado igual
+    que el resto del balance: 87.5% de clears totales con items (vs. 91.9%
+    antes de agregar el jefe) — más difícil, como corresponde al cierre de
+    la run, pero ampliamente superable.
+13. Pendiente: seguir sumando contenido (más enemigos comunes, más
+    variedad de salas o una mazmorra más larga) y balance (curva de poder
+    con mejoras acumuladas a lo largo de una run completa) antes del build
+    de Android.
 
 Ver `docs/design.md` para el detalle completo de arquitectura y roadmap.
 

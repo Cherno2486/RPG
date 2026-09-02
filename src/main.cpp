@@ -67,9 +67,13 @@ game::Enemy CrearEnemigoDeTipo(game::TipoEnemigo tipo, game::Vec2 posicion, int 
             return game::Enemy(std::string("Rata Gigante") + sufijo, tipo,
                 game::Stats{ /*hpMax*/12, /*hp*/12, /*recursoMax*/0, /*recurso*/0, /*ataque*/5, /*defensa*/1, /*velocidad*/130.0f },
                 posicion, salaIndice);
-        default:
+        case game::TipoEnemigo::BanditoAturdidor:
             return game::Enemy(std::string("Bandido Aturdidor") + sufijo, tipo,
-                game::Stats{ /*hpMax*/26, /*hp*/26, /*recursoMax*/0, /*recurso*/0, /*ataque*/8, /*defensa*/4, /*velocidad*/85.0f },
+                game::Stats{ /*hpMax*/24, /*hp*/24, /*recursoMax*/0, /*recurso*/0, /*ataque*/7, /*defensa*/4, /*velocidad*/85.0f },
+                posicion, salaIndice);
+        default:
+            return game::Enemy("Capitan Bandido", tipo,
+                game::Stats{ /*hpMax*/52, /*hp*/52, /*recursoMax*/0, /*recurso*/0, /*ataque*/8, /*defensa*/5, /*velocidad*/85.0f },
                 posicion, salaIndice);
     }
 }
@@ -144,15 +148,24 @@ int main() {
 
     // Mazmorra procedural: una cadena de salas conectadas por pasillos (ver
     // game/dungeon.cpp). La sala 0 es donde arranca el party, sin enemigos;
-    // cada sala siguiente tiene un grupo de 1 a 3 enemigos de tipo
-    // aleatorio, que se enganchan todos juntos en un mismo combate.
+    // las salas intermedias tienen un grupo de 1 a 3 enemigos de tipo
+    // aleatorio, que se enganchan todos juntos en un mismo combate; la
+    // ultima sala, en cambio, tiene un unico Capitan Bandido — el jefe de
+    // la mazmorra, que le da un cierre a la run (ver "Balance" en
+    // docs/design.md y CombatEncounter::Actualizar para su IA especial).
     game::Dungeon mazmorra;
     game::Vec2 posicionInicial = mazmorra.CentroDeSala(0);
     game::Party party = CrearPartyDeEjemplo(posicionInicial);
 
     std::vector<game::Enemy> enemigos;
     const auto& salas = mazmorra.Habitaciones();
+    size_t indiceSalaJefe = salas.size() - 1;
     for (size_t i = 1; i < salas.size(); ++i) {
+        if (i == indiceSalaJefe) {
+            enemigos.push_back(CrearEnemigoDeTipo(game::TipoEnemigo::CapitanBandido,
+                mazmorra.CentroDeSala(i), static_cast<int>(i), 1));
+            continue;
+        }
         std::vector<game::Enemy> grupo = CrearGrupoDeSala(mazmorra.CentroDeSala(i), static_cast<int>(i));
         for (auto& e : grupo) enemigos.push_back(std::move(e));
     }

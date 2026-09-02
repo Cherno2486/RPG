@@ -185,9 +185,25 @@ void DibujarCombate(game::CombatEncounter& encuentro, int anchoVentana, int alto
         int anchoTexto = MeasureText(texto, 20);
         DrawText(texto, (anchoVentana - anchoTexto) / 2, yLog - 38, 20, Color{ 220, 150, 150, 255 });
     } else if (encuentro.Fase() == game::FaseCombate::Ganado) {
-        const char* texto = "¡VICTORIA!  -  presiona cualquier tecla para continuar";
-        int anchoTexto = MeasureText(texto, 26);
-        DrawText(texto, (anchoVentana - anchoTexto) / 2, altoVentana / 2 - 100, 26, Color{ 140, 230, 140, 255 });
+        // El Capitan Bandido es el jefe de la mazmorra (unico enemigo de su
+        // sala) — derrotarlo merece un cierre distinto al de un combate mas.
+        bool esVictoriaFinal = encuentro.Enemigos().size() == 1
+            && encuentro.Enemigos()[0]->Tipo() == game::TipoEnemigo::CapitanBandido;
+        if (esVictoriaFinal) {
+            const char* titulo = "¡MAZMORRA DESPEJADA!";
+            int anchoTitulo = MeasureText(titulo, 40);
+            DrawText(titulo, (anchoVentana - anchoTitulo) / 2, altoVentana / 2 - 130, 40, Color{ 230, 190, 80, 255 });
+            const char* subtitulo = "El Capitan Bandido ha caido.";
+            int anchoSub = MeasureText(subtitulo, 20);
+            DrawText(subtitulo, (anchoVentana - anchoSub) / 2, altoVentana / 2 - 78, 20, Color{ 220, 220, 220, 255 });
+            const char* prompt = "presiona cualquier tecla para continuar";
+            int anchoPrompt = MeasureText(prompt, 18);
+            DrawText(prompt, (anchoVentana - anchoPrompt) / 2, altoVentana / 2 - 46, 18, Color{ 200, 200, 200, 255 });
+        } else {
+            const char* texto = "¡VICTORIA!  -  presiona cualquier tecla para continuar";
+            int anchoTexto = MeasureText(texto, 26);
+            DrawText(texto, (anchoVentana - anchoTexto) / 2, altoVentana / 2 - 100, 26, Color{ 140, 230, 140, 255 });
+        }
     } else if (encuentro.Fase() == game::FaseCombate::Perdido) {
         const char* titulo = "GAME OVER";
         int anchoTitulo = MeasureText(titulo, 46);

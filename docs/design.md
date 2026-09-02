@@ -49,14 +49,26 @@ Cada rol tiene una habilidad propia (además del ataque básico, disponible siem
 
 Con esto los cinco efectos de estado (Aturdido, Veneno, Escudo, Debilitado, Marcado) están conectados a contenido real del juego. Aturdido en particular no viene de ninguna habilidad del party, sino de un enemigo: el Bandido Aturdidor (ver más abajo) a veces usa "Golpe Aturdidor" en vez de un ataque normal.
 
-Hay tres tipos de enemigo, que pueblan las salas con contenido de la mazmorra generada:
+Hay tres tipos de enemigo comunes, que pueblan las salas intermedias de la mazmorra generada, más un jefe único en la última sala (ver "Jefe de mazmorra" más abajo):
 - **Esqueleto Errante**: el original, stats parejas, solo ataque básico.
 - **Rata Gigante**: rápida (mayor velocidad que todo el party) y frágil (poca vida y defensa) — un combate corto pensado como el más fácil de los tres.
-- **Bandido Aturdidor**: más vida y ataque que los otros dos; en su turno, con 50% de probabilidad, usa "Golpe Aturdidor" (daño menor, 1d4) en vez del ataque básico, y si impacta aplica Aturdido a quien golpeó.
+- **Bandido Aturdidor**: más vida y defensa que los otros dos; en su turno, con 50% de probabilidad, usa "Golpe Aturdidor" (daño menor, 1d4) en vez del ataque básico, y si impacta aplica Aturdido a quien golpeó. Ver "Balance: ajuste del Bandido Aturdidor" más abajo por qué su ataque quedó igualado al del Esqueleto en vez de por encima.
 
 ### Encuentros multi-enemigo
 
-Cada sala con contenido tiene un **grupo de 1 a 3 enemigos** (`main.cpp::CrearGrupoDeSala`), de tipos elegidos al azar entre los tres de arriba — pueden repetirse; si hay más de uno del mismo tipo en la sala, se le agrega un sufijo al nombre (" II", " III") para distinguirlos en el log y en las fichas de combate. Cada `Enemy` sabe a qué sala pertenece (`Enemy::Sala()`), asignado al crearlo.
+Cada sala intermedia con contenido tiene un **grupo de 1 a 3 enemigos** (`main.cpp::CrearGrupoDeSala`), de tipos elegidos al azar entre los tres de arriba — pueden repetirse; si hay más de uno del mismo tipo en la sala, se le agrega un sufijo al nombre (" II", " III") para distinguirlos en el log y en las fichas de combate. Cada `Enemy` sabe a qué sala pertenece (`Enemy::Sala()`), asignado al crearlo.
+
+### Jefe de mazmorra: Capitán Bandido
+
+La última sala con contenido (`main.cpp::main`, `indiceSalaJefe = salas.size() - 1`) no tiene un grupo aleatorio: tiene un único **Capitán Bandido** (`TipoEnemigo::CapitanBandido`), el jefe de la run. Se distingue de los enemigos comunes en varios planos:
+
+- **Stats**: el más resistente de largo (52 HP contra 24 del Bandido común), con ataque y defensa también por encima de cualquier enemigo regular.
+- **IA propia** (`CombatEncounter::Actualizar` en `combat.cpp`): en vez de un patrón fijo, alterna entre tres opciones cada turno — ataque básico (30%), "Golpe Aturdidor" (30%, igual que el Bandido común: menos daño pero aplica Aturdido si impacta) y **"Doble Tajo"** (40%: dos ataques básicos en el mismo turno, re-eligiendo objetivo para el segundo golpe por si el primero se llevó puesto a quien tenía en la mira). Por debajo del **40% de HP entra en furia**: deja de aturdir y usa Doble Tajo siempre — la pelea se pone más agresiva justo en el tramo final, en vez de ir apagándose a medida que pierde vida como cualquier otro enemigo.
+- **Visual**: círculo notablemente más grande, casi negro, con un anillo doble dorado (`ColorDeEnemigo`/`RadioDeEnemigo` en `renderer.cpp`) — se distingue a simple vista apenas se lo ve en el mapa, sin depender de leer el nombre.
+- **Botín garantizado** (`TirarLootDeEnemigo` en `item.cpp`): a diferencia de los enemigos comunes (que sueltan botín con cierta probabilidad, y no siempre una mejora), el jefe **siempre** suelta una mejora permanente (Piedra de Fuerza o Amuleto de Protección al azar) — el premio grande de haber llegado hasta el final.
+- **Cierre de la run**: derrotarlo dispara una pantalla de victoria distinta ("¡MAZMORRA DESPEJADA!", en `combat_ui.cpp`, detectada por ser el único enemigo del encuentro y de tipo `CapitanBandido`) en vez del cartel genérico de "¡VICTORIA!" — la mazmorra, hasta ahora, no tenía ningún cierre más allá de "no queda nada más que hacer".
+
+Simulado con el mismo harness Monte Carlo del balance general (`test_balance.cpp`): solo y con party fresco, el Capitán Bandido se gana un 99.3% de las veces con ~81.5% de HP promedio restante (17 turnos en promedio) — comparable o algo más manejable que 3x Bandido Aturdidor (94.7%/72.9%), porque enfrentarlo solo, sin dividir el daño del party entre varios objetivos, compensa el golpe extra de Doble Tajo. La cifra que importa es la de la run completa hasta este jefe (ver más abajo): con el sistema de items activo, la mazmorra completa (4 salas + jefe) se termina un 87.5% de las veces (vs. 91.9% antes de agregar el jefe) — una dificultad final notoria pero ampliamente superable, en línea con la filosofía "duro pero justo" del resto del balance.
 
 Al enganchar combate (tecla E cerca de cualquier enemigo vivo), `main.cpp` reúne a TODOS los enemigos vivos con la misma `Sala()` que el más cercano y arma un único `CombatEncounter` con ese grupo — un combate por sala, no por enemigo individual. `CombatEncounter` pasó de guardar una referencia a un solo `Enemy` a guardar `std::vector<Enemy*>`; el orden de turnos ahora intercala a los 4 del party con TODOS los enemigos del grupo según velocidad (antes era "los 4 del party + 1 enemigo"), y la victoria (`FaseCombate::Ganado`) requiere que **todos** los enemigos del grupo estén derrotados, no solo el primero.
 
@@ -135,6 +147,26 @@ rpg-mazmorras/
     └── design.md
 ```
 
+### Balance: ajuste del Bandido Aturdidor
+
+Para iterar sobre balance general se armó un simulador Monte Carlo standalone (`test_balance.cpp`, no se shippea) que corre combates completos usando las clases reales del juego (`Party`, `Enemy`, `CombatEncounter`) con una IA heurística del lado del jugador (foco en el enemigo con menos HP, uso de habilidad según rol y recurso disponible), en vez de calcular probabilidades a mano. Esto permite medir tasa de victoria, HP restante promedio y duración promedio de cada combinación de enemigos con miles de repeticiones.
+
+La corrida inicial (N=3000-4000 por escenario) mostró que los tres tipos de enemigo estaban parejos en solitario y en grupos de a dos, pero **3x Bandido Aturdidor** era un caso claramente fuera de línea frente a 3x de cualquier otro tipo:
+
+| Escenario | Victorias (antes) | HP del party al ganar (antes) |
+|---|---|---|
+| 3x Esqueleto Errante | 99.1-99.6% | 78.5-78.8% |
+| 3x Rata Gigante | 100% | 87.7-88.0% |
+| 3x Bandido Aturdidor | 76-79% | ~59% |
+
+Se probaron dos hipótesis por separado, cambiando una sola variable a la vez en el simulador:
+1. **Frecuencia de "Golpe Aturdidor"** (de 50% a ~33%, y luego prácticamente desactivada): la tasa de victoria subió de 76.3% a un máximo de 84.1%, con el HP restante casi sin moverse (~59%). Conclusión: el aturdimiento aporta, pero no es la causa principal.
+2. **Stats base** (`ataque` 8→7, `hp`/`hpMax` 26→24, dejando el aturdimiento intacto): la tasa de victoria subió a 94.7% y el HP restante a 72.7% — muy cerca del 99.5%/78.5% del Esqueleto. Conclusión: el desgaste acumulado de tener más HP y más ataque que el Esqueleto durante una pelea de 3 enemigos (que dura ~25 turnos en vez de ~21) era el factor dominante, no la habilidad especial.
+
+Cambio aplicado (`main.cpp::CrearEnemigoDeTipo`, caso `BanditoAturdidor`): `ataque` 8→7 (ahora igual al Esqueleto) y `hpMax`/`hp` 26→24 (sigue siendo el más resistente de los tres). La defensa (4, la más alta) y el "Golpe Aturdidor" quedan sin tocar — sigue siendo el enemigo "tanque con aturdimiento", solo que ya no es desproporcionadamente más duro en grupos de tres. 1x y 2x Bandido no se resienten (ya estaban en 100%/99.6-100% de victorias y quedan igual o mejor).
+
+De paso, la simulación de una mazmorra completa (4 salas, sin curación entre combates, peor caso) dio 71-72% de clears sin usar el sistema de inventario y 91-92% modelando cofres y botín — un dato a favor de que el sistema de loot ya cumple su rol de red de contención, no algo que haya hecho falta tocar en esta pasada.
+
 ## Roadmap y estado actual
 
 1. ✅ **Proyecto base**: ventana con raylib (1280x720), loop principal, grilla de tiles de referencia y panel con la party de ejemplo (Bruna/tanque, Kael/daño, Sara/soporte, Milo/control). Compilando y corriendo en Windows vía VS Code + CMake + GCC/MinGW.
@@ -147,7 +179,9 @@ rpg-mazmorras/
 8. ✅ **Encuentros multi-enemigo**: cada sala con contenido tiene un grupo de 1 a 3 enemigos que se engancha entero en un solo `CombatEncounter` (turnos intercalados entre todo el party y todos los enemigos vivos, selector de objetivo con TAB, victoria solo cuando cae todo el grupo). Marcado pasó de ser un efecto sin consecuencia observable a hacer que el enemigo marcado priorice atacar al Tanque.
 9. ✅ **Inventario y loot**: catálogo de items (pociones de vida, elixires de recurso, mejoras permanentes de ataque/defensa), inventario único compartido por todo el party con apilado, cofres en la mazmorra (uno garantizado + chance por sala), tablas de botín por tipo de enemigo al ganar un combate, e interacción [E] unificada (enemigo o cofre, el que esté más cerca) más una pantalla de inventario ([I], selector de objetivo con TAB, uso con 1-9) — ver "Sistema de inventario y loot" arriba.
 10. ✅ **Ranuras de equipo**: las mejoras permanentes dejaron de aplicarse instantáneo y perderse como concepto — ahora se equipan (`Character::Equipar`) en una ranura de Arma o Accesorio por personaje, una sola de cada, visible en el inventario y en el panel de party expandido; equipar algo nuevo en una ranura ocupada reemplaza lo que había y lo devuelve al inventario compartido en vez de acumular el bono sin límite. Surgió como feedback directo: nada impedía antes ponerle la misma mejora varias veces al mismo personaje, ni había forma de ver qué tenía puesto cada uno — ver "Ranuras de equipo" arriba.
-11. Pendiente: iterar sobre balance general (stats, dificultad de los grupos de enemigos según tamaño, ahora también curva de poder con las mejoras permanentes de items), y recién ahí evaluar el salto a mobile (build de Android vía NDK).
+11. ✅ **Balance general (primera pasada)**: simulador Monte Carlo (`test_balance.cpp`) sobre las clases reales de combate detectó que los grupos de 3x Bandido Aturdidor eran notablemente más duros que cualquier otro grupo de 3 (76-79% de victorias y ~59% de HP restante vs. 99-100%/78-88% del resto); se corrigió ajustando sus stats base (`ataque` 8→7, HP 26→24) — ver "Balance: ajuste del Bandido Aturdidor" arriba.
+12. ✅ **Jefe de mazmorra**: la última sala con contenido ya no tiene un grupo aleatorio más — tiene al Capitán Bandido, un enemigo único con más stats que cualquier otro, IA propia ("Doble Tajo" y furia por debajo del 40% de HP), botín garantizado y una pantalla de cierre distinta ("¡MAZMORRA DESPEJADA!") — ver "Jefe de mazmorra: Capitán Bandido" arriba. Balanceado con el mismo simulador: 87.5% de clears totales con el sistema de items activo (vs. 91.9% antes de agregar el jefe), una caída de dificultad esperable y buscada para el cierre de la run.
+13. Pendiente: seguir iterando sobre contenido (más tipos de enemigo comunes, más variedad de salas o una mazmorra más larga) y sobre balance (curva de poder con mejoras permanentes acumuladas a lo largo de una run completa) antes de evaluar el salto a mobile (build de Android vía NDK).
 
 ## Notas sobre la futura migración a Unreal
 

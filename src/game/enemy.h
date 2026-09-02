@@ -7,15 +7,19 @@
 namespace game {
 
 // Variedad de enemigos: por ahora solo cambia el set de stats y, para
-// Bandido, la IA en combate (ver CombatEncounter::Actualizar en combat.cpp,
-// que a veces usa "Golpe Aturdidor" en vez de un ataque basico). Pensado
-// para crecer cuando haya generacion real de encuentros con mas de un
-// enemigo a la vez.
+// Bandido y el Capitan, la IA en combate (ver CombatEncounter::Actualizar en
+// combat.cpp, que resuelve sus golpes especiales). Pensado para crecer
+// cuando haya generacion real de encuentros con mas de un enemigo a la vez.
 enum class TipoEnemigo {
     EsqueletoErrante,  // el original: stats parejas, solo ataque basico.
     RataGigante,       // rapida y fragil, ataque basico nomas.
     BanditoAturdidor,  // mas dura; a veces en vez de atacar usa un golpe
                         // que aplica Aturdido (hace perder el turno).
+    CapitanBandido,    // jefe de la mazmorra: unico, en la ultima sala. Mas
+                        // stats que cualquier otro enemigo, alterna entre
+                        // ataque basico, Golpe Aturdidor y "Doble Tajo" (dos
+                        // golpes en un mismo turno), y entra en furia por
+                        // debajo del 40% de HP (siempre Doble Tajo).
 };
 
 // Enemigo simple: mismos stats base que un personaje, pero sin rol ni

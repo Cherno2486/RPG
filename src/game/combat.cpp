@@ -399,45 +399,83 @@ void CombatEncounter::Actualizar(float deltaSeconds) {
 
     Enemy& atacante = *enemigos_[orden_[turnoActual_].indice];
 
-    // Si este enemigo esta Marcado (provocado por el Golpe Provocador del
-    // Tanque), prioriza atacar al Tanque en vez de a quien tenga menos vida
-    // — es la unica forma en la que Marcado cambia algo observable: con un
-    // solo enemigo en pantalla nunca importaba a quien "prioriza" atacar.
-    Character* objetivo = nullptr;
-    if (atacante.Combate().TieneEfecto(TipoEfecto::Marcado)) {
-        for (auto& m : party_.Miembros()) {
-            if (m.EstaVivo() && m.Rol() == Role::Tanque) { objetivo = &m; break; }
+    // Elige a quien ataca este enemigo: si esta Marcado (provocado por el
+    // Golpe Provocador del Tanque) prioriza al Tanque; si no, al aliado
+    // vivo con menos HP. Es una lambda porque el Capitan Bandido puede
+    // necesitar volver a elegir objetivo entre su primer y segundo golpe
+    // (si el primero mato a quien tenia en la mira).
+    auto elegirObjetivo = [&]() -> Character* {
+        Character* obj = nullptr;
+        if (atacante.Combate().TieneEfecto(TipoEfecto::Marcado)) {
+            for (auto& m : party_.Miembros()) {
+                if (m.EstaVivo() && m.Rol() == Role::Tanque) { obj = &m; break; }
+            }
         }
-    }
-    if (objetivo == nullptr) {
-        for (auto& m : party_.Miembros()) {
-            if (!m.EstaVivo()) continue;
-            if (objetivo == nullptr || m.GetStats().hp < objetivo->GetStats().hp) objetivo = &m;
+        if (obj == nullptr) {
+            for (auto& m : party_.Miembros()) {
+                if (!m.EstaVivo()) continue;
+                if (obj == nullptr || m.GetStats().hp < obj->GetStats().hp) obj = &m;
+            }
         }
-    }
+        return obj;
+    };
+
+    Character* objetivo = elegirObjetivo();
     if (objetivo == nullptr) {
         ChequearFinDeCombate();
         return;
     }
 
     Combatiente cEnemigo{atacante.Nombre(), &atacante.GetStatsMut(), &atacante.Combate(), false, Role::Tanque};
-    Combatiente cObjetivo{objetivo->Nombre(), &objetivo->GetStatsMut(), &objetivo->Combate(), true, objetivo->Rol()};
 
-    ResultadoAccion r;
-    // El Bandido Aturdidor a veces, en vez de un ataque basico, usa un
-    // golpe mas debil pero que aturde (le hace perder el turno al objetivo).
-    if (atacante.Tipo() == TipoEnemigo::BanditoAturdidor && Roll(2) == 1) {
-        r = ResolverAtaque(cEnemigo, cObjetivo, 1, 4, false, "Golpe Aturdidor");
-        if (r.impacto) {
+    // Resuelve un golpe de 'atacante' contra 'obj' y lo agrega al log; con
+    // 'aturde' en true, si impacta aplica Aturdido (Golpe Aturdidor, tanto
+    // el del Bandido comun como el del Capitan).
+    auto golpear = [&](Character& obj, int dados, int caras, const char* nombreAccion, bool aturde) {
+        Combatiente cObjetivo{obj.Nombre(), &obj.GetStatsMut(), &obj.Combate(), true, obj.Rol()};
+        ResultadoAccion r = ResolverAtaque(cEnemigo, cObjetivo, dados, caras, false, nombreAccion);
+        if (aturde && r.impacto) {
             cObjetivo.estado->AgregarEfecto(EfectoActivo{TipoEfecto::Aturdido, 1, 0});
             r.texto += " " + cObjetivo.nombre + " queda aturdido.";
         }
-    } else {
-        r = EjecutarAtaqueBasico(cEnemigo, cObjetivo);
-    }
-    log_.push_back(r.texto);
+        log_.push_back(r.texto);
+    };
 
-    if (ChequearFinDeCombate()) return;
+    if (atacante.Tipo() == TipoEnemigo::CapitanBandido) {
+        // Jefe de mazmorra: alterna entre ataque basico, Golpe Aturdidor
+        // (igual que el Bandido comun) y "Doble Tajo" (dos golpes basicos
+        // en el mismo turno, re-eligiendo objetivo para el segundo por si
+        // el primero se llevo puesto a quien tenia en la mira). Por debajo
+        // del 40% de HP entra en furia: deja de aturdir y usa Doble Tajo
+        // siempre, todo o nada en el tramo final de la pelea.
+        const Stats& stats = atacante.GetStats();
+        bool enfurecido = stats.hpMax > 0 && stats.hp <= stats.hpMax * 0.4f;
+        int tirada = Roll(10);
+        if (enfurecido || tirada <= 4) {
+            golpear(*objetivo, 1, 6, "Doble Tajo", false);
+            if (ChequearFinDeCombate()) return;
+            Character* segundoObjetivo = elegirObjetivo();
+            if (segundoObjetivo != nullptr) {
+                golpear(*segundoObjetivo, 1, 6, "Doble Tajo", false);
+                if (ChequearFinDeCombate()) return;
+            }
+        } else if (tirada <= 7) {
+            golpear(*objetivo, 1, 4, "Golpe Aturdidor", true);
+            if (ChequearFinDeCombate()) return;
+        } else {
+            golpear(*objetivo, 1, 6, "un ataque", false);
+            if (ChequearFinDeCombate()) return;
+        }
+    } else if (atacante.Tipo() == TipoEnemigo::BanditoAturdidor && Roll(2) == 1) {
+        // El Bandido Aturdidor a veces, en vez de un ataque basico, usa un
+        // golpe mas debil pero que aturde (le hace perder el turno al objetivo).
+        golpear(*objetivo, 1, 4, "Golpe Aturdidor", true);
+        if (ChequearFinDeCombate()) return;
+    } else {
+        golpear(*objetivo, 1, 6, "un ataque", false);
+        if (ChequearFinDeCombate()) return;
+    }
+
     AsegurarObjetivoValido();
     AvanzarIndice();
     ProcesarInicioDeTurnoActual();

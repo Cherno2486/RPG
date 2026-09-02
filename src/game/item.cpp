@@ -86,14 +86,21 @@ ResultadoLoot TirarLootDeEnemigo(TipoEnemigo tipo) {
             if (Roll(10) <= 4) { r.hay = true; r.item = ElixirDeEnergia(); }
             break;
         case TipoEnemigo::BanditoAturdidor:
-            // El mas duro: mas chance de soltar algo, y a veces una mejora
-            // permanente en vez de un consumible — recompensa el riesgo.
+            // El mas duro de los comunes: mas chance de soltar algo, y a
+            // veces una mejora permanente en vez de un consumible —
+            // recompensa el riesgo.
             if (Roll(10) <= 7) {
                 r.hay = true;
                 r.item = (Roll(4) == 1)
                     ? (Roll(2) == 1 ? PiedraDeFuerza() : AmuletoDeProteccion())
                     : PocionCuracionMenor();
             }
+            break;
+        case TipoEnemigo::CapitanBandido:
+            // El jefe: siempre suelta algo, y siempre una mejora permanente
+            // (nunca un consumible) — es el premio grande de la run.
+            r.hay = true;
+            r.item = (Roll(2) == 1) ? PiedraDeFuerza() : AmuletoDeProteccion();
             break;
     }
     return r;

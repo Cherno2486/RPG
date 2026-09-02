@@ -114,6 +114,7 @@ CMakeFiles/rpg_mazmorras.dir/src/game/character.cpp.obj: C:/Users/ama5185/Deskto
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/character.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/combat_state.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/effects.h \
+  C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/item_types.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/mathtypes.h
 
 CMakeFiles/rpg_mazmorras.dir/src/game/combat.cpp.obj: C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/combat.cpp \
@@ -245,6 +246,7 @@ CMakeFiles/rpg_mazmorras.dir/src/game/combat.cpp.obj: C:/Users/ama5185/Desktop/M
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/enemy.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/inventory.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/item.h \
+  C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/item_types.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/mathtypes.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/party.h
 
@@ -369,6 +371,7 @@ CMakeFiles/rpg_mazmorras.dir/src/game/combat_state.cpp.obj: C:/Users/ama5185/Des
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/character.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/combat_state.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/effects.h \
+  C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/item_types.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/mathtypes.h
 
 CMakeFiles/rpg_mazmorras.dir/src/game/dice.cpp.obj: C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/dice.cpp \
@@ -761,6 +764,7 @@ CMakeFiles/rpg_mazmorras.dir/src/game/enemy.cpp.obj: C:/Users/ama5185/Desktop/Ma
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/combat_state.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/effects.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/enemy.h \
+  C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/item_types.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/mathtypes.h
 
 CMakeFiles/rpg_mazmorras.dir/src/game/inventory.cpp.obj: C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/inventory.cpp \
@@ -879,6 +883,7 @@ CMakeFiles/rpg_mazmorras.dir/src/game/inventory.cpp.obj: C:/Users/ama5185/Deskto
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/enemy.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/inventory.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/item.h \
+  C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/item_types.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/mathtypes.h
 
 CMakeFiles/rpg_mazmorras.dir/src/game/item.cpp.obj: C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/item.cpp \
@@ -1005,6 +1010,7 @@ CMakeFiles/rpg_mazmorras.dir/src/game/item.cpp.obj: C:/Users/ama5185/Desktop/Mar
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/effects.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/enemy.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/item.h \
+  C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/item_types.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/mathtypes.h
 
 CMakeFiles/rpg_mazmorras.dir/src/game/mathtypes.cpp.obj: C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/mathtypes.cpp \
@@ -1191,6 +1197,7 @@ CMakeFiles/rpg_mazmorras.dir/src/game/party.cpp.obj: C:/Users/ama5185/Desktop/Ma
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/enemy.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/inventory.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/item.h \
+  C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/item_types.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/mathtypes.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/party.h
 
@@ -1362,6 +1369,7 @@ CMakeFiles/rpg_mazmorras.dir/src/main.cpp.obj: C:/Users/ama5185/Desktop/Martin/R
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/enemy.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/inventory.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/item.h \
+  C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/item_types.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/mathtypes.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/party.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/render/combat_ui.h \
@@ -1378,6 +1386,7 @@ CMakeFiles/rpg_mazmorras.dir/src/render/combat_ui.cpp.obj: C:/Users/ama5185/Desk
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/enemy.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/inventory.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/item.h \
+  C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/item_types.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/mathtypes.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/party.h \
   C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/backward/binders.h \
@@ -1517,6 +1526,7 @@ CMakeFiles/rpg_mazmorras.dir/src/render/inventory_ui.cpp.obj: C:/Users/ama5185/D
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/enemy.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/inventory.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/item.h \
+  C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/item_types.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/mathtypes.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/party.h \
   C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/backward/binders.h \
@@ -1645,6 +1655,7 @@ CMakeFiles/rpg_mazmorras.dir/src/render/renderer.cpp.obj: C:/Users/ama5185/Deskt
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/enemy.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/inventory.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/item.h \
+  C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/item_types.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/mathtypes.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/party.h \
   C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/backward/binders.h \
@@ -1773,6 +1784,7 @@ CMakeFiles/rpg_mazmorras.dir/src/render/ui.cpp.obj: C:/Users/ama5185/Desktop/Mar
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/enemy.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/inventory.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/item.h \
+  C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/item_types.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/mathtypes.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/party.h \
   C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/backward/binders.h \
@@ -2185,6 +2197,10 @@ C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/combat_state.h:
 
 C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/effects.h:
 
+C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/sched.h:
+
+C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/item_types.h:
+
 C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/combat.cpp:
 
 C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/algorithm:
@@ -2302,8 +2318,6 @@ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/
 C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/pthread.h:
 
 C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/pthread_unistd.h:
-
-C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/sched.h:
 
 C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/sec_api/sys/timeb_s.h:
 

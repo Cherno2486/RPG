@@ -24,6 +24,7 @@ Color ColorDeEnemigo(game::TipoEnemigo tipo) {
         case game::TipoEnemigo::EsqueletoErrante: return Color{ 160, 40, 40, 255 };
         case game::TipoEnemigo::RataGigante:      return Color{ 150, 110, 55, 255 };
         case game::TipoEnemigo::BanditoAturdidor: return Color{ 130, 55, 150, 255 };
+        case game::TipoEnemigo::CapitanBandido:   return Color{ 60, 20, 20, 255 };  // casi negro, se distingue de lejos
     }
     return Color{ 160, 40, 40, 255 };
 }
@@ -33,6 +34,7 @@ float RadioDeEnemigo(game::TipoEnemigo tipo) {
         case game::TipoEnemigo::EsqueletoErrante: return 16.0f;
         case game::TipoEnemigo::RataGigante:      return 11.0f;  // chica y rapida
         case game::TipoEnemigo::BanditoAturdidor: return 18.0f;  // mas corpulento
+        case game::TipoEnemigo::CapitanBandido:   return 26.0f;  // notablemente mas grande: es el jefe
     }
     return 16.0f;
 }
@@ -111,8 +113,12 @@ void Renderer::DibujarEscenarioSinUI(const game::Dungeon& mazmorra, const game::
         if (enemigo.Vencido()) continue;
         Vector2 posEnemigo = { enemigo.Posicion().x, enemigo.Posicion().y };
         float radio = RadioDeEnemigo(enemigo.Tipo());
+        bool esJefe = enemigo.Tipo() == game::TipoEnemigo::CapitanBandido;
         DrawCircleV(posEnemigo, radio, ColorDeEnemigo(enemigo.Tipo()));
-        DrawCircleLines((int)posEnemigo.x, (int)posEnemigo.y, radio, BLACK);
+        // El jefe lleva un anillo dorado en vez del contorno negro comun,
+        // para que se note a simple vista que es distinto apenas se lo ve.
+        DrawCircleLines((int)posEnemigo.x, (int)posEnemigo.y, radio, esJefe ? Color{ 230, 190, 80, 255 } : BLACK);
+        if (esJefe) DrawCircleLines((int)posEnemigo.x, (int)posEnemigo.y, radio - 3, Color{ 230, 190, 80, 255 });
         int anchoTexto = MeasureText(enemigo.Nombre().c_str(), 12);
         DrawText(enemigo.Nombre().c_str(), (int)posEnemigo.x - anchoTexto / 2, (int)posEnemigo.y - 32, 12, RAYWHITE);
     }
