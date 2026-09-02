@@ -36,6 +36,20 @@ float RadioDeEnemigo(game::TipoEnemigo tipo) {
     }
     return 16.0f;
 }
+
+// Cofres: un cuadrado dorado cerrado, o un contorno gris apagado una vez
+// abierto (para que se note a simple vista que ya no tiene nada adentro).
+void DibujarCofre(const game::Cofre& cofre) {
+    float mitad = 14.0f;
+    Rectangle rect{ cofre.posicion.x - mitad, cofre.posicion.y - mitad, mitad * 2.0f, mitad * 2.0f };
+    if (cofre.abierto) {
+        DrawRectangleLinesEx(rect, 2.0f, Color{ 110, 100, 80, 200 });
+    } else {
+        DrawRectangleRec(rect, Color{ 200, 165, 60, 255 });
+        DrawRectangleLinesEx(rect, 2.0f, Color{ 90, 70, 30, 255 });
+        DrawRectangle((int)(cofre.posicion.x - mitad), (int)(cofre.posicion.y - 3), (int)(mitad * 2.0f), 6, Color{ 90, 70, 30, 255 });
+    }
+}
 } // namespace
 
 Renderer::Renderer(int anchoVentana, int altoVentana, const char* titulo)
@@ -53,7 +67,8 @@ Renderer::~Renderer() {
     CloseWindow();
 }
 
-void Renderer::DibujarEscenarioSinUI(const game::Dungeon& mazmorra, const game::Party& party, const std::vector<game::Enemy>& enemigos) {
+void Renderer::DibujarEscenarioSinUI(const game::Dungeon& mazmorra, const game::Party& party,
+                                      const std::vector<game::Enemy>& enemigos, const std::vector<game::Cofre>& cofres) {
     ClearBackground(ColorDePiso());
 
     // La camara sigue al lider: la mazmorra generada por salas es mas
@@ -85,6 +100,11 @@ void Renderer::DibujarEscenarioSinUI(const game::Dungeon& mazmorra, const game::
         DrawRectangle((int)pared.x, (int)pared.y, (int)pared.width, (int)pared.height, ColorDePared());
     }
 
+    // Cofres
+    for (const auto& cofre : cofres) {
+        DibujarCofre(cofre);
+    }
+
     // Enemigos vivos en la mazmorra: un marcador por cada uno (color/tamaño
     // segun su tipo), con su nombre arriba para saber que es interactuable.
     for (const auto& enemigo : enemigos) {
@@ -109,23 +129,26 @@ void Renderer::DibujarEscenarioSinUI(const game::Dungeon& mazmorra, const game::
     EndMode2D();
 }
 
-void Renderer::DibujarFrame(const game::Dungeon& mazmorra, const game::Party& party, const std::vector<game::Enemy>& enemigos, bool panelExpandido) {
+void Renderer::DibujarFrame(const game::Dungeon& mazmorra, const game::Party& party,
+                             const std::vector<game::Enemy>& enemigos, const std::vector<game::Cofre>& cofres,
+                             bool panelExpandido, const std::string& promptInteraccion, const std::string& mensajeFlotante) {
     BeginDrawing();
 
-    DibujarEscenarioSinUI(mazmorra, party, enemigos);
+    DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres);
 
     ui::DibujarPanelParty(party, panelExpandido);
 
-    bool hayEnemigoCerca = false;
-    for (const auto& enemigo : enemigos) {
-        if (enemigo.Vencido()) continue;
-        float distancia = game::Length(party.Lider().Posicion() - enemigo.Posicion());
-        if (distancia < 90.0f) { hayEnemigoCerca = true; break; }
+    if (!mensajeFlotante.empty()) {
+        int anchoTexto = MeasureText(mensajeFlotante.c_str(), 18);
+        int x = (anchoVentana_ - anchoTexto) / 2;
+        int y = altoVentana_ - 68;
+        DrawRectangle(x - 12, y - 6, anchoTexto + 24, 30, Color{ 30, 28, 20, 210 });
+        DrawText(mensajeFlotante.c_str(), x, y, 18, Color{ 230, 210, 140, 255 });
     }
-    if (hayEnemigoCerca) {
-        const char* texto = "[E] Atacar";
-        int anchoTexto = MeasureText(texto, 16);
-        DrawText(texto, (anchoVentana_ - anchoTexto) / 2, altoVentana_ - 40, 16, Color{ 255, 235, 180, 255 });
+
+    if (!promptInteraccion.empty()) {
+        int anchoTexto = MeasureText(promptInteraccion.c_str(), 16);
+        DrawText(promptInteraccion.c_str(), (anchoVentana_ - anchoTexto) / 2, altoVentana_ - 40, 16, Color{ 255, 235, 180, 255 });
     }
 
     DrawFPS(anchoVentana_ - 90, 10);

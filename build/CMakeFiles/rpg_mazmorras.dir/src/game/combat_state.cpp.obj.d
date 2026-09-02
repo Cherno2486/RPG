@@ -113,6 +113,7 @@ CMakeFiles/rpg_mazmorras.dir/src/game/combat_state.cpp.obj: \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/charconv.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/basic_string.tcc \
  C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\mathtypes.h \
+ C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\item_types.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/algorithm \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/stl_algo.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/algorithmfwd.h \

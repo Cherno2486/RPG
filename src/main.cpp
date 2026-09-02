@@ -10,9 +10,11 @@
 #include "game/enemy.h"
 #include "game/combat.h"
 #include "game/dice.h"
+#include "game/item.h"
 #include "render/renderer.h"
 #include "render/input.h"
 #include "render/combat_ui.h"
+#include "render/inventory_ui.h"
 
 namespace {
 
@@ -96,12 +98,43 @@ std::vector<game::Enemy> CrearGrupoDeSala(game::Vec2 centro, int salaIndice) {
     return grupo;
 }
 
+// Chance (de 10) de que una sala con contenido tenga ADEMAS un cofre aparte
+// de su grupo de enemigos, ubicado en una esquina de la sala (con margen de
+// la pared) para no superponerse con ellos.
+constexpr int kChanceCofrePorSalaDe10 = 4;
+
+// Arma el cofre de una sala, ubicado en una esquina (con margen de la
+// pared) para no pisar a los enemigos, que suelen estar cerca del centro.
+game::Cofre CrearCofreEnEsquina(const game::Habitacion& sala, game::Item contenido) {
+    game::Vec2 posicion{
+        (sala.x + 1.5f) * game::kTileSize,
+        (sala.y + 1.5f) * game::kTileSize
+    };
+    return game::Cofre{posicion, std::move(contenido), false};
+}
+
 enum class EstadoJuego { Exploracion, Combate };
 
-// Distancia (en pixeles) a la que hay que estar del enemigo mas cercano
-// para poder engancharlo (a el y a todo el resto de su sala) en combate
-// con [E].
+// Distancia (en pixeles) a la que hay que estar del interactuable mas
+// cercano (enemigo o cofre) para poder engancharlo/abrirlo con [E].
 constexpr float kDistanciaInteraccion = 90.0f;
+
+// Cuanto tiempo (segundos) queda en pantalla un mensaje flotante (botin de
+// un cofre o de un combate ganado) antes de desaparecer solo.
+constexpr float kDuracionMensaje = 3.0f;
+
+// Devuelve el indice (0-8) de la tecla numerica 1-9 apretada este frame, o
+// -1 si no se apreto ninguna. Se usa para elegir que item usar del
+// inventario (ver DibujarInventario, que muestra "[N]" al lado de cada uno).
+int NumeroPresionado() {
+    static const int teclas[9] = {
+        KEY_ONE, KEY_TWO, KEY_THREE, KEY_FOUR, KEY_FIVE, KEY_SIX, KEY_SEVEN, KEY_EIGHT, KEY_NINE
+    };
+    for (int i = 0; i < 9; ++i) {
+        if (IsKeyPressed(teclas[i])) return i;
+    }
+    return -1;
+}
 
 } // namespace
 
@@ -124,11 +157,27 @@ int main() {
         for (auto& e : grupo) enemigos.push_back(std::move(e));
     }
 
+    // Cofres: uno garantizado en la sala inicial (para que el sistema se vea
+    // sin depender del azar) y, ademas, una chance por cada sala con
+    // contenido de tener uno extra aparte de su grupo de enemigos.
+    std::vector<game::Cofre> cofres;
+    cofres.push_back(CrearCofreEnEsquina(salas[0], game::ItemAleatorioDeCofre()));
+    for (size_t i = 1; i < salas.size(); ++i) {
+        if (game::Roll(10) <= kChanceCofrePorSalaDe10) {
+            cofres.push_back(CrearCofreEnEsquina(salas[i], game::ItemAleatorioDeCofre()));
+        }
+    }
+
     render::Renderer renderer(anchoVentana, altoVentana, "RPG Mazmorras - Prototipo");
 
     EstadoJuego estado = EstadoJuego::Exploracion;
     std::unique_ptr<game::CombatEncounter> encuentro;
-    bool panelExpandido = false;  // arranca compacto; TAB lo expande/oculta
+    bool panelExpandido = false;     // arranca compacto; TAB lo expande/oculta
+    bool inventarioAbierto = false;  // [I] lo abre/cierra durante exploracion
+    bool lootRepartido = false;      // evita repartir el botin mas de una vez por combate
+    size_t objetivoInventario = 0;   // a quien se le aplica el proximo item usado
+    std::string mensajeFlotante;     // botin de cofre/combate, visible unos segundos
+    float timerMensaje = 0.0f;
 
     while (!WindowShouldClose()) {
         float dt = GetFrameTime();
@@ -139,46 +188,128 @@ int main() {
         if (dt > 1.0f / 30.0f) dt = 1.0f / 30.0f;
 
         if (estado == EstadoJuego::Exploracion) {
-            game::Vec2 direccion = input::LeerDireccionMovimiento();
-            game::Character& lider = party.Lider();
-
-            float velocidadPxPorSeg = lider.GetStats().velocidad;
-            game::Vec2 posicionActual = lider.Posicion();
-            game::Vec2 posicionDeseada = posicionActual + direccion * (velocidadPxPorSeg * dt);
-
-            game::Vec2 posicionResuelta = mazmorra.ResolverColision(
-                lider.Colisionador(), posicionActual, posicionDeseada);
-            lider.SetPosicion(posicionResuelta);
-
-            party.ActualizarFormacion(dt);
-
-            if (IsKeyPressed(KEY_TAB)) panelExpandido = !panelExpandido;
-
-            // Enganchar combate: el enemigo vivo mas cercano, si esta a
-            // distancia de interaccion y se aprieta E. Al engancharlo se
-            // suma al combate TODO el resto de su sala (todos los enemigos
-            // vivos con la misma Sala()), no solo a el — un combate por
-            // sala, no por enemigo individual.
-            game::Enemy* enemigoCercano = nullptr;
-            float distanciaCercana = kDistanciaInteraccion;
-            for (auto& e : enemigos) {
-                if (e.Vencido()) continue;
-                float distancia = game::Length(lider.Posicion() - e.Posicion());
-                if (distancia < distanciaCercana) {
-                    distanciaCercana = distancia;
-                    enemigoCercano = &e;
+            if (timerMensaje > 0.0f) {
+                timerMensaje -= dt;
+                if (timerMensaje <= 0.0f) {
+                    timerMensaje = 0.0f;
+                    mensajeFlotante.clear();
                 }
             }
-            if (enemigoCercano != nullptr && IsKeyPressed(KEY_E)) {
-                std::vector<game::Enemy*> grupo;
+
+            if (IsKeyPressed(KEY_I)) inventarioAbierto = !inventarioAbierto;
+
+            std::string prompt;
+
+            if (inventarioAbierto) {
+                // Con el inventario abierto se congela la exploracion: TAB
+                // cicla a quien se le va a aplicar el proximo item, y 1-9 lo
+                // usa sobre ese objetivo (ver ui::DibujarInventario).
+                auto& miembros = party.Miembros();
+                if (IsKeyPressed(KEY_TAB) && !miembros.empty()) {
+                    objetivoInventario = (objetivoInventario + 1) % miembros.size();
+                }
+                int indice = NumeroPresionado();
+                if (indice >= 0 && objetivoInventario < miembros.size()) {
+                    const auto& pilas = party.Inventario().Pilas();
+                    if (static_cast<size_t>(indice) < pilas.size()) {
+                        // Consumibles se usan directo (se gastan al toque);
+                        // Mejoras se equipan en su ranura (Arma/Accesorio) en
+                        // vez de aplicarse instantaneo — asi no se pueden
+                        // acumular sin limite en el mismo personaje.
+                        if (pilas[indice].item.tipo == game::TipoItem::Consumible) {
+                            game::ResultadoUsoItem resultado = party.Inventario().Usar(
+                                static_cast<size_t>(indice), miembros[objetivoInventario]);
+                            if (resultado.exitoso) {
+                                mensajeFlotante = resultado.texto;
+                                timerMensaje = kDuracionMensaje;
+                            }
+                        } else {
+                            game::ResultadoEquipar resultado = party.Inventario().Equipar(
+                                static_cast<size_t>(indice), miembros[objetivoInventario]);
+                            if (resultado.exitoso) {
+                                mensajeFlotante = resultado.texto;
+                                timerMensaje = kDuracionMensaje;
+                            }
+                        }
+                    }
+                }
+            } else {
+                game::Vec2 direccion = input::LeerDireccionMovimiento();
+                game::Character& lider = party.Lider();
+
+                float velocidadPxPorSeg = lider.GetStats().velocidad;
+                game::Vec2 posicionActual = lider.Posicion();
+                game::Vec2 posicionDeseada = posicionActual + direccion * (velocidadPxPorSeg * dt);
+
+                game::Vec2 posicionResuelta = mazmorra.ResolverColision(
+                    lider.Colisionador(), posicionActual, posicionDeseada);
+                lider.SetPosicion(posicionResuelta);
+
+                party.ActualizarFormacion(dt);
+
+                if (IsKeyPressed(KEY_TAB)) panelExpandido = !panelExpandido;
+
+                // Interactuable mas cercano: el enemigo vivo o el cofre sin
+                // abrir mas cercano, si esta a distancia de interaccion —
+                // [E] enganchar combate o abrir cofre, segun cual sea.
+                game::Enemy* enemigoCercano = nullptr;
+                game::Cofre* cofreCercano = nullptr;
+                float distanciaCercana = kDistanciaInteraccion;
                 for (auto& e : enemigos) {
-                    if (!e.Vencido() && e.Sala() == enemigoCercano->Sala()) grupo.push_back(&e);
+                    if (e.Vencido()) continue;
+                    float distancia = game::Length(lider.Posicion() - e.Posicion());
+                    if (distancia < distanciaCercana) {
+                        distanciaCercana = distancia;
+                        enemigoCercano = &e;
+                        cofreCercano = nullptr;
+                    }
                 }
-                encuentro = std::make_unique<game::CombatEncounter>(party, std::move(grupo));
-                estado = EstadoJuego::Combate;
+                for (auto& c : cofres) {
+                    if (c.abierto) continue;
+                    float distancia = game::Length(lider.Posicion() - c.posicion);
+                    if (distancia < distanciaCercana) {
+                        distanciaCercana = distancia;
+                        cofreCercano = &c;
+                        enemigoCercano = nullptr;
+                    }
+                }
+
+                if (enemigoCercano != nullptr) {
+                    prompt = "[E] Atacar";
+                } else if (cofreCercano != nullptr) {
+                    prompt = "[E] Abrir cofre";
+                }
+
+                if (IsKeyPressed(KEY_E)) {
+                    if (enemigoCercano != nullptr) {
+                        // Se suma al encuentro TODO el resto de la sala
+                        // (todos los enemigos vivos con la misma Sala()), no
+                        // solo a el — un combate por sala, no por enemigo
+                        // individual.
+                        std::vector<game::Enemy*> grupo;
+                        for (auto& e : enemigos) {
+                            if (!e.Vencido() && e.Sala() == enemigoCercano->Sala()) grupo.push_back(&e);
+                        }
+                        encuentro = std::make_unique<game::CombatEncounter>(party, std::move(grupo));
+                        estado = EstadoJuego::Combate;
+                        lootRepartido = false;
+                    } else if (cofreCercano != nullptr) {
+                        cofreCercano->abierto = true;
+                        party.Inventario().Agregar(cofreCercano->contenido);
+                        mensajeFlotante = "Encontraste: " + cofreCercano->contenido.nombre;
+                        timerMensaje = kDuracionMensaje;
+                    }
+                }
             }
 
-            renderer.DibujarFrame(mazmorra, party, enemigos, panelExpandido);
+            if (inventarioAbierto) {
+                BeginDrawing();
+                renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres);
+                ui::DibujarInventario(party, objetivoInventario);
+                EndDrawing();
+            } else {
+                renderer.DibujarFrame(mazmorra, party, enemigos, cofres, panelExpandido, prompt, mensajeFlotante);
+            }
         } else {  // EstadoJuego::Combate
             encuentro->Actualizar(dt);
 
@@ -193,6 +324,23 @@ int main() {
                     encuentro->CiclarObjetivo();
                 }
             } else if (encuentro->Fase() == game::FaseCombate::Ganado) {
+                if (!lootRepartido) {
+                    // Botin: se tira una vez por cada enemigo del encuentro
+                    // (independiente de si el jugador puede haber visto un
+                    // "Ganado" repetido en frames previos, por lootRepartido).
+                    std::string botin;
+                    for (game::Enemy* e : encuentro->Enemigos()) {
+                        game::ResultadoLoot loot = game::TirarLootDeEnemigo(e->Tipo());
+                        if (loot.hay) {
+                            party.Inventario().Agregar(loot.item);
+                            if (!botin.empty()) botin += ", ";
+                            botin += loot.item.nombre;
+                        }
+                    }
+                    mensajeFlotante = botin.empty() ? "No encontraste botin esta vez." : ("Botin: " + botin);
+                    timerMensaje = kDuracionMensaje;
+                    lootRepartido = true;
+                }
                 if (GetKeyPressed() != 0) {
                     estado = EstadoJuego::Exploracion;
                     encuentro.reset();
@@ -217,7 +365,7 @@ int main() {
             ClearBackground(BLACK);
             // Se dibuja la mazmorra "congelada" de fondo para dar contexto, y
             // encima la pantalla de combate (que ya trae su propio overlay oscuro).
-            renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos);
+            renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres);
             if (encuentro) {
                 ui::DibujarCombate(*encuentro, anchoVentana, altoVentana);
             }

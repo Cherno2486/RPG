@@ -18,8 +18,12 @@ Color ColorDeRol(game::Role rol) {
 void DibujarPanelExpandido(const game::Party& party) {
     const int panelX = 16;
     const int panelY = 16;
-    const int anchoPanel = 220;
-    const int altoFila = 54;
+    // Un poco mas ancho que antes (220) para que "Arma / Accesorio" con
+    // nombres largos no se corte contra el borde del panel.
+    const int anchoPanel = 270;
+    // +16 respecto de antes: una linea extra para el equipo (Arma/Accesorio
+    // en una sola linea, para no duplicar el alto de fila otra vez).
+    const int altoFila = 70;
 
     const auto& miembros = party.Miembros();
     int altoPanel = 12 + altoFila * (int)miembros.size();
@@ -47,6 +51,18 @@ void DibujarPanelExpandido(const game::Party& party) {
         float ratio = stats.hpMax > 0 ? (float)stats.hp / (float)stats.hpMax : 0.0f;
         DrawRectangle(panelX + 40, filaY + 36, 150, 6, Color{ 60, 20, 20, 255 });
         DrawRectangle(panelX + 40, filaY + 36, (int)(150 * ratio), 6, Color{ 200, 60, 60, 255 });
+
+        // Equipo actual (ver Character::Equipar) — "-" si no tiene nada
+        // puesto en esa ranura. Se muestra tambien aca (y no solo en el
+        // inventario) para poder chusmear el equipo del party sin tener que
+        // abrirlo con [I].
+        const auto& arma = personaje.Arma();
+        const auto& accesorio = personaje.Accesorio();
+        char linea3[96];
+        std::snprintf(linea3, sizeof(linea3), "%s / %s",
+                       arma.ocupado ? arma.item.nombre.c_str() : "-",
+                       accesorio.ocupado ? accesorio.item.nombre.c_str() : "-");
+        DrawText(linea3, panelX + 40, filaY + 48, 11, Color{ 190, 190, 160, 255 });
 
         filaY += altoFila;
     }

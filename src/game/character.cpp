@@ -38,4 +38,22 @@ void Character::Revivir() {
     combate_.LimpiarTodo();
 }
 
+ItemEquipado Character::Equipar(Item nuevo) {
+    ItemEquipado* ranura = (nuevo.ranura == RanuraEquipo::Arma) ? &arma_ : &accesorio_;
+    ItemEquipado anterior = *ranura;
+
+    // Revierte el bono de lo que hubiera antes en esa ranura, para no
+    // acumular stats de items que ya no estan puestos.
+    if (anterior.ocupado) {
+        if (anterior.item.efecto == EfectoItem::MejorarAtaque) stats_.ataque -= anterior.item.bono;
+        else if (anterior.item.efecto == EfectoItem::MejorarDefensa) stats_.defensa -= anterior.item.bono;
+    }
+
+    if (nuevo.efecto == EfectoItem::MejorarAtaque) stats_.ataque += nuevo.bono;
+    else if (nuevo.efecto == EfectoItem::MejorarDefensa) stats_.defensa += nuevo.bono;
+
+    *ranura = ItemEquipado{true, std::move(nuevo)};
+    return anterior;
+}
+
 } // namespace game

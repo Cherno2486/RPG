@@ -413,6 +413,54 @@ src/game/enemy.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/game/enemy.cpp.s
 .PHONY : src/game/enemy.cpp.s
 
+src/game/inventory.obj: src/game/inventory.cpp.obj
+.PHONY : src/game/inventory.obj
+
+# target to build an object file
+src/game/inventory.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/game/inventory.cpp.obj
+.PHONY : src/game/inventory.cpp.obj
+
+src/game/inventory.i: src/game/inventory.cpp.i
+.PHONY : src/game/inventory.i
+
+# target to preprocess a source file
+src/game/inventory.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/game/inventory.cpp.i
+.PHONY : src/game/inventory.cpp.i
+
+src/game/inventory.s: src/game/inventory.cpp.s
+.PHONY : src/game/inventory.s
+
+# target to generate assembly for a file
+src/game/inventory.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/game/inventory.cpp.s
+.PHONY : src/game/inventory.cpp.s
+
+src/game/item.obj: src/game/item.cpp.obj
+.PHONY : src/game/item.obj
+
+# target to build an object file
+src/game/item.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/game/item.cpp.obj
+.PHONY : src/game/item.cpp.obj
+
+src/game/item.i: src/game/item.cpp.i
+.PHONY : src/game/item.i
+
+# target to preprocess a source file
+src/game/item.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/game/item.cpp.i
+.PHONY : src/game/item.cpp.i
+
+src/game/item.s: src/game/item.cpp.s
+.PHONY : src/game/item.s
+
+# target to generate assembly for a file
+src/game/item.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/game/item.cpp.s
+.PHONY : src/game/item.cpp.s
+
 src/game/mathtypes.obj: src/game/mathtypes.cpp.obj
 .PHONY : src/game/mathtypes.obj
 
@@ -533,6 +581,30 @@ src/render/input.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/render/input.cpp.s
 .PHONY : src/render/input.cpp.s
 
+src/render/inventory_ui.obj: src/render/inventory_ui.cpp.obj
+.PHONY : src/render/inventory_ui.obj
+
+# target to build an object file
+src/render/inventory_ui.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/render/inventory_ui.cpp.obj
+.PHONY : src/render/inventory_ui.cpp.obj
+
+src/render/inventory_ui.i: src/render/inventory_ui.cpp.i
+.PHONY : src/render/inventory_ui.i
+
+# target to preprocess a source file
+src/render/inventory_ui.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/render/inventory_ui.cpp.i
+.PHONY : src/render/inventory_ui.cpp.i
+
+src/render/inventory_ui.s: src/render/inventory_ui.cpp.s
+.PHONY : src/render/inventory_ui.s
+
+# target to generate assembly for a file
+src/render/inventory_ui.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/render/inventory_ui.cpp.s
+.PHONY : src/render/inventory_ui.cpp.s
+
 src/render/renderer.obj: src/render/renderer.cpp.obj
 .PHONY : src/render/renderer.obj
 
@@ -621,6 +693,12 @@ help:
 	@echo ... src/game/enemy.obj
 	@echo ... src/game/enemy.i
 	@echo ... src/game/enemy.s
+	@echo ... src/game/inventory.obj
+	@echo ... src/game/inventory.i
+	@echo ... src/game/inventory.s
+	@echo ... src/game/item.obj
+	@echo ... src/game/item.i
+	@echo ... src/game/item.s
 	@echo ... src/game/mathtypes.obj
 	@echo ... src/game/mathtypes.i
 	@echo ... src/game/mathtypes.s
@@ -636,6 +714,9 @@ help:
 	@echo ... src/render/input.obj
 	@echo ... src/render/input.i
 	@echo ... src/render/input.s
+	@echo ... src/render/inventory_ui.obj
+	@echo ... src/render/inventory_ui.i
+	@echo ... src/render/inventory_ui.s
 	@echo ... src/render/renderer.obj
 	@echo ... src/render/renderer.i
 	@echo ... src/render/renderer.s

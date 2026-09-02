@@ -2,6 +2,7 @@
 #include <string>
 #include "mathtypes.h"
 #include "combat_state.h"
+#include "item_types.h"
 
 namespace game {
 
@@ -22,6 +23,13 @@ struct Stats {
     int ataque = 1;
     int defensa = 0;
     float velocidad = 100.0f;  // usada para orden de turno en combate y velocidad de movimiento
+};
+
+// Lo que hay puesto (o no) en una ranura de equipo — ver Character::Arma(),
+// Character::Accesorio() y Character::Equipar().
+struct ItemEquipado {
+    bool ocupado = false;
+    Item item;  // valido solo si ocupado
 };
 
 class Character {
@@ -55,12 +63,31 @@ public:
     // muerto para siempre (ver CombatEncounter::FaseCombate::Perdido).
     void Revivir();
 
+    // --- Equipo (mejoras permanentes de item.h: Piedra de Fuerza, Amuleto
+    // de Proteccion) ---
+    // Cada personaje tiene UNA sola ranura de Arma y UNA de Accesorio (ver
+    // RanuraEquipo) — asi no tiene sentido, por ejemplo, ponerle 5 Piedras
+    // de Fuerza al mismo personaje: la sexta vez que equipa un arma,
+    // reemplaza a la anterior en vez de sumarse.
+    const ItemEquipado& Arma() const { return arma_; }
+    const ItemEquipado& Accesorio() const { return accesorio_; }
+
+    // Equipa 'nuevo' en la ranura que le corresponde segun nuevo.ranura
+    // (debe ser Arma o Accesorio — no llamar con Ninguna). Si esa ranura ya
+    // tenia algo puesto, le revierte el bono a las stats antes de aplicar
+    // el nuevo, y lo devuelve (ocupado=true) para que el llamador lo pueda
+    // devolver al inventario compartido en vez de perderlo (ver
+    // Inventory::Equipar). Devuelve ocupado=false si la ranura estaba vacia.
+    ItemEquipado Equipar(Item nuevo);
+
 private:
     std::string nombre_;
     Role rol_;
     Stats stats_;
     Vec2 posicion_;
     EstadoCombate combate_;
+    ItemEquipado arma_;
+    ItemEquipado accesorio_;
     static constexpr float kRadioColision = 14.0f;
 };
 

@@ -31,10 +31,13 @@ add_executable(rpg_mazmorras
     src/game/combat_state.cpp
     src/game/enemy.cpp
     src/game/combat.cpp
+    src/game/item.cpp
+    src/game/inventory.cpp
     src/render/renderer.cpp
     src/render/input.cpp
     src/render/ui.cpp
     src/render/combat_ui.cpp
+    src/render/inventory_ui.cpp
 )
 
 target_link_libraries(rpg_mazmorras PRIVATE raylib)

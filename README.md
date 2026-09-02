@@ -39,9 +39,21 @@ siguientes veces es mucho más rápido.
 - **WASD / flechas**: mover al líder del party (movimiento libre, no por
   grilla, con colisión contra las paredes). Los otros dos miembros siguen
   al líder en formación de fila.
-- **E** (cerca del enemigo): engancha el combate.
+- **E**: sobre el interactuable más cercano (enemigo o cofre) — engancha el
+  combate de toda la sala, o abre el cofre y suma su contenido al
+  inventario. El cartel de abajo indica cuál de los dos es ("[E] Atacar" /
+  "[E] Abrir cofre") según lo que esté más cerca.
+- **I**: abre/cierra el inventario (congela la exploración mientras está
+  abierto).
 - **TAB**: alterna el panel de party entre compacto (chiquito, no tapa el
   mapa) y expandido (con nombre/rol/HP detallado de cada uno).
+
+**Inventario (con [I] abierto):**
+- **TAB**: cicla a cuál miembro del party se le va a aplicar el próximo
+  item usado (se marca con "<" y un borde dorado en su ficha).
+- **1-9**: usa (Consumibles) o equipa (Mejoras — reemplazan lo que haya en
+  su ranura) el item de esa fila sobre el objetivo actual.
+- **I**: cierra el inventario y vuelve a la exploración.
 
 **Combate:**
 - **1**: ataque básico (1d6 + bono de ataque, tirada de d20 vs la defensa
@@ -111,6 +123,52 @@ turno, y la victoria requiere derrotarlos a todos. Las salas de otras
 partes de la mazmorra quedan de fondo, sin participar, hasta que se las
 engancha.
 
+## Sistema de inventario y loot
+
+Inventario único, compartido por todo el party (`game::Inventory`, dentro
+de `game::Party`), que apila items iguales en una sola fila con cantidad
+(`PilaItem`). Cada item (`game::Item`) es de uno de dos tipos:
+- **Consumible**: cura vida o recurso tirando dados (`RollDados`), y se
+  gasta una unidad al usarse — **Poción de Curación Menor** (2d6+2 de
+  vida) y **Elixir de Energía** (1d6+4 de recurso).
+- **Mejora**: sube una stat en un monto fijo **para siempre**, pero en vez
+  de gastarse al toque se **equipa** en una ranura del personaje elegido —
+  **Piedra de Fuerza** (Arma, +1 ataque) y **Amuleto de Protección**
+  (Accesorio, +1 defensa). Cada personaje tiene una sola ranura de Arma y
+  una de Accesorio: no se le puede poner "5 espadas" al mismo, la sexta
+  vez que equipa un arma reemplaza a la anterior en vez de sumarse. Si la
+  ranura ya tenía algo puesto, lo reemplazado vuelve solo al inventario
+  compartido (no se pierde) en vez de perderse.
+
+Fuentes de items:
+- **Cofres** (`game::Cofre`): objetos fijos en la mazmorra, dibujados como
+  un cuadrado dorado (se ponen grises/vacíos una vez abiertos). Hay uno
+  garantizado en la sala inicial y, además, un 40% de chance por cada sala
+  con contenido de tener uno extra ubicado en una esquina (lejos de su
+  grupo de enemigos). Se abren con **E**, igual que se engancha combate
+  con un enemigo — el cartel de abajo indica cuál de las dos acciones
+  corresponde según qué esté más cerca.
+- **Botín de combate**: al ganar un encuentro, se tira una vez por cada
+  enemigo derrotado (`TirarLootDeEnemigo`), con tablas de drop distintas
+  por tipo — Esqueleto Errante y Bandido Aturdidor sueltan más seguido que
+  la Rata Gigante, y el Bandido a veces suelta una mejora permanente en
+  vez de un consumible (recompensa extra por ser el más duro de pelear).
+
+La pantalla de inventario (**I**, `render/inventory_ui.cpp`) muestra una
+ficha por miembro del party — con su Arma y Accesorio equipados, "-" si no
+tiene nada puesto en esa ranura — resaltando a quién se le va a aplicar el
+próximo item (**TAB** para cambiar), y la lista de items apilados con un
+número al lado de cada uno; los de tipo Mejora se marcan con un tag
+`[Equipar: Arma]` / `[Equipar: Accesorio]` para dejar claro que van a
+reemplazar lo que haya en esa ranura, no a sumarse. **1-9** usa (los
+Consumibles) o equipa (las Mejoras) ese item sobre el objetivo actual. El
+objetivo puede ser cualquier miembro, vivo o no — pensado para poder
+revivir/curar a alguien caído sin salir del inventario para reordenar el
+party. Abrir el inventario congela el movimiento y las interacciones de
+exploración hasta cerrarlo. El equipo también se puede ver sin abrir el
+inventario: el panel de party expandido (**TAB** en exploración) muestra
+el Arma/Accesorio de cada uno debajo de su barra de HP.
+
 ## Estado actual
 
 1. ✅ Proyecto base: ventana raylib (1280x720), loop principal, grilla de
@@ -142,7 +200,18 @@ engancha.
    el party y todos los enemigos vivos, selector de objetivo con TAB, y
    Marcado ahora hace que un enemigo marcado priorice atacar al Tanque en
    vez de al aliado más débil.
-9. Pendiente: balance general, y recién ahí evaluar build de Android.
+9. ✅ Inventario y loot: catálogo de items (pociones, elixires, mejoras
+   permanentes de ataque/defensa), cofres ubicados en la mazmorra (uno
+   garantizado en la sala inicial, más una chance por sala con contenido),
+   botín al derrotar enemigos (distinto por tipo), y una pantalla de
+   inventario ([I]) para ver y usar lo que se junta — ver "Sistema de
+   inventario y loot" abajo.
+10. ✅ Ranuras de equipo: las mejoras permanentes ya no se consumen al
+    toque — se equipan en una ranura de Arma o Accesorio por personaje (una
+    sola de cada una), reemplazando lo que hubiera antes en vez de
+    acumularse sin límite, y visibles tanto en el inventario como en el
+    panel de party expandido.
+11. Pendiente: balance general, y recién ahí evaluar build de Android.
 
 Ver `docs/design.md` para el detalle completo de arquitectura y roadmap.
 

@@ -2,6 +2,7 @@
 #include <vector>
 #include <deque>
 #include "character.h"
+#include "inventory.h"
 
 namespace game {
 
@@ -27,9 +28,15 @@ public:
     // viejo en vez de aparecer ya formados en el punto nuevo.
     void ReiniciarFormacion(Vec2 posicion);
 
+    // Inventario compartido por todo el party (items de cofres y botin de
+    // enemigos derrotados) — ver game/item.h e game/inventory.h.
+    Inventory& Inventario() { return inventario_; }
+    const Inventory& Inventario() const { return inventario_; }
+
 private:
     std::vector<Character> miembros_;
     std::deque<Vec2> historialLider_;
+    Inventory inventario_;
     static constexpr float kEspaciado = 34.0f;
     static constexpr int kMaxHistorial = 600;
 };

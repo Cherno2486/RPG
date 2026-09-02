@@ -1,6 +1,6 @@
-CMakeFiles/rpg_mazmorras.dir/src/game/character.cpp.obj: \
- C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\character.cpp \
- C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\character.h \
+CMakeFiles/rpg_mazmorras.dir/src/game/inventory.cpp.obj: \
+ C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\inventory.cpp \
+ C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\inventory.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/string \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/requires_hosted.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/x86_64-w64-mingw32/bits/c++config.h \
@@ -105,12 +105,15 @@ CMakeFiles/rpg_mazmorras.dir/src/game/character.cpp.obj: \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/uses_allocator_args.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/tuple \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/invoke.h \
- C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\mathtypes.h \
- C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\combat_state.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/vector \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/stl_uninitialized.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/stl_vector.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/stl_bvector.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/vector.tcc \
+ C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\item.h \
+ C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\item_types.h \
+ C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\character.h \
+ C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\mathtypes.h \
+ C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\combat_state.h \
  C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\effects.h \
- C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\item_types.h
+ C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\enemy.h

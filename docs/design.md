@@ -70,6 +70,28 @@ Al ganar (`FaseCombate::Ganado`), se vuelve a la exploración tal cual — el pa
 
 Al perder (`FaseCombate::Perdido`) se ve una pantalla de Game Over distinta a la de victoria, y al apretar una tecla el party **revive**: `Character::Revivir()` restaura HP y recurso al máximo y limpia todos los efectos de combate, y `Party::ReiniciarFormacion()` teletransporta a todo el party de vuelta al punto de partida de la mazmorra (y limpia el rastro de formación, para que los seguidores no "corran" desde el rastro viejo). Sin esto, perder dejaba al party con HP 0 para siempre — el próximo combate terminaba en derrota instantánea sin que el jugador pudiera hacer nada (softlock).
 
+### Sistema de inventario y loot
+
+Inventario único y compartido por todo el party (`game::Inventory`, dueño: `game::Party`), no uno por personaje — evita tener que decidir "a quién le doy este item" al momento de recogerlo, esa decisión se toma recién al usarlo. Apila items iguales en una sola entrada con cantidad (`PilaItem`, comparado por nombre) en vez de ocupar un slot por unidad.
+
+Cada `game::Item` (catálogo fijo en `item.h`/`item.cpp`, definición del struct en `item_types.h`) es de uno de dos tipos:
+- **Consumible** (`EfectoItem::CurarVida` / `CurarRecurso`), resuelto por `UsarItem`: tira dados (`RollDados(dados, caras, bono)`) y aplica el resultado a HP o recurso, clampeado al máximo (`AplicarCuracion` para vida; un `std::min` manual para recurso, que no tiene una función compartida como la curación). Se gasta una unidad de la pila al usarse (`Inventory::Usar`).
+- **Mejora** (`MejorarAtaque` / `MejorarDefensa`): suma `bono` directo a la stat correspondiente, **permanente**. A diferencia de los Consumibles, **no se "usa" instantáneo — se equipa** (`Character::Equipar` / `Inventory::Equipar`), ver la subsección de abajo. `UsarItem` rechaza explícitamente cualquier item que no sea `TipoItem::Consumible` (devuelve `exitoso=false` sin tocar stats), como red de seguridad si algo lo llama por error con una Mejora.
+
+`ResultadoUsoItem` devuelve si se pudo usar, el valor numérico aplicado y un texto ya formateado (p.ej. "Poción de Curación Menor sobre Milo: recupera 6 de vida.") pensado para mostrarse directo como mensaje flotante, sin que la capa de render tenga que reconstruir la frase.
+
+Dos fuentes de items:
+- **Cofres** (`game::Cofre`: posición + `Item` fijo + `abierto`): objetos estáticos ubicados por `main.cpp` en la generación de la mazmorra — uno garantizado en la sala inicial (para que el sistema se vea sin depender del azar) y, por cada sala con contenido, un 40% (`Roll(10) <= kChanceCofrePorSalaDe10`) de tener uno adicional, en la esquina de la sala (lejos del grupo de enemigos, que suele estar cerca del centro). `ItemAleatorioDeCofre()` decide el contenido con una tabla de probabilidad fija (50% poción, 30% elixir, 20% una mejora al azar).
+- **Botín de combate** (`TirarLootDeEnemigo(TipoEnemigo)`): al entrar en `FaseCombate::Ganado`, `main.cpp` tira una vez por cada enemigo que participó del encuentro (`CombatEncounter::Enemigos()`), con una tabla de drop por tipo — Esqueleto Errante 60%, Rata Gigante 40% (el más débil, tabla más floja a propósito), Bandido Aturdidor 70% con 1/4 de esas veces siendo una mejora permanente en vez de un consumible (recompensa extra por ser el enemigo más duro de pelear). Un flag `lootRepartido` en `main()` asegura que el botín se reparta una sola vez por combate, ya que `Ganado` se re-evalúa todos los frames hasta que el jugador aprieta una tecla.
+
+**Interacción unificada con [E]**: antes, `main.cpp` solo buscaba el enemigo vivo más cercano; ahora busca el interactuable más cercano entre enemigos vivos y cofres sin abrir (`kDistanciaInteraccion`, el mismo radio de antes), y el cartel de abajo ("[E] Atacar" / "[E] Abrir cofre") depende de cuál sea. Un enemigo cercano siempre gana la prioridad sobre un cofre a la misma distancia — no debería haber ambigüedad real en la práctica, ya que los cofres se ubican lejos de los grupos de enemigos a propósito.
+
+**Ranuras de equipo** (`RanuraEquipo` en `item_types.h`; `Character::Equipar`/`Arma()`/`Accesorio()` en `character.h`/`.cpp`): cada `Item` de tipo Mejora declara a qué ranura va (`Arma` para `MejorarAtaque`, `Accesorio` para `MejorarDefensa`), y cada `Character` tiene como mucho un `ItemEquipado` por ranura (`{bool ocupado; Item item;}`). El motivo del cambio: antes una Mejora se aplicaba directo y se perdía como concepto (no había forma de ver qué tenía puesto un personaje, ni nada que impidiera "equiparle 5 Piedras de Fuerza" al mismo, cada una sumando +1 de ataque sin límite). `Character::Equipar(nuevo)` resuelve la ranura según `nuevo.ranura`, si ya había algo puesto le revierte el `bono` a la stat (resta exacta, no un reset a un valor base — no hace falta separar "stats base" de "stats con equipo" porque el `bono` que se sumó es el mismo que se resta), aplica el `bono` del nuevo, dejarlo equipado, y devuelve el `ItemEquipado` anterior (con `ocupado=false` si la ranura estaba vacía) para que el llamador decida qué hacer con él. `Inventory::Equipar(indice, personaje)` es ese llamador: saca una unidad de la pila, llama a `Character::Equipar`, y si vuelve algo ocupado lo reinserta con `Agregar` — así lo reemplazado no se pierde, vuelve al inventario compartido. `Inventory::Usar` e `Inventory::Equipar` se rechazan mutuamente por tipo (`Usar` solo actúa sobre Consumibles, `Equipar` solo sobre Mejoras), y `main.cpp` decide cuál llamar mirando `pilas[indice].item.tipo` antes de procesar la tecla numérica.
+
+**Pantalla de inventario** (**I** la abre/cierra, `render/inventory_ui.cpp`): reemplaza por completo el frame de exploración mientras está abierta (congela movimiento e interacción — `main.cpp` solo procesa TAB/números en ese estado). Muestra una ficha por miembro del party (nombre, rol por color, HP/recurso, Arma/Accesorio equipados — "-" si la ranura está vacía —, y un borde dorado + "<" en quien es el objetivo actual) y la lista de pilas de items con un `[N]` al lado de cada una; las de tipo Mejora llevan además un tag `[Equipar: Arma]` / `[Equipar: Accesorio]` en dorado, para que quede claro que van a reemplazar lo que haya en esa ranura en vez de sumarse sin límite. **TAB** cicla el objetivo entre **todos** los miembros, vivos o no — a propósito, para poder curar/revivir a un caído sin tener que cerrar el inventario y reordenar nada. **1-9** llama a `Inventory::Usar` o `Inventory::Equipar` según el tipo del item en esa fila. El panel de party expandido (`render/ui.cpp::DibujarPanelExpandido`, TAB en exploración) también muestra el Arma/Accesorio de cada uno en una línea aparte, para poder chusmear el equipo sin abrir el inventario.
+
+**Mensajes flotantes**: un `std::string mensajeFlotante` + `float timerMensaje` en `main()` (no en el renderer — la capa de lógica decide el texto, `renderer.cpp` solo lo dibuja) muestran por `kDuracionMensaje` (3s) el resultado de abrir un cofre, usar/equipar un item o el resumen de botín tras un combate, en un cartel arriba del prompt de interacción.
+
 ## Arquitectura de código (pensando en la portabilidad a Unreal)
 
 Para que la migración futura a Unreal sea lo más parecida a "portar lógica" y no "reescribir el juego", conviene separar desde el principio:
@@ -96,12 +118,15 @@ rpg-mazmorras/
 │   │   ├── effects.h/.cpp       # tipos de efecto de estado
 │   │   ├── dice.h/.cpp          # tiradas de dados (d20, dN+mod)
 │   │   ├── dungeon.h/.cpp       # generación procedural por cadena de salas
-│   │   └── inventory.h/.cpp
+│   │   ├── item_types.h         # Item, TipoItem, EfectoItem, RanuraEquipo (sin depender de item.h)
+│   │   ├── item.h/.cpp          # catálogo de items, UsarItem, loot de enemigos, Cofre
+│   │   └── inventory.h/.cpp     # Inventory: pilas de items, Usar (Consumibles) / Equipar (Mejoras)
 │   └── render/           # capa de presentación: usa raylib
 │       ├── renderer.h/.cpp      # incluye la Camera2D que sigue al líder
 │       ├── input.h/.cpp
 │       ├── ui.h/.cpp
-│       └── combat_ui.h/.cpp
+│       ├── combat_ui.h/.cpp
+│       └── inventory_ui.h/.cpp  # pantalla de inventario (tecla I)
 ├── assets/
 │   ├── sprites/
 │   ├── audio/
@@ -120,7 +145,9 @@ rpg-mazmorras/
 6. ✅ **Pantalla de Game Over**: perder ya no deja al party en HP 0 para siempre — se ve una pantalla distinta a la de victoria y, al apretar una tecla, el party revive a full HP/recurso (sin efectos) y vuelve al punto de partida.
 7. ✅ **Generación de mazmorra por salas conectadas**: cadena de 5 salas (4 room templates de tamaño, extensión Este/Sur al azar, pasillos de conexión), paredes calculadas por diferencia contra el piso, cámara que sigue al líder para navegar el layout completo.
 8. ✅ **Encuentros multi-enemigo**: cada sala con contenido tiene un grupo de 1 a 3 enemigos que se engancha entero en un solo `CombatEncounter` (turnos intercalados entre todo el party y todos los enemigos vivos, selector de objetivo con TAB, victoria solo cuando cae todo el grupo). Marcado pasó de ser un efecto sin consecuencia observable a hacer que el enemigo marcado priorice atacar al Tanque.
-9. Pendiente: iterar sobre balance general (stats, dificultad de los grupos de enemigos según tamaño), y recién ahí evaluar el salto a mobile (build de Android vía NDK). También pendiente: inventario/loot (el stub `inventory.h` sigue vacío).
+9. ✅ **Inventario y loot**: catálogo de items (pociones de vida, elixires de recurso, mejoras permanentes de ataque/defensa), inventario único compartido por todo el party con apilado, cofres en la mazmorra (uno garantizado + chance por sala), tablas de botín por tipo de enemigo al ganar un combate, e interacción [E] unificada (enemigo o cofre, el que esté más cerca) más una pantalla de inventario ([I], selector de objetivo con TAB, uso con 1-9) — ver "Sistema de inventario y loot" arriba.
+10. ✅ **Ranuras de equipo**: las mejoras permanentes dejaron de aplicarse instantáneo y perderse como concepto — ahora se equipan (`Character::Equipar`) en una ranura de Arma o Accesorio por personaje, una sola de cada, visible en el inventario y en el panel de party expandido; equipar algo nuevo en una ranura ocupada reemplaza lo que había y lo devuelve al inventario compartido en vez de acumular el bono sin límite. Surgió como feedback directo: nada impedía antes ponerle la misma mejora varias veces al mismo personaje, ni había forma de ver qué tenía puesto cada uno — ver "Ranuras de equipo" arriba.
+11. Pendiente: iterar sobre balance general (stats, dificultad de los grupos de enemigos según tamaño, ahora también curva de poder con las mejoras permanentes de items), y recién ahí evaluar el salto a mobile (build de Android vía NDK).
 
 ## Notas sobre la futura migración a Unreal
 
