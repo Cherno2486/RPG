@@ -75,4 +75,9 @@ ItemEquipado Character::Equipar(Item nuevo) {
     return anterior;
 }
 
+void Character::CargarEquipoGuardado(ItemEquipado arma, ItemEquipado accesorio) {
+    arma_ = std::move(arma);
+    accesorio_ = std::move(accesorio);
+}
+
 } // namespace game

@@ -164,6 +164,9 @@ Dungeon::Dungeon() {
     }
 }
 
+Dungeon::Dungeon(std::vector<Habitacion> habitaciones, std::vector<Rect> paredes)
+    : habitaciones_(std::move(habitaciones)), paredes_(std::move(paredes)) {}
+
 Vec2 Dungeon::CentroDeSala(size_t indice) const {
     if (indice >= habitaciones_.size()) return Vec2{0.0f, 0.0f};
     const Habitacion& h = habitaciones_[indice];

@@ -509,6 +509,30 @@ src/game/party.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/game/party.cpp.s
 .PHONY : src/game/party.cpp.s
 
+src/game/save.obj: src/game/save.cpp.obj
+.PHONY : src/game/save.obj
+
+# target to build an object file
+src/game/save.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/game/save.cpp.obj
+.PHONY : src/game/save.cpp.obj
+
+src/game/save.i: src/game/save.cpp.i
+.PHONY : src/game/save.i
+
+# target to preprocess a source file
+src/game/save.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/game/save.cpp.i
+.PHONY : src/game/save.cpp.i
+
+src/game/save.s: src/game/save.cpp.s
+.PHONY : src/game/save.s
+
+# target to generate assembly for a file
+src/game/save.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/game/save.cpp.s
+.PHONY : src/game/save.cpp.s
+
 src/main.obj: src/main.cpp.obj
 .PHONY : src/main.obj
 
@@ -753,6 +777,9 @@ help:
 	@echo ... src/game/party.obj
 	@echo ... src/game/party.i
 	@echo ... src/game/party.s
+	@echo ... src/game/save.obj
+	@echo ... src/game/save.i
+	@echo ... src/game/save.s
 	@echo ... src/main.obj
 	@echo ... src/main.i
 	@echo ... src/main.s

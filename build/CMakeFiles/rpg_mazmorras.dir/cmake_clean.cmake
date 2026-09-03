@@ -21,6 +21,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/rpg_mazmorras.dir/src/game/mathtypes.cpp.obj.d"
   "CMakeFiles/rpg_mazmorras.dir/src/game/party.cpp.obj"
   "CMakeFiles/rpg_mazmorras.dir/src/game/party.cpp.obj.d"
+  "CMakeFiles/rpg_mazmorras.dir/src/game/save.cpp.obj"
+  "CMakeFiles/rpg_mazmorras.dir/src/game/save.cpp.obj.d"
   "CMakeFiles/rpg_mazmorras.dir/src/main.cpp.obj"
   "CMakeFiles/rpg_mazmorras.dir/src/main.cpp.obj.d"
   "CMakeFiles/rpg_mazmorras.dir/src/render/audio.cpp.obj"

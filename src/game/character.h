@@ -80,6 +80,13 @@ public:
     // Inventory::Equipar). Devuelve ocupado=false si la ranura estaba vacia.
     ItemEquipado Equipar(Item nuevo);
 
+    // Fija el equipo directamente, SIN tocar stats_ (a diferencia de
+    // Equipar, que aplica/revierte bonos). La usa el sistema de guardado
+    // (game/save.h): stats_ ya se restaura con cualquier bono de equipo
+    // incluido, asi que volver a aplicarlo via Equipar lo sumaria dos
+    // veces.
+    void CargarEquipoGuardado(ItemEquipado arma, ItemEquipado accesorio);
+
 private:
     std::string nombre_;
     Role rol_;

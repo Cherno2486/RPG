@@ -36,9 +36,14 @@ siguientes veces es mucho más rápido.
 ## Controles del prototipo actual
 
 **Menú de inicio:**
-- **Flechas arriba/abajo o W/S**: mover la selección entre "Jugar" y
-  "Salir".
+- **Flechas arriba/abajo o W/S**: mover la selección entre las 4 opciones
+  fijas, siempre en el mismo orden: "Nueva partida", "Cargar", "Sobre mi",
+  "Salir". "Cargar" se dibuja atenuada si todavía no existe una partida
+  guardada (el cursor igual puede pararse ahí, pero confirmarla no hace
+  nada).
 - **ENTER o ESPACIO**: confirmar la opción resaltada.
+- **"Sobre mi"** lleva a una pantalla placeholder (todavía sin contenido) —
+  **ESC o ENTER** vuelve al menú desde ahí.
 
 **Exploración:**
 - **WASD / flechas**: mover al líder del party (movimiento libre, no por
@@ -52,6 +57,8 @@ siguientes veces es mucho más rápido.
   abierto).
 - **TAB**: alterna el panel de party entre compacto (chiquito, no tapa el
   mapa) y expandido (con nombre/rol/HP detallado de cada uno).
+- **F5**: guarda la partida (mazmorra, party, inventario, enemigos y
+  cofres) en un único slot — ver "Guardado de partida" abajo.
 
 **Inventario (con [I] abierto):**
 - **TAB**: cicla a cuál miembro del party se le va a aplicar el próximo
@@ -291,12 +298,20 @@ Ver "Sonido" en `docs/design.md` para el detalle técnico (`render/audio.h`).
     izquierda (donde va el cofre). Verificado con un fuzz test de 300
     mazmorras (1500 salas) sin fallos — ver "Generación de mazmorra" abajo
     y "Variedad de formas de sala" en `docs/design.md`.
-18. ✅ Menú de inicio: pantalla de título antes de largar a explorar, con
-    "Jugar" y "Salir" navegables con las flechas (o W/S) y ENTER/ESPACIO
-    para confirmar. Todavía no hay "Continuar" porque el juego no tiene
-    guardado de partida — ver "Menú de inicio" en `docs/design.md`.
-19. Pendiente: seguir sumando contenido (más enemigos comunes o una
-    mazmorra más larga), o encarar el guardado de partida, antes del build
+18. ✅ Menú de inicio: pantalla de título antes de largar a explorar, con 4
+    opciones fijas navegables con las flechas (o W/S) y ENTER/ESPACIO para
+    confirmar — "Nueva partida", "Cargar" (atenuada si no hay guardado),
+    "Sobre mi" (placeholder por ahora) y "Salir" — ver "Menú de inicio" en
+    `docs/design.md`.
+19. ✅ Guardado de partida: **F5** guarda la partida en curso (mazmorra,
+    party con stats/posición/equipo, inventario, enemigos y cofres) a un
+    único slot en texto plano (`savegame.txt`, sin librerías externas). El
+    menú de inicio ofrece "Cargar" habilitada apenas hay un guardado. Un
+    archivo corrupto o truncado no rompe el juego — se ignora y el jugador
+    puede arrancar de cero. Ver "Guardado de partida" abajo y en
+    `docs/design.md`.
+20. Pendiente: contenido para "Sobre mi", seguir sumando contenido de
+    juego (más enemigos comunes o una mazmorra más larga) antes del build
     de Android.
 
 Ver `docs/design.md` para el detalle completo de arquitectura y roadmap.
@@ -328,6 +343,29 @@ Como el layout generado es más grande que la ventana (1280x720), la
 cámara (`Camera2D` en `render/renderer.cpp`) sigue al líder del party;
 la grilla de referencia se dibuja sólo dentro de cada sala, no en los
 pasillos ni fuera del layout.
+
+## Guardado de partida
+
+**F5**, en cualquier momento de la exploración, guarda la partida en curso
+a un único slot: `savegame.txt`, un archivo de texto plano en la misma
+carpeta desde donde se corre el ejecutable (sin ninguna librería externa de
+serialización). Se persiste todo lo necesario para retomar exactamente
+donde quedaste: la mazmorra ya generada (salas + paredes, formas
+incluidas), los 4 personajes del party (stats, posición, Arma/Accesorio
+equipados), el inventario compartido, los enemigos (con cuáles ya están
+derrotados) y los cofres (con cuáles ya se abrieron). No se puede guardar
+en medio de un combate.
+
+El menú de inicio dibuja "Cargar" habilitada apenas existe un
+`savegame.txt` (atenuada y sin efecto si no) — al confirmarla carga y
+reemplaza por completo la mazmorra/party/enemigos/cofres que ya se habían
+generado para el fondo del menú. Un archivo dañado o de una versión vieja
+del formato no rompe el juego: `CargarPartida` lo detecta y devuelve
+inválido, así que el jugador se queda en el menú y puede arrancar de cero
+con "Nueva partida".
+
+`savegame.txt` está en `.gitignore` — es el progreso de quien juega, no
+parte del código fuente.
 
 ## Por qué está armado así
 

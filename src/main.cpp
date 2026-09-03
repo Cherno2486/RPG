@@ -11,6 +11,7 @@
 #include "game/combat.h"
 #include "game/dice.h"
 #include "game/item.h"
+#include "game/save.h"
 #include "render/renderer.h"
 #include "render/input.h"
 #include "render/combat_ui.h"
@@ -119,11 +120,12 @@ game::Cofre CrearCofreEnEsquina(const game::Habitacion& sala, game::Item conteni
     return game::Cofre{posicion, std::move(contenido), false};
 }
 
-// MenuInicio es el estado inicial: pantalla de titulo con "Jugar"/"Salir"
-// antes de largar a explorar. No hay "Continuar" todavia porque el juego no
-// tiene guardado de partida — cuando se agregue, esta es la lista a la que
-// hay que sumarle la opcion (ver render/menu_ui.h, kNumOpcionesMenuInicio).
-enum class EstadoJuego { MenuInicio, Exploracion, Combate };
+// MenuInicio es el estado inicial: pantalla de titulo con las 4 opciones de
+// ui::OpcionMenuInicio (ver render/menu_ui.h) antes de largar a explorar.
+// SobreMi es la pantalla placeholder de esa opcion (ver ui::DibujarSobreMi) —
+// un estado propio, no un sub-estado de MenuInicio, para que se dibuje y se
+// lea el input igual que cualquier otra pantalla de la maquina de estados.
+enum class EstadoJuego { MenuInicio, SobreMi, Exploracion, Combate };
 
 // Distancia (en pixeles) a la que hay que estar del interactuable mas
 // cercano (enemigo o cofre) para poder engancharlo/abrirlo con [E].
@@ -190,6 +192,14 @@ int main() {
     render::Renderer renderer(anchoVentana, altoVentana, "RPG Mazmorras - Prototipo");
     render::Audio audio;
 
+    // Se chequea una sola vez, antes del loop: controla si "Cargar" se
+    // dibuja habilitada en el menu de inicio (ver render/menu_ui.h). No hace
+    // falta re-chequear despues — desde el menu no se puede volver a
+    // guardar ni borrar el archivo antes de decidir, y una vez elegido
+    // "Nueva partida" o "Cargar" ya no se vuelve a MenuInicio (salvo pasando
+    // por "Sobre mi", que no toca el archivo de guardado).
+    bool hayGuardado = game::HayPartidaGuardada();
+
     EstadoJuego estado = EstadoJuego::MenuInicio;
     std::unique_ptr<game::CombatEncounter> encuentro;
     bool panelExpandido = false;     // arranca compacto; TAB lo expande/oculta
@@ -199,9 +209,10 @@ int main() {
     size_t objetivoInventario = 0;   // a quien se le aplica el proximo item usado
     std::string mensajeFlotante;     // botin de cofre/combate, visible unos segundos
     float timerMensaje = 0.0f;
-    int opcionMenuSeleccionada = 0;  // 0 = Jugar, 1 = Salir (ver render/menu_ui.h)
+    int opcionMenuSeleccionada = 0;  // indice sobre ui::OpcionMenuInicio (ver render/menu_ui.h)
+    bool salirDelJuego = false;      // "Salir" del menu de inicio lo pone en true (ver mas abajo)
 
-    while (!WindowShouldClose()) {
+    while (!WindowShouldClose() && !salirDelJuego) {
         float dt = GetFrameTime();
         // Clamp defensivo: si el frame tarda mucho (ventana minimizada, breakpoint,
         // etc.), un dt gigante podria mover al personaje lo suficiente como para
@@ -221,14 +232,55 @@ int main() {
             }
 
             if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
-                if (opcionMenuSeleccionada == 0) {
-                    estado = EstadoJuego::Exploracion;
-                } else {
-                    // "Salir": cortar el bucle principal alcanza — el resto
-                    // de main() (return 0) ya deja que Renderer/Audio se
-                    // desarmen solos por RAII al salir de scope, igual que
-                    // pasa al cerrar la ventana con la X.
-                    break;
+                switch (static_cast<ui::OpcionMenuInicio>(opcionMenuSeleccionada)) {
+                    case ui::OpcionMenuInicio::NuevaPartida:
+                        estado = EstadoJuego::Exploracion;
+                        break;
+                    case ui::OpcionMenuInicio::Cargar: {
+                        // Deshabilitada (ver ui::DibujarMenuInicio) mientras
+                        // no haya guardado — confirmarla en ese caso no hace
+                        // nada, el jugador se queda en el menu.
+                        if (!hayGuardado) break;
+                        game::ResultadoCarga carga = game::CargarPartida();
+                        if (carga.valido) {
+                            // Reemplaza TODO el estado pre-generado de arriba
+                            // (mazmorra/party/enemigos/cofres) por el
+                            // guardado — lo generado antes del loop solo era
+                            // para tener algo de fondo en este mismo menu.
+                            mazmorra = game::Dungeon(std::move(carga.datos.habitaciones), std::move(carga.datos.paredes));
+                            posicionInicial = mazmorra.CentroDeSala(0);
+                            party = game::Party(std::move(carga.datos.miembros));
+                            for (auto& pila : carga.datos.pilasInventario) {
+                                party.Inventario().Agregar(std::move(pila.item), pila.cantidad);
+                            }
+                            enemigos = std::move(carga.datos.enemigos);
+                            cofres = std::move(carga.datos.cofres);
+                            // Reubica a todo el party en la posicion guardada
+                            // del lider y borra el rastro de formacion — sin
+                            // esto, los seguidores "correrian" desde un
+                            // rastro vacio en vez de aparecer ya en fila
+                            // detras del lider (mismo recurso que ya usa el
+                            // revivir tras una derrota).
+                            party.ReiniciarFormacion(party.Lider().Posicion());
+                            estado = EstadoJuego::Exploracion;
+                        }
+                        // Si el archivo estaba corrupto/incompleto (a pesar
+                        // de que HayPartidaGuardada() dio true), se ignora en
+                        // silencio y el jugador se queda en el menu — puede
+                        // elegir "Nueva partida" en vez de trabarse.
+                        break;
+                    }
+                    case ui::OpcionMenuInicio::SobreMi:
+                        estado = EstadoJuego::SobreMi;
+                        break;
+                    case ui::OpcionMenuInicio::Salir:
+                        // Corta el bucle principal en la proxima vuelta (ver
+                        // la condicion del while) — el resto de main()
+                        // (return 0) ya deja que Renderer/Audio se desarmen
+                        // solos por RAII al salir de scope, igual que pasa
+                        // al cerrar la ventana con la X.
+                        salirDelJuego = true;
+                        break;
                 }
             }
 
@@ -238,7 +290,16 @@ int main() {
             // arranque sobre una pantalla vacia, mismo truco visual que usa
             // la pantalla de combate.
             renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres);
-            ui::DibujarMenuInicio(anchoVentana, altoVentana, opcionMenuSeleccionada);
+            ui::DibujarMenuInicio(anchoVentana, altoVentana, opcionMenuSeleccionada, hayGuardado);
+            EndDrawing();
+        } else if (estado == EstadoJuego::SobreMi) {
+            if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
+                estado = EstadoJuego::MenuInicio;
+            }
+
+            BeginDrawing();
+            renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres);
+            ui::DibujarSobreMi(anchoVentana, altoVentana);
             EndDrawing();
         } else if (estado == EstadoJuego::Exploracion) {
             if (timerMensaje > 0.0f) {
@@ -250,6 +311,20 @@ int main() {
             }
 
             if (IsKeyPressed(KEY_I)) inventarioAbierto = !inventarioAbierto;
+
+            // F5 guarda en cualquier momento de la exploracion (con el
+            // inventario abierto o no) — nunca durante combate, ni siquiera
+            // apretando la tecla por error, porque este bloque es
+            // EstadoJuego::Exploracion nomas. El archivo de guardado
+            // persiste todo lo necesario para reconstruir la partida
+            // (mazmorra ya resuelta, party, inventario, enemigos, cofres) —
+            // ver game/save.h.
+            if (IsKeyPressed(KEY_F5)) {
+                bool guardado = game::GuardarPartida(mazmorra, party, enemigos, cofres);
+                mensajeFlotante = guardado ? "Partida guardada." : "No se pudo guardar la partida.";
+                timerMensaje = kDuracionMensaje;
+                hayGuardado = hayGuardado || guardado;
+            }
 
             std::string prompt;
 

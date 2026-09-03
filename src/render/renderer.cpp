@@ -58,6 +58,13 @@ Renderer::Renderer(int anchoVentana, int altoVentana, const char* titulo)
     : anchoVentana_(anchoVentana), altoVentana_(altoVentana) {
     InitWindow(anchoVentana_, altoVentana_, titulo);
     SetTargetFPS(60);
+    // raylib por defecto usa ESC como "tecla de salida" (hace que
+    // WindowShouldClose() de true apenas se aprieta, sin pasar por el loop
+    // principal). Lo desactivamos porque ESC ahora tiene un uso propio
+    // dentro del juego (volver de la pantalla "Sobre mi" al menu, ver
+    // EstadoJuego::SobreMi en main.cpp) — "Salir" en el menu de inicio
+    // sigue siendo la unica forma de cerrar el juego.
+    SetExitKey(KEY_NULL);
 
     camara_.offset = Vector2{ anchoVentana_ / 2.0f, altoVentana_ / 2.0f };
     camara_.target = Vector2{ 0.0f, 0.0f };
@@ -158,6 +165,11 @@ void Renderer::DibujarFrame(const game::Dungeon& mazmorra, const game::Party& pa
     }
 
     DrawFPS(anchoVentana_ - 90, 10);
+
+    // Hint fijo de guardado — F5 funciona en toda la exploracion (ver
+    // main.cpp), asi que el recordatorio tambien es fijo, no depende de
+    // estar cerca de nada como el prompt de interaccion.
+    DrawText("[F5] Guardar", 16, altoVentana_ - 24, 14, Color{ 150, 150, 160, 255 });
 
     EndDrawing();
 }
