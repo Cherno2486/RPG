@@ -37,6 +37,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/rpg_mazmorras.dir/src/render/menu_ui.cpp.obj.d"
   "CMakeFiles/rpg_mazmorras.dir/src/render/renderer.cpp.obj"
   "CMakeFiles/rpg_mazmorras.dir/src/render/renderer.cpp.obj.d"
+  "CMakeFiles/rpg_mazmorras.dir/src/render/sprites.cpp.obj"
+  "CMakeFiles/rpg_mazmorras.dir/src/render/sprites.cpp.obj.d"
   "CMakeFiles/rpg_mazmorras.dir/src/render/ui.cpp.obj"
   "CMakeFiles/rpg_mazmorras.dir/src/render/ui.cpp.obj.d"
   "librpg_mazmorras.dll.a"

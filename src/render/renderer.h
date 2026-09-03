@@ -1,4 +1,5 @@
 #pragma once
+#include <memory>
 #include <string>
 #include <vector>
 #include "raylib.h"
@@ -6,6 +7,7 @@
 #include "../game/party.h"
 #include "../game/enemy.h"
 #include "../game/item.h"
+#include "sprites.h"
 
 namespace render {
 
@@ -13,6 +15,13 @@ class Renderer {
 public:
     Renderer(int anchoVentana, int altoVentana, const char* titulo);
     ~Renderer();
+
+    // Las texturas pixel-art del juego (personajes, enemigos, cofres, tiles
+    // de piso/pared) — combat_ui.cpp e inventory_ui.cpp la necesitan para
+    // dibujar sus propios retratos chicos con el mismo sprite que ya se ve
+    // en el mapa, en vez de duplicar la generacion de texturas en cada
+    // archivo (que ademas gastaria memoria GL por las pilas).
+    const SpriteSet& Sprites() const { return *sprites_; }
 
     // 'enemigos' puede tener cualquier cantidad (incluso ninguno vivo) — se
     // dibujan todos los que no esten Vencido(). 'cofres' se dibujan cerrados
@@ -42,6 +51,10 @@ private:
     int anchoVentana_;
     int altoVentana_;
     Camera2D camara_;
+    // unique_ptr porque SpriteSet necesita un contexto GL valido (InitWindow
+    // ya llamado) para construirse — no puede ser un miembro por valor
+    // inicializado antes que el cuerpo del constructor de Renderer corra.
+    std::unique_ptr<SpriteSet> sprites_;
 };
 
 } // namespace render

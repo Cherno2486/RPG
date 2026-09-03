@@ -5,17 +5,14 @@
 namespace ui {
 
 namespace {
-Color ColorDeRol(game::Role rol) {
-    switch (rol) {
-        case game::Role::Tanque:  return Color{ 90, 130, 220, 255 };
-        case game::Role::Danio:   return Color{ 220, 90, 90, 255 };
-        case game::Role::Soporte: return Color{ 100, 210, 130, 255 };
-        case game::Role::Control: return Color{ 210, 170, 90, 255 };
-    }
-    return WHITE;
-}
+// Escala de los retratos chicos del panel — el lienzo nativo del sprite de
+// personaje mide render::kCanvasPersonaje px de ancho (20); a esta escala
+// el retrato queda mas o menos del mismo diametro que el circulo de radio
+// 10 que dibujaba antes.
+constexpr float kEscalaRetrato = 1.0f;
+constexpr float kEscalaRetratoCompacto = 1.2f;
 
-void DibujarPanelExpandido(const game::Party& party) {
+void DibujarPanelExpandido(const game::Party& party, const render::SpriteSet& sprites) {
     const int panelX = 16;
     const int panelY = 16;
     // Un poco mas ancho que antes (220) para que "Arma / Accesorio" con
@@ -35,7 +32,7 @@ void DibujarPanelExpandido(const game::Party& party) {
         const auto& personaje = miembros[i];
         const auto& stats = personaje.GetStats();
 
-        DrawCircle(panelX + 20, filaY + 18, 10.0f, ColorDeRol(personaje.Rol()));
+        render::DibujarSpriteCentrado(sprites.Personaje(personaje.Rol()), Vector2{ (float)(panelX + 20), (float)(filaY + 18) }, kEscalaRetrato);
 
         char linea1[64];
         std::snprintf(linea1, sizeof(linea1), "%s%s",
@@ -70,7 +67,7 @@ void DibujarPanelExpandido(const game::Party& party) {
     DrawText("[TAB] ocultar", panelX + 8, panelY + altoPanel + 6, 12, Color{ 180, 180, 190, 255 });
 }
 
-void DibujarPanelCompacto(const game::Party& party) {
+void DibujarPanelCompacto(const game::Party& party, const render::SpriteSet& sprites) {
     const int x = 16;
     const int y = 16;
     const auto& miembros = party.Miembros();
@@ -85,7 +82,7 @@ void DibujarPanelCompacto(const game::Party& party) {
         const auto& stats = personaje.GetStats();
         int cx = x + 8 + (int)i * anchoItem + 14;
 
-        DrawCircle(cx, y + 20, 12.0f, ColorDeRol(personaje.Rol()));
+        render::DibujarSpriteCentrado(sprites.Personaje(personaje.Rol()), Vector2{ (float)cx, (float)(y + 20) }, kEscalaRetratoCompacto);
         if (!personaje.EstaVivo()) {
             DrawLine(cx - 10, y + 10, cx + 10, y + 30, Color{ 220, 60, 60, 255 });
         }
@@ -100,11 +97,11 @@ void DibujarPanelCompacto(const game::Party& party) {
 
 } // namespace
 
-void DibujarPanelParty(const game::Party& party, bool expandido) {
+void DibujarPanelParty(const game::Party& party, bool expandido, const render::SpriteSet& sprites) {
     if (expandido) {
-        DibujarPanelExpandido(party);
+        DibujarPanelExpandido(party, sprites);
     } else {
-        DibujarPanelCompacto(party);
+        DibujarPanelCompacto(party, sprites);
     }
 }
 

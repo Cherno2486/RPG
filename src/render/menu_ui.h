@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 namespace ui {
 
 // Opciones del menu de inicio, en el orden en que se dibujan y se ciclan
@@ -27,5 +29,24 @@ void DibujarMenuInicio(int anchoVentana, int altoVentana, int opcionSeleccionada
 // Roadmap en docs/design.md). Mismo criterio visual y de dibujo que
 // DibujarMenuInicio (sin BeginDrawing/EndDrawing propios).
 void DibujarSobreMi(int anchoVentana, int altoVentana);
+
+// Opciones del menu de pausa (ver DibujarPausa), en el orden en que se
+// dibujan y se ciclan — mismo criterio de casteo directo indice->enum que
+// OpcionMenuInicio. Se llega aca con ESC durante la exploracion (ver
+// EstadoJuego::Pausa en main.cpp); "Guardar" reusa la misma logica que ya
+// tenia la tecla F5, "MenuPrincipal" vuelve a EstadoJuego::MenuInicio sin
+// cerrar el juego (a diferencia de la primera version de este menu, ahora
+// SI se puede volver del gameplay al menu de inicio).
+enum class OpcionPausa { Continuar, Guardar, MenuPrincipal, Salir };
+constexpr int kNumOpcionesPausa = 4;
+
+// Pantalla de pausa: titulo del juego + las 4 opciones de arriba.
+// 'opcionSeleccionada' (0..kNumOpcionesPausa-1) lo maneja quien llama, igual
+// que en DibujarMenuInicio. 'mensajeGuardado' (puede venir vacio) muestra un
+// cartel chico debajo de las opciones con el resultado de la ultima vez que
+// se eligio "Guardar" en esta pausa (p.ej. "Partida guardada.") — main.cpp
+// es quien decide cuando ponerlo y cuando limpiarlo. Sin BeginDrawing/
+// EndDrawing propios, mismo criterio que las otras pantallas de este archivo.
+void DibujarPausa(int anchoVentana, int altoVentana, int opcionSeleccionada, const std::string& mensajeGuardado);
 
 }  // namespace ui

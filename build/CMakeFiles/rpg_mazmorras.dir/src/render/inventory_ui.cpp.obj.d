@@ -122,6 +122,7 @@ CMakeFiles/rpg_mazmorras.dir/src/render/inventory_ui.cpp.obj: \
  C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/inventory.h \
  C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/item.h \
  C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/enemy.h \
+ C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\render\sprites.h \
  C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/external/raylib-src/src/raylib.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/stdarg.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/stdarg.h \

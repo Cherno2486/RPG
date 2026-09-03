@@ -9,6 +9,10 @@ constexpr const char* kNombresOpciones[kNumOpcionesMenuInicio] = {
     "Nueva partida", "Cargar", "Sobre mi", "Salir"
 };
 
+constexpr const char* kNombresOpcionesPausa[kNumOpcionesPausa] = {
+    "Continuar", "Guardar", "Menu principal", "Salir"
+};
+
 // El titulo va siempre en el mismo lugar en las dos pantallas (menu y
 // "Sobre mi") para que la transicion entre las dos no salte.
 constexpr int kTamanoTitulo = 56;
@@ -93,6 +97,51 @@ void DibujarSobreMi(int anchoVentana, int altoVentana) {
     DrawText(cuerpo, (anchoVentana - anchoCuerpo) / 2, altoVentana / 2, 18, Color{ 160, 160, 170, 255 });
 
     const char* prompt = "[ESC o ENTER] Volver";
+    int anchoPrompt = MeasureText(prompt, 16);
+    DrawText(prompt, (anchoVentana - anchoPrompt) / 2, altoVentana - 60, 16, Color{ 130, 130, 140, 255 });
+}
+
+void DibujarPausa(int anchoVentana, int altoVentana, int opcionSeleccionada, const std::string& mensajeGuardado) {
+    // Mismo overlay que las otras pantallas de este archivo — la exploracion
+    // ya dibujada de fondo se ve "congelada" detras.
+    DrawRectangle(0, 0, anchoVentana, altoVentana, Color{ 8, 8, 14, 225 });
+
+    DibujarTitulo(anchoVentana, altoVentana);
+
+    const char* subtitulo = "Pausa";
+    int anchoSub = MeasureText(subtitulo, 22);
+    DrawText(subtitulo, (anchoVentana - anchoSub) / 2, altoVentana / 2 - 90, 22, Color{ 230, 190, 80, 255 });
+
+    // Mismo criterio que DibujarMenuInicio: tamano fijo por opcion, solo
+    // cambia el color y el prefijo "> ", para que la seleccion no haga
+    // saltar el texto centrado.
+    int tamanoOpcion = 28;
+    int yOpciones = altoVentana / 2 - 30;
+    for (int i = 0; i < kNumOpcionesPausa; ++i) {
+        bool esSeleccionada = (i == opcionSeleccionada);
+
+        char texto[32];
+        std::snprintf(texto, sizeof(texto), "%s%s", esSeleccionada ? "> " : "  ", kNombresOpcionesPausa[i]);
+
+        Color color = esSeleccionada ? Color{ 255, 235, 180, 255 } : Color{ 140, 140, 150, 255 };
+
+        int ancho = MeasureText(texto, tamanoOpcion);
+        DrawText(texto, (anchoVentana - ancho) / 2, yOpciones, tamanoOpcion, color);
+
+        yOpciones += 50;
+    }
+
+    // Resultado de la ultima vez que se eligio "Guardar" en esta pausa
+    // (p.ej. "Partida guardada.") — vacio si todavia no se guardo nada
+    // desde que se abrio esta pantalla. main.cpp decide cuando ponerlo y
+    // cuando limpiarlo (ver EstadoJuego::Pausa).
+    if (!mensajeGuardado.empty()) {
+        int anchoMsg = MeasureText(mensajeGuardado.c_str(), 16);
+        DrawText(mensajeGuardado.c_str(), (anchoVentana - anchoMsg) / 2, yOpciones + 10, 16,
+                 Color{ 200, 200, 160, 255 });
+    }
+
+    const char* prompt = "[flechas o W/S] moverse    [ENTER] confirmar    [ESC] continuar";
     int anchoPrompt = MeasureText(prompt, 16);
     DrawText(prompt, (anchoVentana - anchoPrompt) / 2, altoVentana - 60, 16, Color{ 130, 130, 140, 255 });
 }

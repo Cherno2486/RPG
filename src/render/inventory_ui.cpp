@@ -6,28 +6,23 @@ namespace ui {
 
 namespace {
 
-Color ColorDeRol(game::Role rol) {
-    switch (rol) {
-        case game::Role::Tanque:  return Color{ 90, 130, 220, 255 };
-        case game::Role::Danio:   return Color{ 220, 90, 90, 255 };
-        case game::Role::Soporte: return Color{ 100, 210, 130, 255 };
-        case game::Role::Control: return Color{ 210, 170, 90, 255 };
-    }
-    return WHITE;
-}
+// Mismo criterio que ui.cpp/combat_ui.cpp: el retrato reusa el sprite de
+// personaje del mapa a un tamaño chico, en vez de un circulo de color.
+constexpr float kEscalaRetrato = 1.0f;
 
 // Alto total de cada ficha: HP/recurso arriba, y las dos lineas de equipo
 // (Arma/Accesorio) abajo — asi se ve de un vistazo que tiene puesto cada
 // uno, sin tener que adivinar ni ir personaje por personaje.
 constexpr int kAltoFicha = 78;
 
-void DibujarFichaObjetivo(const game::Character& personaje, bool esObjetivo, int x, int y, int ancho) {
+void DibujarFichaObjetivo(const game::Character& personaje, bool esObjetivo, int x, int y, int ancho,
+                           const render::SpriteSet& sprites) {
     Color fondo = esObjetivo ? Color{ 45, 45, 30, 230 } : Color{ 20, 20, 25, 200 };
     Color borde = esObjetivo ? Color{ 230, 200, 90, 255 } : Color{ 80, 80, 90, 255 };
     DrawRectangle(x, y, ancho, kAltoFicha, fondo);
     DrawRectangleLines(x, y, ancho, kAltoFicha, borde);
 
-    DrawCircle(x + 18, y + 18, 10.0f, ColorDeRol(personaje.Rol()));
+    render::DibujarSpriteCentrado(sprites.Personaje(personaje.Rol()), Vector2{ (float)(x + 18), (float)(y + 18) }, kEscalaRetrato);
     if (!personaje.EstaVivo()) {
         DrawLine(x + 8, y + 8, x + 28, y + 28, Color{ 220, 60, 60, 255 });
     }
@@ -61,7 +56,7 @@ void DibujarFichaObjetivo(const game::Character& personaje, bool esObjetivo, int
 
 } // namespace
 
-void DibujarInventario(const game::Party& party, size_t indiceObjetivo) {
+void DibujarInventario(const game::Party& party, size_t indiceObjetivo, const render::SpriteSet& sprites) {
     int anchoVentana = GetScreenWidth();
     int altoVentana = GetScreenHeight();
 
@@ -76,7 +71,7 @@ void DibujarInventario(const game::Party& party, size_t indiceObjetivo) {
     int anchoFicha = 220;
     const auto& miembros = party.Miembros();
     for (size_t i = 0; i < miembros.size(); ++i) {
-        DibujarFichaObjetivo(miembros[i], i == indiceObjetivo, xFicha, yFicha, anchoFicha);
+        DibujarFichaObjetivo(miembros[i], i == indiceObjetivo, xFicha, yFicha, anchoFicha, sprites);
         xFicha += anchoFicha + 12;
     }
 

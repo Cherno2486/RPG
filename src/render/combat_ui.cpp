@@ -8,15 +8,9 @@ namespace ui {
 
 namespace {
 
-Color ColorDeRol(game::Role rol) {
-    switch (rol) {
-        case game::Role::Tanque:  return Color{ 90, 130, 220, 255 };
-        case game::Role::Danio:   return Color{ 220, 90, 90, 255 };
-        case game::Role::Soporte: return Color{ 100, 210, 130, 255 };
-        case game::Role::Control: return Color{ 210, 170, 90, 255 };
-    }
-    return WHITE;
-}
+// Mismo criterio que ui.cpp: el retrato reusa el sprite de personaje del
+// mapa a un tamaño chico, en vez de un circulo de color.
+constexpr float kEscalaRetrato = 1.0f;
 
 // Dibuja una lista corta de "tags" de texto con los efectos activos (por
 // ejemplo "Envenenado x2", "Escudo 5"), una debajo de otra.
@@ -43,7 +37,8 @@ void DibujarBarra(int x, int y, int ancho, int alto, float ratio, Color colorLle
     DrawRectangleLines(x, y, ancho, alto, Color{ 20, 20, 20, 255 });
 }
 
-void DibujarFichaAliado(const game::Character& personaje, bool esSuTurno, int x, int y, int ancho) {
+void DibujarFichaAliado(const game::Character& personaje, bool esSuTurno, int x, int y, int ancho,
+                         const render::SpriteSet& sprites) {
     const auto& stats = personaje.GetStats();
     int alto = stats.recursoMax > 0 ? 78 : 60;
 
@@ -52,7 +47,7 @@ void DibujarFichaAliado(const game::Character& personaje, bool esSuTurno, int x,
     DrawRectangle(x, y, ancho, alto, fondo);
     DrawRectangleLines(x, y, ancho, alto, borde);
 
-    DrawCircle(x + 18, y + 18, 10.0f, ColorDeRol(personaje.Rol()));
+    render::DibujarSpriteCentrado(sprites.Personaje(personaje.Rol()), Vector2{ (float)(x + 18), (float)(y + 18) }, kEscalaRetrato);
 
     char nombre[48];
     std::snprintf(nombre, sizeof(nombre), "%s%s", personaje.Nombre().c_str(), esSuTurno ? " <-- turno" : "");
@@ -249,7 +244,8 @@ void DibujarNumerosFlotantes() {
 
 } // namespace
 
-void DibujarCombate(game::CombatEncounter& encuentro, int anchoVentana, int altoVentana, float deltaSeconds) {
+void DibujarCombate(game::CombatEncounter& encuentro, int anchoVentana, int altoVentana, float deltaSeconds,
+                     const render::SpriteSet& sprites) {
     // Fondo semitransparente para que se note que estamos "en combate".
     DrawRectangle(0, 0, anchoVentana, altoVentana, Color{ 10, 8, 15, 235 });
 
@@ -263,7 +259,7 @@ void DibujarCombate(game::CombatEncounter& encuentro, int anchoVentana, int alto
         bool esSuTurno = (enTurno == &personaje);
         int altoFicha = personaje.GetStats().recursoMax > 0 ? 78 : 60;
         rectAliados.push_back(Rectangle{ (float)x, (float)y, (float)anchoFicha, (float)altoFicha });
-        DibujarFichaAliado(personaje, esSuTurno, x, y, anchoFicha);
+        DibujarFichaAliado(personaje, esSuTurno, x, y, anchoFicha, sprites);
         y += altoFicha + 10;
     }
 

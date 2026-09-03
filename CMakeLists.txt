@@ -35,6 +35,7 @@ add_executable(rpg_mazmorras
     src/game/inventory.cpp
     src/game/save.cpp
     src/render/renderer.cpp
+    src/render/sprites.cpp
     src/render/input.cpp
     src/render/ui.cpp
     src/render/combat_ui.cpp

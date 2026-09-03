@@ -701,6 +701,30 @@ src/render/renderer.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/render/renderer.cpp.s
 .PHONY : src/render/renderer.cpp.s
 
+src/render/sprites.obj: src/render/sprites.cpp.obj
+.PHONY : src/render/sprites.obj
+
+# target to build an object file
+src/render/sprites.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/render/sprites.cpp.obj
+.PHONY : src/render/sprites.cpp.obj
+
+src/render/sprites.i: src/render/sprites.cpp.i
+.PHONY : src/render/sprites.i
+
+# target to preprocess a source file
+src/render/sprites.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/render/sprites.cpp.i
+.PHONY : src/render/sprites.cpp.i
+
+src/render/sprites.s: src/render/sprites.cpp.s
+.PHONY : src/render/sprites.s
+
+# target to generate assembly for a file
+src/render/sprites.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/render/sprites.cpp.s
+.PHONY : src/render/sprites.cpp.s
+
 src/render/ui.obj: src/render/ui.cpp.obj
 .PHONY : src/render/ui.obj
 
@@ -801,6 +825,9 @@ help:
 	@echo ... src/render/renderer.obj
 	@echo ... src/render/renderer.i
 	@echo ... src/render/renderer.s
+	@echo ... src/render/sprites.obj
+	@echo ... src/render/sprites.i
+	@echo ... src/render/sprites.s
 	@echo ... src/render/ui.obj
 	@echo ... src/render/ui.i
 	@echo ... src/render/ui.s

@@ -59,13 +59,26 @@ siguientes veces es mucho más rápido.
   mapa) y expandido (con nombre/rol/HP detallado de cada uno).
 - **F5**: guarda la partida (mazmorra, party, inventario, enemigos y
   cofres) en un único slot — ver "Guardado de partida" abajo.
+- **ESC**: con el inventario cerrado, abre el menú de pausa (ver abajo). Con
+  el inventario abierto, lo cierra primero.
 
 **Inventario (con [I] abierto):**
 - **TAB**: cicla a cuál miembro del party se le va a aplicar el próximo
   item usado (se marca con "<" y un borde dorado en su ficha).
 - **1-9**: usa (Consumibles) o equipa (Mejoras — reemplazan lo que haya en
   su ranura) el item de esa fila sobre el objetivo actual.
-- **I**: cierra el inventario y vuelve a la exploración.
+- **I** o **ESC**: cierra el inventario y vuelve a la exploración.
+
+**Pausa (ESC durante la exploración):**
+- **Flechas arriba/abajo o W/S**: mover la selección entre "Continuar",
+  "Guardar", "Menú principal" y "Salir".
+- **ENTER o ESPACIO**: confirmar la opción resaltada. "Guardar" hace lo
+  mismo que F5 y muestra el mismo cartel de confirmación; "Menú principal"
+  vuelve a la pantalla de título sin cerrar el juego y sin perder el
+  progreso en curso (para retomarlo hay que haber guardado antes y elegir
+  "Cargar" — "Nueva partida" en cambio genera una mazmorra distinta y
+  descarta lo que había).
+- **ESC**: vuelve directo a jugar (equivale a confirmar "Continuar").
 
 **Combate:**
 - **1**: ataque básico (1d6 + bono de ataque, tirada de d20 vs la defensa
@@ -310,7 +323,30 @@ Ver "Sonido" en `docs/design.md` para el detalle técnico (`render/audio.h`).
     archivo corrupto o truncado no rompe el juego — se ignora y el jugador
     puede arrancar de cero. Ver "Guardado de partida" abajo y en
     `docs/design.md`.
-20. Pendiente: contenido para "Sobre mi", seguir sumando contenido de
+20. ✅ Pausa y vuelta al menú: **ESC** durante la exploración abre un menú
+    de pausa con Continuar/Guardar/Menú principal/Salir — antes, una vez
+    adentro de una partida no había forma de volver a la pantalla de
+    título sin cerrar el juego. "Nueva partida" ahora se puede elegir más
+    de una vez por corrida (antes solo al arrancar el ejecutable) y
+    siempre genera una mazmorra distinta. De paso se corrigió un bug real:
+    ESC cerraba el juego entero en vez de volver de una pantalla, por la
+    tecla de salida por defecto de raylib. Ver "Pausa y vuelta al menú" en
+    `docs/design.md`.
+21. ✅ Sprites pixel-art: personajes, enemigos, cofres y tiles de piso/pared
+    dejaron de ser círculos y rectángulos de color liso — ahora son sprites
+    pixel-art generados por código (`render/sprites.h`/`.cpp`, sin archivos
+    de assets ni licencias de terceros, mismo criterio que el audio
+    sintetizado) escalados con filtro nearest-neighbor para verse nítidos.
+    Los retratos chicos del HUD, el inventario y las fichas de combate
+    reusan la misma textura. Ver "Sprites pixel-art generados por código"
+    en `docs/design.md`.
+22. ✅ Ambientación de mapa: se sacó la grilla de referencia (era la
+    principal causa de que el mapa se sintiera "a planilla vacía") y se
+    sumó decoración suelta de piso (grieta/musgo/escombros/charco,
+    repartida dispersa por tile) más antorchas encendidas en la fila
+    superior de cada sala, con un parpadeo sutil — todo pixel-art generado
+    por código. Ver "Ambientación de mapa" en `docs/design.md`.
+23. Pendiente: contenido para "Sobre mi", seguir sumando contenido de
     juego (más enemigos comunes o una mazmorra más larga) antes del build
     de Android.
 
@@ -346,12 +382,13 @@ pasillos ni fuera del layout.
 
 ## Guardado de partida
 
-**F5**, en cualquier momento de la exploración, guarda la partida en curso
-a un único slot: `savegame.txt`, un archivo de texto plano en la misma
-carpeta desde donde se corre el ejecutable (sin ninguna librería externa de
-serialización). Se persiste todo lo necesario para retomar exactamente
-donde quedaste: la mazmorra ya generada (salas + paredes, formas
-incluidas), los 4 personajes del party (stats, posición, Arma/Accesorio
+**F5** (en cualquier momento de la exploración) o **Guardar** en el menú de
+pausa (ESC) guardan la partida en curso a un único slot: `savegame.txt`, un
+archivo de texto plano en la misma carpeta desde donde se corre el
+ejecutable (sin ninguna librería externa de serialización) — las dos son la
+misma función por debajo, solo cambia cómo se dispara. Se persiste todo lo
+necesario para retomar exactamente donde quedaste: la mazmorra ya generada
+(salas + paredes, formas incluidas), los 4 personajes del party (stats, posición, Arma/Accesorio
 equipados), el inventario compartido, los enemigos (con cuáles ya están
 derrotados) y los cofres (con cuáles ya se abrieron). No se puede guardar
 en medio de un combate.

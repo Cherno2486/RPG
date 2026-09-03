@@ -120,40 +120,24 @@ game::Cofre CrearCofreEnEsquina(const game::Habitacion& sala, game::Item conteni
     return game::Cofre{posicion, std::move(contenido), false};
 }
 
-// MenuInicio es el estado inicial: pantalla de titulo con las 4 opciones de
-// ui::OpcionMenuInicio (ver render/menu_ui.h) antes de largar a explorar.
-// SobreMi es la pantalla placeholder de esa opcion (ver ui::DibujarSobreMi) —
-// un estado propio, no un sub-estado de MenuInicio, para que se dibuje y se
-// lea el input igual que cualquier otra pantalla de la maquina de estados.
-enum class EstadoJuego { MenuInicio, SobreMi, Exploracion, Combate };
+// Todo lo que hace falta para arrancar una partida nueva desde cero: una
+// mazmorra procedural distinta cada vez, el party de ejemplo parado en la
+// sala 0, y los enemigos/cofres repartidos por el resto de las salas. Antes
+// esto vivia inline al principio de main() y se corria una sola vez (el
+// menu de inicio solo se veia al arrancar el ejecutable); ahora que se
+// puede volver a MenuInicio desde la pausa (ver EstadoJuego::Pausa) y elegir
+// "Nueva partida" de nuevo, hace falta poder repetirlo en cualquier momento
+// sin reiniciar el programa — de ahi que estar en una funcion aparte en vez
+// de en el cuerpo de main().
+struct PartidaNueva {
+    game::Dungeon mazmorra;
+    game::Vec2 posicionInicial;
+    game::Party party;
+    std::vector<game::Enemy> enemigos;
+    std::vector<game::Cofre> cofres;
+};
 
-// Distancia (en pixeles) a la que hay que estar del interactuable mas
-// cercano (enemigo o cofre) para poder engancharlo/abrirlo con [E].
-constexpr float kDistanciaInteraccion = 90.0f;
-
-// Cuanto tiempo (segundos) queda en pantalla un mensaje flotante (botin de
-// un cofre o de un combate ganado) antes de desaparecer solo.
-constexpr float kDuracionMensaje = 3.0f;
-
-// Devuelve el indice (0-8) de la tecla numerica 1-9 apretada este frame, o
-// -1 si no se apreto ninguna. Se usa para elegir que item usar del
-// inventario (ver DibujarInventario, que muestra "[N]" al lado de cada uno).
-int NumeroPresionado() {
-    static const int teclas[9] = {
-        KEY_ONE, KEY_TWO, KEY_THREE, KEY_FOUR, KEY_FIVE, KEY_SIX, KEY_SEVEN, KEY_EIGHT, KEY_NINE
-    };
-    for (int i = 0; i < 9; ++i) {
-        if (IsKeyPressed(teclas[i])) return i;
-    }
-    return -1;
-}
-
-} // namespace
-
-int main() {
-    const int anchoVentana = 1280;
-    const int altoVentana = 720;
-
+PartidaNueva GenerarPartidaNueva() {
     // Mazmorra procedural: una cadena de salas conectadas por pasillos (ver
     // game/dungeon.cpp). La sala 0 es donde arranca el party, sin enemigos;
     // las salas intermedias tienen un grupo de 1 a 3 enemigos de tipo
@@ -189,15 +173,72 @@ int main() {
         }
     }
 
+    return PartidaNueva{ std::move(mazmorra), posicionInicial, std::move(party), std::move(enemigos), std::move(cofres) };
+}
+
+// MenuInicio es el estado inicial: pantalla de titulo con las 4 opciones de
+// ui::OpcionMenuInicio (ver render/menu_ui.h) antes de largar a explorar.
+// SobreMi es la pantalla placeholder de esa opcion (ver ui::DibujarSobreMi) —
+// un estado propio, no un sub-estado de MenuInicio, para que se dibuje y se
+// lea el input igual que cualquier otra pantalla de la maquina de estados.
+// Pausa es la pantalla que abre ESC durante la exploracion (ver
+// ui::DibujarPausa) — desde ahi se puede volver a jugar, guardar, volver a
+// MenuInicio sin cerrar el juego, o salir. No existe durante Combate (ESC
+// no hace nada ahi, igual que F5 tampoco guarda en combate).
+enum class EstadoJuego { MenuInicio, SobreMi, Exploracion, Pausa, Combate };
+
+// Distancia (en pixeles) a la que hay que estar del interactuable mas
+// cercano (enemigo o cofre) para poder engancharlo/abrirlo con [E].
+constexpr float kDistanciaInteraccion = 90.0f;
+
+// Cuanto tiempo (segundos) queda en pantalla un mensaje flotante (botin de
+// un cofre o de un combate ganado) antes de desaparecer solo.
+constexpr float kDuracionMensaje = 3.0f;
+
+// Devuelve el indice (0-8) de la tecla numerica 1-9 apretada este frame, o
+// -1 si no se apreto ninguna. Se usa para elegir que item usar del
+// inventario (ver DibujarInventario, que muestra "[N]" al lado de cada uno).
+int NumeroPresionado() {
+    static const int teclas[9] = {
+        KEY_ONE, KEY_TWO, KEY_THREE, KEY_FOUR, KEY_FIVE, KEY_SIX, KEY_SEVEN, KEY_EIGHT, KEY_NINE
+    };
+    for (int i = 0; i < 9; ++i) {
+        if (IsKeyPressed(teclas[i])) return i;
+    }
+    return -1;
+}
+
+} // namespace
+
+int main() {
+    const int anchoVentana = 1280;
+    const int altoVentana = 720;
+
+    // Arranca con una partida generada de cero — sirve como fondo "congelado"
+    // del menu de inicio hasta que el jugador elija que hacer. Si mas tarde
+    // vuelve a elegir "Nueva partida" (desde el menu de inicio la primera
+    // vez, o volviendo por la pausa despues), se llama de nuevo a
+    // GenerarPartidaNueva() para reemplazar esto por una mazmorra distinta —
+    // ver el case NuevaPartida mas abajo.
+    PartidaNueva partidaInicial = GenerarPartidaNueva();
+    game::Dungeon mazmorra = std::move(partidaInicial.mazmorra);
+    game::Vec2 posicionInicial = partidaInicial.posicionInicial;
+    game::Party party = std::move(partidaInicial.party);
+    std::vector<game::Enemy> enemigos = std::move(partidaInicial.enemigos);
+    std::vector<game::Cofre> cofres = std::move(partidaInicial.cofres);
+
     render::Renderer renderer(anchoVentana, altoVentana, "RPG Mazmorras - Prototipo");
     render::Audio audio;
 
-    // Se chequea una sola vez, antes del loop: controla si "Cargar" se
-    // dibuja habilitada en el menu de inicio (ver render/menu_ui.h). No hace
-    // falta re-chequear despues — desde el menu no se puede volver a
-    // guardar ni borrar el archivo antes de decidir, y una vez elegido
-    // "Nueva partida" o "Cargar" ya no se vuelve a MenuInicio (salvo pasando
-    // por "Sobre mi", que no toca el archivo de guardado).
+    // Se chequea una vez al arrancar el programa; despues se mantiene al
+    // dia a mano (nunca se vuelve a llamar a HayPartidaGuardada) cada vez
+    // que F5 o "Guardar" en la pausa guardan con exito, sumando el
+    // resultado con OR — ver los dos lugares que hacen
+    // "hayGuardado = hayGuardado || guardado;" mas abajo. Controla si
+    // "Cargar" se dibuja habilitada en el menu de inicio (ver
+    // render/menu_ui.h), que ahora se puede volver a visitar en cualquier
+    // momento a traves de la pausa (Pausa -> Menu principal), asi que no
+    // alcanza con chequearlo una sola vez al principio como antes.
     bool hayGuardado = game::HayPartidaGuardada();
 
     EstadoJuego estado = EstadoJuego::MenuInicio;
@@ -210,7 +251,8 @@ int main() {
     std::string mensajeFlotante;     // botin de cofre/combate, visible unos segundos
     float timerMensaje = 0.0f;
     int opcionMenuSeleccionada = 0;  // indice sobre ui::OpcionMenuInicio (ver render/menu_ui.h)
-    bool salirDelJuego = false;      // "Salir" del menu de inicio lo pone en true (ver mas abajo)
+    int opcionPausaSeleccionada = 0; // indice sobre ui::OpcionPausa (ver render/menu_ui.h)
+    bool salirDelJuego = false;      // "Salir" (del menu de inicio o de la pausa) lo pone en true
 
     while (!WindowShouldClose() && !salirDelJuego) {
         float dt = GetFrameTime();
@@ -233,9 +275,24 @@ int main() {
 
             if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
                 switch (static_cast<ui::OpcionMenuInicio>(opcionMenuSeleccionada)) {
-                    case ui::OpcionMenuInicio::NuevaPartida:
+                    case ui::OpcionMenuInicio::NuevaPartida: {
+                        // Se regenera siempre, incluso la primerísima vez
+                        // (que ya tenia una mazmorra "de fondo" generada
+                        // antes del loop) — asi el codigo no tiene que
+                        // distinguir entre esa mazmorra inicial y una
+                        // vuelta al menu despues de haber jugado (via
+                        // Pausa -> Menu principal, ver EstadoJuego::Pausa):
+                        // "Nueva partida" siempre da una mazmorra nueva,
+                        // nunca retoma la que estaba de fondo en el menu.
+                        PartidaNueva partida = GenerarPartidaNueva();
+                        mazmorra = std::move(partida.mazmorra);
+                        posicionInicial = partida.posicionInicial;
+                        party = std::move(partida.party);
+                        enemigos = std::move(partida.enemigos);
+                        cofres = std::move(partida.cofres);
                         estado = EstadoJuego::Exploracion;
                         break;
+                    }
                     case ui::OpcionMenuInicio::Cargar: {
                         // Deshabilitada (ver ui::DibujarMenuInicio) mientras
                         // no haya guardado — confirmarla en ese caso no hace
@@ -307,6 +364,20 @@ int main() {
                 if (timerMensaje <= 0.0f) {
                     timerMensaje = 0.0f;
                     mensajeFlotante.clear();
+                }
+            }
+
+            // ESC con el inventario abierto lo cierra primero (mismo criterio
+            // "cerrar lo de encima antes" que un juego tipico) — recien con
+            // el inventario ya cerrado, ESC abre la pausa. Arranca siempre
+            // en "Continuar" (indice 0) para que un ESC sin querer, seguido
+            // de un ENTER sin querer, no dispare "Guardar" ni "Salir".
+            if (IsKeyPressed(KEY_ESCAPE)) {
+                if (inventarioAbierto) {
+                    inventarioAbierto = false;
+                } else {
+                    opcionPausaSeleccionada = 0;
+                    estado = EstadoJuego::Pausa;
                 }
             }
 
@@ -436,11 +507,81 @@ int main() {
             if (inventarioAbierto) {
                 BeginDrawing();
                 renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres);
-                ui::DibujarInventario(party, objetivoInventario);
+                ui::DibujarInventario(party, objetivoInventario, renderer.Sprites());
                 EndDrawing();
             } else {
                 renderer.DibujarFrame(mazmorra, party, enemigos, cofres, panelExpandido, prompt, mensajeFlotante);
             }
+        } else if (estado == EstadoJuego::Pausa) {
+            // Mismo timer que ya usaba F5 en Exploracion (reutilizado tal
+            // cual, no uno aparte) — asi "Guardar" desde la pausa muestra el
+            // mismo cartel "Partida guardada." con la misma duracion, y si
+            // el jugador elige Continuar con el cartel todavia visible, va a
+            // seguir viendolo un rato en la exploracion (comportamiento ya
+            // aceptado: mensajeFlotante nunca se ata a una pantalla en
+            // particular, solo al tiempo transcurrido).
+            if (timerMensaje > 0.0f) {
+                timerMensaje -= dt;
+                if (timerMensaje <= 0.0f) {
+                    timerMensaje = 0.0f;
+                    mensajeFlotante.clear();
+                }
+            }
+
+            if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S)) {
+                opcionPausaSeleccionada = (opcionPausaSeleccionada + 1) % ui::kNumOpcionesPausa;
+            } else if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W)) {
+                opcionPausaSeleccionada = (opcionPausaSeleccionada + ui::kNumOpcionesPausa - 1) % ui::kNumOpcionesPausa;
+            }
+
+            if (IsKeyPressed(KEY_ESCAPE)) {
+                // ESC en la pausa vuelve directo a jugar, como elegir
+                // "Continuar" — es el uso mas comun (pausar por las dudas,
+                // chequear que se puede guardar/salir, seguir jugando) y
+                // evita que el jugador tenga que navegar hasta "Continuar"
+                // a mano cada vez.
+                estado = EstadoJuego::Exploracion;
+            } else if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
+                switch (static_cast<ui::OpcionPausa>(opcionPausaSeleccionada)) {
+                    case ui::OpcionPausa::Continuar:
+                        estado = EstadoJuego::Exploracion;
+                        break;
+                    case ui::OpcionPausa::Guardar: {
+                        // Misma funcion que ya usaba F5 — no hay dos caminos
+                        // distintos para guardar, solo dos formas de
+                        // dispararla.
+                        bool guardado = game::GuardarPartida(mazmorra, party, enemigos, cofres);
+                        mensajeFlotante = guardado ? "Partida guardada." : "No se pudo guardar la partida.";
+                        timerMensaje = kDuracionMensaje;
+                        hayGuardado = hayGuardado || guardado;
+                        break;
+                    }
+                    case ui::OpcionPausa::MenuPrincipal:
+                        // No toca mazmorra/party/enemigos/cofres — siguen
+                        // ahi tal cual, sirviendo de fondo "congelado" para
+                        // el menu de inicio (mismo truco visual de siempre),
+                        // por si el jugador vuelve a elegir "Continuar"...
+                        // que en MenuInicio no existe: para retomar tiene
+                        // que guardar antes y despues elegir "Cargar", o
+                        // elegir "Nueva partida" y perder este progreso.
+                        // Se limpia el cartel de guardado para no arrastrar
+                        // un "Partida guardada." viejo a una pantalla donde
+                        // ya no tiene sentido.
+                        mensajeFlotante.clear();
+                        timerMensaje = 0.0f;
+                        opcionMenuSeleccionada = 0;
+                        estado = EstadoJuego::MenuInicio;
+                        break;
+                    case ui::OpcionPausa::Salir:
+                        salirDelJuego = true;
+                        break;
+                }
+            }
+
+            BeginDrawing();
+            renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres);
+            ui::DibujarPausa(anchoVentana, altoVentana, opcionPausaSeleccionada, mensajeFlotante);
+            EndDrawing();
         } else {  // EstadoJuego::Combate
             encuentro->Actualizar(dt);
 
@@ -503,7 +644,7 @@ int main() {
             // encima la pantalla de combate (que ya trae su propio overlay oscuro).
             renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres);
             if (encuentro) {
-                ui::DibujarCombate(*encuentro, anchoVentana, altoVentana, dt);
+                ui::DibujarCombate(*encuentro, anchoVentana, altoVentana, dt, renderer.Sprites());
                 audio.ProcesarEventos(*encuentro);
             }
             EndDrawing();
