@@ -16,6 +16,7 @@
 #include "render/combat_ui.h"
 #include "render/inventory_ui.h"
 #include "render/audio.h"
+#include "render/menu_ui.h"
 
 namespace {
 
@@ -118,7 +119,11 @@ game::Cofre CrearCofreEnEsquina(const game::Habitacion& sala, game::Item conteni
     return game::Cofre{posicion, std::move(contenido), false};
 }
 
-enum class EstadoJuego { Exploracion, Combate };
+// MenuInicio es el estado inicial: pantalla de titulo con "Jugar"/"Salir"
+// antes de largar a explorar. No hay "Continuar" todavia porque el juego no
+// tiene guardado de partida — cuando se agregue, esta es la lista a la que
+// hay que sumarle la opcion (ver render/menu_ui.h, kNumOpcionesMenuInicio).
+enum class EstadoJuego { MenuInicio, Exploracion, Combate };
 
 // Distancia (en pixeles) a la que hay que estar del interactuable mas
 // cercano (enemigo o cofre) para poder engancharlo/abrirlo con [E].
@@ -185,7 +190,7 @@ int main() {
     render::Renderer renderer(anchoVentana, altoVentana, "RPG Mazmorras - Prototipo");
     render::Audio audio;
 
-    EstadoJuego estado = EstadoJuego::Exploracion;
+    EstadoJuego estado = EstadoJuego::MenuInicio;
     std::unique_ptr<game::CombatEncounter> encuentro;
     bool panelExpandido = false;     // arranca compacto; TAB lo expande/oculta
     bool inventarioAbierto = false;  // [I] lo abre/cierra durante exploracion
@@ -194,6 +199,7 @@ int main() {
     size_t objetivoInventario = 0;   // a quien se le aplica el proximo item usado
     std::string mensajeFlotante;     // botin de cofre/combate, visible unos segundos
     float timerMensaje = 0.0f;
+    int opcionMenuSeleccionada = 0;  // 0 = Jugar, 1 = Salir (ver render/menu_ui.h)
 
     while (!WindowShouldClose()) {
         float dt = GetFrameTime();
@@ -207,7 +213,34 @@ int main() {
         // frames) y cambia sola de pista si cambio el estado del juego.
         audio.Actualizar(estado == EstadoJuego::Combate);
 
-        if (estado == EstadoJuego::Exploracion) {
+        if (estado == EstadoJuego::MenuInicio) {
+            if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S)) {
+                opcionMenuSeleccionada = (opcionMenuSeleccionada + 1) % ui::kNumOpcionesMenuInicio;
+            } else if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W)) {
+                opcionMenuSeleccionada = (opcionMenuSeleccionada + ui::kNumOpcionesMenuInicio - 1) % ui::kNumOpcionesMenuInicio;
+            }
+
+            if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
+                if (opcionMenuSeleccionada == 0) {
+                    estado = EstadoJuego::Exploracion;
+                } else {
+                    // "Salir": cortar el bucle principal alcanza — el resto
+                    // de main() (return 0) ya deja que Renderer/Audio se
+                    // desarmen solos por RAII al salir de scope, igual que
+                    // pasa al cerrar la ventana con la X.
+                    break;
+                }
+            }
+
+            BeginDrawing();
+            // La mazmorra ya esta generada (se arma antes del loop, mas
+            // arriba) — se dibuja "congelada" de fondo para que el menu no
+            // arranque sobre una pantalla vacia, mismo truco visual que usa
+            // la pantalla de combate.
+            renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres);
+            ui::DibujarMenuInicio(anchoVentana, altoVentana, opcionMenuSeleccionada);
+            EndDrawing();
+        } else if (estado == EstadoJuego::Exploracion) {
             if (timerMensaje > 0.0f) {
                 timerMensaje -= dt;
                 if (timerMensaje <= 0.0f) {

@@ -629,6 +629,30 @@ src/render/inventory_ui.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/render/inventory_ui.cpp.s
 .PHONY : src/render/inventory_ui.cpp.s
 
+src/render/menu_ui.obj: src/render/menu_ui.cpp.obj
+.PHONY : src/render/menu_ui.obj
+
+# target to build an object file
+src/render/menu_ui.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/render/menu_ui.cpp.obj
+.PHONY : src/render/menu_ui.cpp.obj
+
+src/render/menu_ui.i: src/render/menu_ui.cpp.i
+.PHONY : src/render/menu_ui.i
+
+# target to preprocess a source file
+src/render/menu_ui.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/render/menu_ui.cpp.i
+.PHONY : src/render/menu_ui.cpp.i
+
+src/render/menu_ui.s: src/render/menu_ui.cpp.s
+.PHONY : src/render/menu_ui.s
+
+# target to generate assembly for a file
+src/render/menu_ui.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/render/menu_ui.cpp.s
+.PHONY : src/render/menu_ui.cpp.s
+
 src/render/renderer.obj: src/render/renderer.cpp.obj
 .PHONY : src/render/renderer.obj
 
@@ -744,6 +768,9 @@ help:
 	@echo ... src/render/inventory_ui.obj
 	@echo ... src/render/inventory_ui.i
 	@echo ... src/render/inventory_ui.s
+	@echo ... src/render/menu_ui.obj
+	@echo ... src/render/menu_ui.i
+	@echo ... src/render/menu_ui.s
 	@echo ... src/render/renderer.obj
 	@echo ... src/render/renderer.i
 	@echo ... src/render/renderer.s

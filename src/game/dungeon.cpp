@@ -8,24 +8,82 @@ namespace game {
 
 namespace {
 
+// Ademas del rectangulo simple de siempre, dos formas con "recortes"
+// interiores: L (un rectangulo con una esquina faltante) y con pilares (un
+// rectangulo con un par de obstaculos 2x2 adentro). Se implementan como
+// recortes sobre el set de tiles de piso -- no como un tipo de dato
+// distinto -- para no tener que tocar Habitacion (sigue siendo el
+// bounding box de siempre, que es lo que usan CentroDeSala, la camara, la
+// grilla y las paredes) ni ningun otro lugar del codigo que ya asume que
+// una sala es "su rectangulo".
+enum class FormaSala { Rectangular, LForma, ConPilares };
+
 struct RoomTemplate {
     int ancho;
     int alto;
+    FormaSala forma = FormaSala::Rectangular;
+    int muescaAncho = 0;  // solo FormaSala::LForma
+    int muescaAlto = 0;   // solo FormaSala::LForma
 };
 
-// Los "room templates" de los que se arma la mazmorra: un par de salas
-// chicas/cuadradas y una alargada, para que el layout generado no sea
-// siempre del mismo tamaño. Ver docs/design.md.
+// Los "room templates" de los que se arma la mazmorra, para que el layout
+// generado no sea siempre del mismo tamaño ni la misma forma. Ver
+// docs/design.md, "Sistema de mazmorras".
+//
+// Las dos formas no rectangulares (LForma, ConPilares) recortan una parte
+// del rectangulo, pero SIEMPRE dejan dos zonas garantizadas como piso: la
+// esquina superior izquierda (ahi puede ir el cofre "de esquina" de la
+// sala, ver CrearCofreEnEsquina en main.cpp) y un margen generoso alrededor
+// del centro geometrico del bounding box (ahi arranca el grupo de
+// enemigos, ver CrearGrupoDeSala en main.cpp, con un spread de hasta ~1.5
+// tiles) -- ver GenerarTilesDeSala mas abajo para el detalle de por que
+// las medidas elegidas cumplen las dos garantias.
 constexpr RoomTemplate kTemplates[] = {
-    {8, 8},    // chica
-    {14, 10},  // grande
-    {6, 14},   // alargada (vertical)
-    {10, 10},  // mediana
+    {8, 8},                                     // chica
+    {14, 10},                                   // grande
+    {6, 14},                                    // alargada (vertical)
+    {10, 10},                                   // mediana
+    {14, 14, FormaSala::LForma, 4, 4},           // L grande (esquina inferior derecha recortada)
+    {12, 12, FormaSala::ConPilares},             // con pilares
 };
-constexpr int kNumTemplates = 4;
+constexpr int kNumTemplates = 6;
 
 constexpr int kNumSalas = 5;       // 1 inicial + 4 con contenido
 constexpr int kAnchoPasillo = 3;   // en tiles
+
+// True si la celda local (lx, ly) -- relativa a la esquina superior
+// izquierda de una sala ConPilares de 'ancho' x 'alto' -- cae dentro de uno
+// de los 4 pilares 2x2. Los 4 quedan simetricos y bien adentro del
+// rectangulo (nunca tocan un borde ni la esquina superior izquierda), asi
+// que un enemigo en el centro o un cofre en la esquina nunca caen arriba
+// de uno, y tampoco puede haber un pasillo que los toque (los pasillos se
+// conectan siempre centrados en un borde, nunca cerca de una esquina).
+bool EsCeldaDePilar(int lx, int ly, int ancho, int alto) {
+    int col1 = ancho / 4;
+    int col2 = ancho - ancho / 4 - 1;
+    int fil1 = alto / 4;
+    int fil2 = alto - alto / 4 - 1;
+    bool enColumna = (lx == col1 || lx == col1 + 1 || lx == col2 || lx == col2 + 1);
+    bool enFila = (ly == fil1 || ly == fil1 + 1 || ly == fil2 || ly == fil2 + 1);
+    return enColumna && enFila;
+}
+
+// Inserta en 'piso' los tiles de la sala 't' ubicada en (rx, ry), con el
+// recorte que corresponda segun su forma (ver comentario de kTemplates).
+void GenerarTilesDeSala(std::set<std::pair<int, int>>& piso, const RoomTemplate& t, int rx, int ry) {
+    for (int x = rx; x < rx + t.ancho; ++x) {
+        for (int y = ry; y < ry + t.alto; ++y) {
+            if (t.forma == FormaSala::LForma) {
+                bool enMuescaX = x >= rx + t.ancho - t.muescaAncho;
+                bool enMuescaY = y >= ry + t.alto - t.muescaAlto;
+                if (enMuescaX && enMuescaY) continue;  // esquina recortada: no es piso
+            } else if (t.forma == FormaSala::ConPilares) {
+                if (EsCeldaDePilar(x - rx, y - ry, t.ancho, t.alto)) continue;
+            }
+            piso.insert({x, y});
+        }
+    }
+}
 
 } // namespace
 
@@ -72,11 +130,7 @@ Dungeon::Dungeon() {
             }
         }
 
-        for (int x = rx; x < rx + t.ancho; ++x) {
-            for (int y = ry; y < ry + t.alto; ++y) {
-                piso.insert({x, y});
-            }
-        }
+        GenerarTilesDeSala(piso, t, rx, ry);
 
         habitaciones_.push_back(Habitacion{rx, ry, t.ancho, t.alto});
         cursorX = rx;

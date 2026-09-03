@@ -39,6 +39,7 @@ add_executable(rpg_mazmorras
     src/render/combat_ui.cpp
     src/render/inventory_ui.cpp
     src/render/audio.cpp
+    src/render/menu_ui.cpp
 )
 
 target_link_libraries(rpg_mazmorras PRIVATE raylib)

@@ -174,4 +174,5 @@ CMakeFiles/rpg_mazmorras.dir/src/main.cpp.obj: \
  C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\render/input.h \
  C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\render/combat_ui.h \
  C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\render/inventory_ui.h \
- C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\render/audio.h
+ C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\render/audio.h \
+ C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\render/menu_ui.h

@@ -1,0 +1,22 @@
+CMakeFiles/rpg_mazmorras.dir/src/render/menu_ui.cpp.obj: \
+ C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\render\menu_ui.cpp \
+ C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\render\menu_ui.h \
+ C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/external/raylib-src/src/raylib.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/stdarg.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/stdarg.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/_mingw_stdarg.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/vadefs.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/_mingw.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/_mingw_mac.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/_mingw_secapi.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/cstdio \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/x86_64-w64-mingw32/bits/c++config.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/x86_64-w64-mingw32/bits/os_defines.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/x86_64-w64-mingw32/bits/cpu_defines.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/pstl/pstl_config.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/stdio.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/corecrt_stdio_config.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/corecrt.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/_mingw_off_t.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/swprintf.inl \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/sec_api/stdio_s.h

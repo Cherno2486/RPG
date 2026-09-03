@@ -35,6 +35,11 @@ siguientes veces es mucho más rápido.
 
 ## Controles del prototipo actual
 
+**Menú de inicio:**
+- **Flechas arriba/abajo o W/S**: mover la selección entre "Jugar" y
+  "Salir".
+- **ENTER o ESPACIO**: confirmar la opción resaltada.
+
 **Exploración:**
 - **WASD / flechas**: mover al líder del party (movimiento libre, no por
   grilla, con colisión contra las paredes). Los otros dos miembros siguen
@@ -276,9 +281,23 @@ Ver "Sonido" en `docs/design.md` para el detalle técnico (`render/audio.h`).
     derrota, todos generados por código (sin assets con licencia de
     terceros) — sigue andando en silencio si la máquina no tiene
     dispositivo de audio. Ver "Sonido" arriba y en `docs/design.md`.
-17. Pendiente: seguir sumando contenido (más enemigos comunes, más
-    variedad de salas o una mazmorra más larga) antes del build de
-    Android.
+17. ✅ Variedad de salas: además de los 4 templates rectangulares de
+    siempre, ahora hay 2 formas nuevas — una sala en L (14x14 con una
+    esquina recortada) y una con 4 pilares (12x12) — elegidas al azar
+    junto con las demás. Se implementaron recortando tiles del set de piso
+    antes de calcular las paredes, así que no hizo falta tocar cámara,
+    grilla ni colisión; las dos formas garantizan piso libre alrededor del
+    centro (donde arrancan los enemigos) y en la esquina superior
+    izquierda (donde va el cofre). Verificado con un fuzz test de 300
+    mazmorras (1500 salas) sin fallos — ver "Generación de mazmorra" abajo
+    y "Variedad de formas de sala" en `docs/design.md`.
+18. ✅ Menú de inicio: pantalla de título antes de largar a explorar, con
+    "Jugar" y "Salir" navegables con las flechas (o W/S) y ENTER/ESPACIO
+    para confirmar. Todavía no hay "Continuar" porque el juego no tiene
+    guardado de partida — ver "Menú de inicio" en `docs/design.md`.
+19. Pendiente: seguir sumando contenido (más enemigos comunes o una
+    mazmorra más larga), o encarar el guardado de partida, antes del build
+    de Android.
 
 Ver `docs/design.md` para el detalle completo de arquitectura y roadmap.
 
@@ -286,11 +305,18 @@ Ver `docs/design.md` para el detalle completo de arquitectura y roadmap.
 
 Cada partida arma la mazmorra de cero (`game::Dungeon`, en
 `src/game/dungeon.cpp`): una cadena de 5 salas, cada una elegida al azar
-entre 4 "templates" de tamaño (chica, grande, alargada, mediana), donde
-cada sala se ubica pegada a la anterior extendiéndose al Este o al Sur (al
-azar), conectada por un pasillo de 3 tiles de ancho. La sala 0 es siempre
-el punto de partida del party (sin enemigos); las otras 4 tienen un grupo
-de 1 a 3 enemigos de tipo aleatorio cada una.
+entre 6 "templates" de tamaño y forma (chica, grande, alargada, mediana,
+más una en L y una con pilares), donde cada sala se ubica pegada a la
+anterior extendiéndose al Este o al Sur (al azar), conectada por un
+pasillo de 3 tiles de ancho. La sala 0 es siempre el punto de partida del
+party (sin enemigos); las otras 4 tienen un grupo de 1 a 3 enemigos de
+tipo aleatorio cada una.
+
+Las dos formas no rectangulares recortan tiles del rectángulo base (la L
+pierde una esquina inferior derecha, la sala con pilares tiene 4 bloques
+2x2 simétricos adentro) pero siempre dejan libres las dos zonas que el
+resto del juego necesita: el centro (donde aparece el grupo de enemigos) y
+la esquina superior izquierda (donde va el cofre de la sala).
 
 Las paredes se calculan solas: se arma primero el conjunto completo de
 tiles de piso (salas + pasillos) y, al final, cualquier tile del área
