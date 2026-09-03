@@ -15,6 +15,7 @@
 #include "render/input.h"
 #include "render/combat_ui.h"
 #include "render/inventory_ui.h"
+#include "render/audio.h"
 
 namespace {
 
@@ -182,12 +183,14 @@ int main() {
     }
 
     render::Renderer renderer(anchoVentana, altoVentana, "RPG Mazmorras - Prototipo");
+    render::Audio audio;
 
     EstadoJuego estado = EstadoJuego::Exploracion;
     std::unique_ptr<game::CombatEncounter> encuentro;
     bool panelExpandido = false;     // arranca compacto; TAB lo expande/oculta
     bool inventarioAbierto = false;  // [I] lo abre/cierra durante exploracion
     bool lootRepartido = false;      // evita repartir el botin mas de una vez por combate
+    bool derrotaSonada = false;      // evita repetir el sonido de derrota mientras se ve el Game Over
     size_t objetivoInventario = 0;   // a quien se le aplica el proximo item usado
     std::string mensajeFlotante;     // botin de cofre/combate, visible unos segundos
     float timerMensaje = 0.0f;
@@ -199,6 +202,10 @@ int main() {
         // atravesar una pared fina en un solo salto. Con esto el movimiento maximo
         // por frame queda acotado.
         if (dt > 1.0f / 30.0f) dt = 1.0f / 30.0f;
+
+        // Musica: avanza el streaming siempre (lo necesita raylib todos los
+        // frames) y cambia sola de pista si cambio el estado del juego.
+        audio.Actualizar(estado == EstadoJuego::Combate);
 
         if (estado == EstadoJuego::Exploracion) {
             if (timerMensaje > 0.0f) {
@@ -304,8 +311,11 @@ int main() {
                             if (!e.Vencido() && e.Sala() == enemigoCercano->Sala()) grupo.push_back(&e);
                         }
                         encuentro = std::make_unique<game::CombatEncounter>(party, std::move(grupo));
+                        ui::ReiniciarFeedbackVisual();
+                        audio.ReiniciarCombate();
                         estado = EstadoJuego::Combate;
                         lootRepartido = false;
+                        derrotaSonada = false;
                     } else if (cofreCercano != nullptr) {
                         cofreCercano->abierto = true;
                         party.Inventario().Agregar(cofreCercano->contenido);
@@ -353,12 +363,17 @@ int main() {
                     mensajeFlotante = botin.empty() ? "No encontraste botin esta vez." : ("Botin: " + botin);
                     timerMensaje = kDuracionMensaje;
                     lootRepartido = true;
+                    audio.ReproducirVictoria();
                 }
                 if (GetKeyPressed() != 0) {
                     estado = EstadoJuego::Exploracion;
                     encuentro.reset();
                 }
             } else if (encuentro->Fase() == game::FaseCombate::Perdido) {
+                if (!derrotaSonada) {
+                    audio.ReproducirDerrota();
+                    derrotaSonada = true;
+                }
                 if (GetKeyPressed() != 0) {
                     // Game over "de verdad": si solo volvieramos a explorar,
                     // el party quedaria con HP 0 para siempre (el proximo
@@ -380,7 +395,8 @@ int main() {
             // encima la pantalla de combate (que ya trae su propio overlay oscuro).
             renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres);
             if (encuentro) {
-                ui::DibujarCombate(*encuentro, anchoVentana, altoVentana);
+                ui::DibujarCombate(*encuentro, anchoVentana, altoVentana, dt);
+                audio.ProcesarEventos(*encuentro);
             }
             EndDrawing();
         }

@@ -43,6 +43,7 @@ ResultadoAccion EjecutarAtaqueBasico(Combatiente& atacante, Combatiente& objetiv
 struct ResultadoHabilidad {
     bool ejecutada = false;   // false si no se pudo usar (p.ej. sin recurso)
     ResultadoAccion accion;   // valido si ejecutada y la habilidad ataca
+    int montoCurado = 0;      // valido si ejecutada y la habilidad cura (Soporte)
     std::string texto;
 };
 
@@ -55,6 +56,19 @@ enum class FaseCombate {
     TurnoEnemigo,  // la IA va a actuar (con una pequeña demora para que se lea el log)
     Ganado,
     Perdido,
+};
+
+// Version "estructurada" (no texto) de lo que le paso a un combatiente en el
+// ultimo paso de combate resuelto — la usa la capa de render (ver
+// combat_ui.cpp) para mostrar numeritos flotantes de daño/curacion sobre la
+// ficha correspondiente, ademas del log de texto que ya existia.
+enum class TipoEventoVisual { Dano, Curacion, Fallo };
+struct EventoVisual {
+    bool esAliado = false;  // a quien le paso: true = miembro del party, false = enemigo
+    int indice = -1;        // indice en party_.Miembros() o en Enemigos(), segun esAliado
+    TipoEventoVisual tipo = TipoEventoVisual::Dano;
+    int monto = 0;          // dano o curacion; 0 en Fallo
+    bool critico = false;
 };
 
 // Maneja un encuentro de combate contra uno o mas enemigos a la vez (todos
@@ -98,6 +112,16 @@ public:
     // temporizador y cuando se cumple resuelve su turno solo.
     void Actualizar(float deltaSeconds);
 
+    // Eventos visuales (daño/curacion/fallo) del ultimo paso de combate
+    // resuelto (una accion de aliado, o el turno completo de un enemigo,
+    // que puede incluir mas de un golpe — ver Doble Tajo del jefe). Vacio
+    // si el ultimo paso no genero ninguno (p.ej. una habilidad que no se
+    // pudo usar). 'SecuenciaEventos' cambia cada vez que este vector se
+    // repuebla, para que quien lo consume (el render) sepa si ya vio la
+    // tanda actual o hay una nueva sin mostrar.
+    const std::vector<EventoVisual>& UltimosEventos() const { return eventosUltimoPaso_; }
+    int SecuenciaEventos() const { return secuenciaEventos_; }
+
 private:
     struct EntradaTurno {
         bool esAliado;
@@ -112,8 +136,15 @@ private:
     FaseCombate fase_ = FaseCombate::TurnoAliado;
     float timerIA_ = 0.0f;
     std::vector<std::string> log_;
+    std::vector<EventoVisual> eventosUltimoPaso_;
+    int secuenciaEventos_ = 0;
 
     static constexpr float kEsperaTurnoIA = 1.1f;  // segundos antes de que el enemigo actue
+
+    // Reemplaza eventosUltimoPaso_ por 'eventos' y bumpea SecuenciaEventos(),
+    // incluso si 'eventos' esta vacio (para que un paso "sin nada que
+    // mostrar" tambien se distinga del anterior en vez de arrastrarlo).
+    void RegistrarEventos(std::vector<EventoVisual> eventos);
 
     void AvanzarIndice();
     // Procesa el inicio del turno de quien esta en orden_[turnoActual_]: tickea

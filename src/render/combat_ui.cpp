@@ -1,6 +1,8 @@
 #include "combat_ui.h"
 #include "raylib.h"
+#include <algorithm>
 #include <cstdio>
+#include <vector>
 
 namespace ui {
 
@@ -115,9 +117,139 @@ void DibujarFichaEnemigo(const game::Enemy& enemigo, bool esSuTurno, bool esObje
     DibujarEfectos(enemigo.Combate(), x + ancho - 100, y + 4);
 }
 
+// --- Feedback visual (numeritos flotantes + flash al recibir un golpe) ---
+//
+// Se guarda como estado a nivel de archivo (solo hay un combate en pantalla
+// a la vez) en vez de vivir en game::CombatEncounter, para respetar la
+// separacion game/render: la capa de juego solo expone datos estructurados
+// (EventoVisual/SecuenciaEventos), y toda la animacion/temporizacion vive
+// aca. Se detectan eventos nuevos comparando SecuenciaEventos() contra el
+// ultimo valor visto; si ese valor BAJA (un CombatEncounter nuevo empieza su
+// cuenta en 0) se descartan las animaciones que quedaban del combate previo
+// en vez de intentar reproducirlas.
+
+struct NumeroFlotante {
+    float x = 0.0f;
+    float y = 0.0f;
+    float edad = 0.0f;
+    char texto[16] = "";
+    Color color = WHITE;
+    int tamano = 20;
+};
+
+struct FlashActivo {
+    bool esAliado = false;
+    int indice = -1;
+    float restante = 0.0f;
+};
+
+std::vector<NumeroFlotante> g_numerosFlotantes;
+std::vector<FlashActivo> g_flashesActivos;
+int g_ultimaSecuenciaVista = -1;
+// Identidad del CombatEncounter del frame anterior: SecuenciaEventos() por
+// si sola no alcanza para detectar "empezo un combate nuevo": un encuentro
+// nuevo puede llegar a cualquier numero de secuencia (si dos encuentros
+// distintos llevan resuelto un solo paso, los dos muestran secuencia 1), y
+// comparar la direccion del encuentro tampoco alcanza (un CombatEncounter
+// nuevo puede perfectamente reusar la memoria de uno recien destruido). Por
+// eso quien crea el encuentro (main.cpp) llama a ReiniciarFeedbackVisual()
+// una vez, de forma explicita, apenas lo crea — ver combat_ui.h.
+
+constexpr float kDuracionNumeroFlotante = 1.0f;   // segundos que vive un numerito
+constexpr float kVelocidadSubidaNumero = 42.0f;   // px/seg que sube mientras vive
+constexpr float kDuracionFlash = 0.22f;           // segundos que dura el flash de golpe
+
+void SpawnEventosVisuales(const std::vector<game::EventoVisual>& eventos,
+                           const std::vector<Rectangle>& rectAliados,
+                           const std::vector<Rectangle>& rectEnemigos) {
+    for (const auto& ev : eventos) {
+        const std::vector<Rectangle>& rects = ev.esAliado ? rectAliados : rectEnemigos;
+        if (ev.indice < 0 || ev.indice >= (int)rects.size()) continue;
+        const Rectangle& r = rects[ev.indice];
+
+        NumeroFlotante n;
+        n.x = r.x + r.width * 0.5f;
+        // Justo encima del borde superior de la ficha (no dentro) para no
+        // taparse con el nombre/turno que ya se dibuja ahi.
+        n.y = r.y - 6.0f;
+        switch (ev.tipo) {
+            case game::TipoEventoVisual::Dano:
+                std::snprintf(n.texto, sizeof(n.texto), "-%d%s", ev.monto, ev.critico ? "!" : "");
+                n.color = ev.critico ? Color{ 255, 210, 80, 255 } : Color{ 230, 70, 70, 255 };
+                n.tamano = ev.critico ? 26 : 20;
+                g_flashesActivos.push_back(FlashActivo{ ev.esAliado, ev.indice, kDuracionFlash });
+                break;
+            case game::TipoEventoVisual::Curacion:
+                std::snprintf(n.texto, sizeof(n.texto), "+%d", ev.monto);
+                n.color = Color{ 110, 220, 140, 255 };
+                n.tamano = 20;
+                break;
+            case game::TipoEventoVisual::Fallo:
+                std::snprintf(n.texto, sizeof(n.texto), "FALLO");
+                n.color = Color{ 190, 190, 190, 255 };
+                n.tamano = 16;
+                break;
+        }
+        g_numerosFlotantes.push_back(n);
+    }
+}
+
+// Bumpea las animaciones un frame y, si SecuenciaEventos() cambio desde el
+// ultimo frame, hace nacer los numeritos/flash correspondientes al paso
+// nuevo (usando las posiciones de ficha ya calculadas ese mismo frame).
+void ActualizarFeedbackVisual(game::CombatEncounter& encuentro, float deltaSeconds,
+                               const std::vector<Rectangle>& rectAliados,
+                               const std::vector<Rectangle>& rectEnemigos) {
+    int secuencia = encuentro.SecuenciaEventos();
+    if (secuencia != g_ultimaSecuenciaVista) {
+        SpawnEventosVisuales(encuentro.UltimosEventos(), rectAliados, rectEnemigos);
+    }
+    g_ultimaSecuenciaVista = secuencia;
+
+    for (auto& n : g_numerosFlotantes) n.edad += deltaSeconds;
+    g_numerosFlotantes.erase(
+        std::remove_if(g_numerosFlotantes.begin(), g_numerosFlotantes.end(),
+                        [](const NumeroFlotante& n) { return n.edad >= kDuracionNumeroFlotante; }),
+        g_numerosFlotantes.end());
+
+    for (auto& f : g_flashesActivos) f.restante -= deltaSeconds;
+    g_flashesActivos.erase(
+        std::remove_if(g_flashesActivos.begin(), g_flashesActivos.end(),
+                        [](const FlashActivo& f) { return f.restante <= 0.0f; }),
+        g_flashesActivos.end());
+}
+
+// Flash: un rectangulo rojo semitransparente encima de la ficha entera,
+// cuya opacidad decae a lo largo de kDuracionFlash — se dibuja despues de
+// las fichas (las tapa un poco) y antes de los numeritos.
+void DibujarFlashes(const std::vector<Rectangle>& rectAliados, const std::vector<Rectangle>& rectEnemigos) {
+    for (const auto& f : g_flashesActivos) {
+        const std::vector<Rectangle>& rects = f.esAliado ? rectAliados : rectEnemigos;
+        if (f.indice < 0 || f.indice >= (int)rects.size()) continue;
+        const Rectangle& r = rects[f.indice];
+        float ratio = f.restante / kDuracionFlash;
+        if (ratio < 0.0f) ratio = 0.0f;
+        unsigned char alpha = (unsigned char)(140 * ratio);
+        DrawRectangle((int)r.x, (int)r.y, (int)r.width, (int)r.height, Color{ 255, 60, 60, alpha });
+    }
+}
+
+void DibujarNumerosFlotantes() {
+    for (const auto& n : g_numerosFlotantes) {
+        float ratio = n.edad / kDuracionNumeroFlotante;
+        if (ratio > 1.0f) ratio = 1.0f;
+        float yOffset = -kVelocidadSubidaNumero * n.edad;
+        unsigned char alpha = (unsigned char)(255 * (1.0f - ratio));
+        Color c = n.color;
+        c.a = alpha;
+        int anchoTexto = MeasureText(n.texto, n.tamano);
+        DrawText(n.texto, (int)(n.x - anchoTexto / 2), (int)(n.y + yOffset), n.tamano, c);
+    }
+}
+
 } // namespace
 
-void DibujarCombate(game::CombatEncounter& encuentro, int anchoVentana, int altoVentana) {
+void DibujarCombate(game::CombatEncounter& encuentro, int anchoVentana, int altoVentana, float deltaSeconds) {
     // Fondo semitransparente para que se note que estamos "en combate".
     DrawRectangle(0, 0, anchoVentana, altoVentana, Color{ 10, 8, 15, 235 });
 
@@ -126,10 +258,13 @@ void DibujarCombate(game::CombatEncounter& encuentro, int anchoVentana, int alto
     int y = 24;
     int anchoFicha = 260;
     game::Character* enTurno = encuentro.AliadoEnTurno();
+    std::vector<Rectangle> rectAliados;
     for (auto& personaje : encuentro.PartyRef().Miembros()) {
         bool esSuTurno = (enTurno == &personaje);
+        int altoFicha = personaje.GetStats().recursoMax > 0 ? 78 : 60;
+        rectAliados.push_back(Rectangle{ (float)x, (float)y, (float)anchoFicha, (float)altoFicha });
         DibujarFichaAliado(personaje, esSuTurno, x, y, anchoFicha);
-        y += (personaje.GetStats().recursoMax > 0 ? 78 : 60) + 10;
+        y += altoFicha + 10;
     }
 
     // --- Enemigos, columna derecha (uno o varios, uno debajo del otro) ---
@@ -139,13 +274,21 @@ void DibujarCombate(game::CombatEncounter& encuentro, int anchoVentana, int alto
     int yEnemigo = 24;
     game::Enemy* enemigoEnTurno = encuentro.EnemigoEnTurno();
     int indiceObjetivo = encuentro.IndiceObjetivo();
+    std::vector<Rectangle> rectEnemigos;
     for (size_t i = 0; i < enemigos.size(); ++i) {
         const game::Enemy* enemigo = enemigos[i];
         bool esSuTurno = (enemigoEnTurno == enemigo);
         bool esObjetivo = (encuentro.Fase() == game::FaseCombate::TurnoAliado && (int)i == indiceObjetivo);
+        int altoEnemigo = 70;
+        rectEnemigos.push_back(Rectangle{ (float)xEnemigo, (float)yEnemigo, (float)anchoEnemigo, (float)altoEnemigo });
         DibujarFichaEnemigo(*enemigo, esSuTurno, esObjetivo, xEnemigo, yEnemigo, anchoEnemigo);
-        yEnemigo += 70 + 10;
+        yEnemigo += altoEnemigo + 10;
     }
+
+    // --- Feedback visual: numeritos de daño/curacion + flash de golpe ---
+    ActualizarFeedbackVisual(encuentro, deltaSeconds, rectAliados, rectEnemigos);
+    DibujarFlashes(rectAliados, rectEnemigos);
+    DibujarNumerosFlotantes();
 
     // --- Log de combate, abajo ---
     const auto& log = encuentro.Log();
@@ -217,6 +360,12 @@ void DibujarCombate(game::CombatEncounter& encuentro, int anchoVentana, int alto
         int anchoPrompt = MeasureText(prompt, 18);
         DrawText(prompt, (anchoVentana - anchoPrompt) / 2, altoVentana / 2 - 34, 18, Color{ 210, 210, 210, 255 });
     }
+}
+
+void ReiniciarFeedbackVisual() {
+    g_numerosFlotantes.clear();
+    g_flashesActivos.clear();
+    g_ultimaSecuenciaVista = -1;
 }
 
 } // namespace ui

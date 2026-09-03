@@ -1,6 +1,15 @@
-CMakeFiles/rpg_mazmorras.dir/src/game/combat.cpp.obj: \
- C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\combat.cpp \
- C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\combat.h \
+CMakeFiles/rpg_mazmorras.dir/src/render/audio.cpp.obj: \
+ C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\render\audio.cpp \
+ C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\render\audio.h \
+ C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/external/raylib-src/src/raylib.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/stdarg.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/stdarg.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/_mingw_stdarg.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/vadefs.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/_mingw.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/_mingw_mac.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/_mingw_secapi.h \
+ C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/combat.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/string \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/requires_hosted.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/x86_64-w64-mingw32/bits/c++config.h \
@@ -15,10 +24,6 @@ CMakeFiles/rpg_mazmorras.dir/src/game/combat.cpp.obj: \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/cwchar \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/wchar.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/corecrt.h \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/_mingw.h \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/_mingw_mac.h \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/_mingw_secapi.h \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/vadefs.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/corecrt_stdio_config.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/corecrt_wconio.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/stddef.h \
@@ -110,26 +115,15 @@ CMakeFiles/rpg_mazmorras.dir/src/game/combat.cpp.obj: \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/stl_vector.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/stl_bvector.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/vector.tcc \
- C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\character.h \
- C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\mathtypes.h \
- C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\combat_state.h \
- C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\effects.h \
- C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\item_types.h \
- C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\party.h \
+ C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/character.h \
+ C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/mathtypes.h \
+ C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/combat_state.h \
+ C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/effects.h \
+ C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/item_types.h \
+ C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/party.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/deque \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/stl_deque.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/deque.tcc \
- C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\inventory.h \
- C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\item.h \
- C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\enemy.h \
- C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\dice.h \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/algorithm \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/stl_algo.h \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/algorithmfwd.h \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/stl_heap.h \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/uniform_int_dist.h \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/stl_tempbuf.h \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/pstl/glue_algorithm_defs.h \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/pstl/execution_defs.h \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/utility \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/stl_relops.h
+ C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/inventory.h \
+ C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/item.h \
+ C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/enemy.h

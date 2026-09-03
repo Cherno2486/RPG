@@ -533,6 +533,30 @@ src/main.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/main.cpp.s
 .PHONY : src/main.cpp.s
 
+src/render/audio.obj: src/render/audio.cpp.obj
+.PHONY : src/render/audio.obj
+
+# target to build an object file
+src/render/audio.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/render/audio.cpp.obj
+.PHONY : src/render/audio.cpp.obj
+
+src/render/audio.i: src/render/audio.cpp.i
+.PHONY : src/render/audio.i
+
+# target to preprocess a source file
+src/render/audio.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/render/audio.cpp.i
+.PHONY : src/render/audio.cpp.i
+
+src/render/audio.s: src/render/audio.cpp.s
+.PHONY : src/render/audio.s
+
+# target to generate assembly for a file
+src/render/audio.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/render/audio.cpp.s
+.PHONY : src/render/audio.cpp.s
+
 src/render/combat_ui.obj: src/render/combat_ui.cpp.obj
 .PHONY : src/render/combat_ui.obj
 
@@ -708,6 +732,9 @@ help:
 	@echo ... src/main.obj
 	@echo ... src/main.i
 	@echo ... src/main.s
+	@echo ... src/render/audio.obj
+	@echo ... src/render/audio.i
+	@echo ... src/render/audio.s
 	@echo ... src/render/combat_ui.obj
 	@echo ... src/render/combat_ui.i
 	@echo ... src/render/combat_ui.s

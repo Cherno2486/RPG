@@ -2,6 +2,7 @@
 #include "dice.h"
 #include <algorithm>
 #include <cstdio>
+#include <utility>
 
 namespace game {
 
@@ -139,6 +140,7 @@ ResultadoHabilidad EjecutarHabilidadDeRol(Combatiente& atacante, Combatiente& ob
             int tirada = RollDados(1, 8, 2);
             int curado = AplicarCuracion(*objetivoAliado->stats, tirada);
             r.ejecutada = true;
+            r.montoCurado = curado;
             char buffer[192];
             std::snprintf(buffer, sizeof(buffer), "%s usa Curar sobre %s: 1d8+2 (%d) -> recupera %d de vida.",
                           atacante.nombre.c_str(), objetivoAliado->nombre.c_str(), tirada, curado);
@@ -346,6 +348,10 @@ void CombatEncounter::AccionAtaqueBasico() {
     ResultadoAccion r = EjecutarAtaqueBasico(cAtacante, cEnemigo);
     log_.push_back(r.texto);
     if (!objetivo.EstaVivo()) objetivo.MarcarVencido();
+    RegistrarEventos({EventoVisual{
+        false, objetivoActual_,
+        r.impacto ? TipoEventoVisual::Dano : TipoEventoVisual::Fallo,
+        r.impacto ? r.dano : 0, r.critico}});
 
     if (ChequearFinDeCombate()) return;
     AsegurarObjetivoValido();
@@ -365,11 +371,16 @@ void CombatEncounter::AccionHabilidadDeRol() {
 
     Combatiente aliadoTemp;
     Combatiente* objetivoAliado = nullptr;
+    int indiceAliadoObjetivo = -1;
     if (atacante.Rol() == Role::Soporte) {
         Character* peorHerido = nullptr;
-        for (auto& m : party_.Miembros()) {
+        for (size_t i = 0; i < party_.Miembros().size(); ++i) {
+            Character& m = party_.Miembros()[i];
             if (!m.EstaVivo()) continue;
-            if (peorHerido == nullptr || m.GetStats().hp < peorHerido->GetStats().hp) peorHerido = &m;
+            if (peorHerido == nullptr || m.GetStats().hp < peorHerido->GetStats().hp) {
+                peorHerido = &m;
+                indiceAliadoObjetivo = (int)i;
+            }
         }
         if (peorHerido != nullptr) {
             aliadoTemp = Combatiente{peorHerido->Nombre(), &peorHerido->GetStatsMut(), &peorHerido->Combate(), true, peorHerido->Rol()};
@@ -382,8 +393,20 @@ void CombatEncounter::AccionHabilidadDeRol() {
     if (!objetivo.EstaVivo()) objetivo.MarcarVencido();
 
     if (!r.ejecutada) {
-        // No se pudo usar (p.ej. sin recurso): no se consume el turno.
+        // No se pudo usar (p.ej. sin recurso): no se consume el turno, y no
+        // huno ninguna tirada — nada que mostrar como evento visual.
         return;
+    }
+
+    if (atacante.Rol() == Role::Soporte) {
+        if (indiceAliadoObjetivo >= 0) {
+            RegistrarEventos({EventoVisual{true, indiceAliadoObjetivo, TipoEventoVisual::Curacion, r.montoCurado, false}});
+        }
+    } else {
+        RegistrarEventos({EventoVisual{
+            false, objetivoActual_,
+            r.accion.impacto ? TipoEventoVisual::Dano : TipoEventoVisual::Fallo,
+            r.accion.impacto ? r.accion.dano : 0, r.accion.critico}});
     }
 
     if (ChequearFinDeCombate()) return;
@@ -428,9 +451,15 @@ void CombatEncounter::Actualizar(float deltaSeconds) {
 
     Combatiente cEnemigo{atacante.Nombre(), &atacante.GetStatsMut(), &atacante.Combate(), false, Role::Tanque};
 
-    // Resuelve un golpe de 'atacante' contra 'obj' y lo agrega al log; con
-    // 'aturde' en true, si impacta aplica Aturdido (Golpe Aturdidor, tanto
-    // el del Bandido comun como el del Capitan).
+    // Eventos visuales acumulados en este turno (puede haber mas de uno:
+    // Doble Tajo pega dos veces), registrados de una sola vez al final (o en
+    // cualquiera de los cortes anticipados por ChequearFinDeCombate, para no
+    // perder el golpe que sí llego a resolverse).
+    std::vector<EventoVisual> eventos;
+
+    // Resuelve un golpe de 'atacante' contra 'obj', lo agrega al log y a
+    // 'eventos'; con 'aturde' en true, si impacta aplica Aturdido (Golpe
+    // Aturdidor, tanto el del Bandido comun como el del Capitan).
     auto golpear = [&](Character& obj, int dados, int caras, const char* nombreAccion, bool aturde) {
         Combatiente cObjetivo{obj.Nombre(), &obj.GetStatsMut(), &obj.Combate(), true, obj.Rol()};
         ResultadoAccion r = ResolverAtaque(cEnemigo, cObjetivo, dados, caras, false, nombreAccion);
@@ -439,6 +468,11 @@ void CombatEncounter::Actualizar(float deltaSeconds) {
             r.texto += " " + cObjetivo.nombre + " queda aturdido.";
         }
         log_.push_back(r.texto);
+        int indiceObj = (int)(&obj - party_.Miembros().data());
+        eventos.push_back(EventoVisual{
+            true, indiceObj,
+            r.impacto ? TipoEventoVisual::Dano : TipoEventoVisual::Fallo,
+            r.impacto ? r.dano : 0, r.critico});
     };
 
     if (atacante.Tipo() == TipoEnemigo::CapitanBandido) {
@@ -453,32 +487,38 @@ void CombatEncounter::Actualizar(float deltaSeconds) {
         int tirada = Roll(10);
         if (enfurecido || tirada <= 4) {
             golpear(*objetivo, 1, 6, "Doble Tajo", false);
-            if (ChequearFinDeCombate()) return;
+            if (ChequearFinDeCombate()) { RegistrarEventos(eventos); return; }
             Character* segundoObjetivo = elegirObjetivo();
             if (segundoObjetivo != nullptr) {
                 golpear(*segundoObjetivo, 1, 6, "Doble Tajo", false);
-                if (ChequearFinDeCombate()) return;
+                if (ChequearFinDeCombate()) { RegistrarEventos(eventos); return; }
             }
         } else if (tirada <= 7) {
             golpear(*objetivo, 1, 4, "Golpe Aturdidor", true);
-            if (ChequearFinDeCombate()) return;
+            if (ChequearFinDeCombate()) { RegistrarEventos(eventos); return; }
         } else {
             golpear(*objetivo, 1, 6, "un ataque", false);
-            if (ChequearFinDeCombate()) return;
+            if (ChequearFinDeCombate()) { RegistrarEventos(eventos); return; }
         }
     } else if (atacante.Tipo() == TipoEnemigo::BanditoAturdidor && Roll(2) == 1) {
         // El Bandido Aturdidor a veces, en vez de un ataque basico, usa un
         // golpe mas debil pero que aturde (le hace perder el turno al objetivo).
         golpear(*objetivo, 1, 4, "Golpe Aturdidor", true);
-        if (ChequearFinDeCombate()) return;
+        if (ChequearFinDeCombate()) { RegistrarEventos(eventos); return; }
     } else {
         golpear(*objetivo, 1, 6, "un ataque", false);
-        if (ChequearFinDeCombate()) return;
+        if (ChequearFinDeCombate()) { RegistrarEventos(eventos); return; }
     }
 
+    RegistrarEventos(eventos);
     AsegurarObjetivoValido();
     AvanzarIndice();
     ProcesarInicioDeTurnoActual();
+}
+
+void CombatEncounter::RegistrarEventos(std::vector<EventoVisual> eventos) {
+    eventosUltimoPaso_ = std::move(eventos);
+    secuenciaEventos_++;
 }
 
 } // namespace game

@@ -99,6 +99,40 @@ Al ganar (`FaseCombate::Ganado`), se vuelve a la exploración tal cual — el pa
 
 Al perder (`FaseCombate::Perdido`) se ve una pantalla de Game Over distinta a la de victoria, y al apretar una tecla el party **revive**: `Character::Revivir()` restaura HP y recurso al máximo y limpia todos los efectos de combate, y `Party::ReiniciarFormacion()` teletransporta a todo el party de vuelta al punto de partida de la mazmorra (y limpia el rastro de formación, para que los seguidores no "corran" desde el rastro viejo). Sin esto, perder dejaba al party con HP 0 para siempre — el próximo combate terminaba en derrota instantánea sin que el jugador pudiera hacer nada (softlock).
 
+### Feedback visual de combate
+
+Hasta esta vuelta, lo único que comunicaba lo que pasaba en combate era el log de texto — un golpe, una curación y un fallo se veían todos igual (una línea más abajo del todo). Se agregó un segundo canal, puramente visual: numeritos flotantes de daño/curación/fallo sobre la ficha correspondiente, más un flash breve en quien recibe un golpe.
+
+**Capa de juego (`game/combat.h`/`.cpp`), datos estructurados, sin nada de animación ni de tiempo real:**
+- `enum class TipoEventoVisual { Dano, Curacion, Fallo }` y `struct EventoVisual { esAliado, indice, tipo, monto, critico }` — el "qué pasó", sin ningún dato de posición en pantalla ni de temporizado (eso es 100% de la capa de render).
+- `CombatEncounter::UltimosEventos()` (el `std::vector<EventoVisual>` del paso más reciente) y `SecuenciaEventos()` (un contador que se incrementa cada vez que ese vector se repuebla, **incluso si queda vacío**) — mismo patrón de "dirty flag" que ya usaba `lootRepartido`, para que quien consume los datos (el render) sepa si ya vio la tanda actual o hay una nueva sin mostrar, sin tener que comparar el contenido del vector.
+- `RegistrarEventos(std::vector<EventoVisual>)`, privado, es el único punto que escribe esos dos campos — se llama desde los tres lugares donde se resuelve una acción: `AccionAtaqueBasico()` (un evento), `AccionHabilidadDeRol()` (un evento — el aliado que se sana si es Soporte, o el enemigo atacado en los otros tres roles; nada si la habilidad no se pudo usar por falta de recurso, para no generar un "paso" fantasma), y `Actualizar()` (el turno del enemigo, que junta un `std::vector` local a medida que resuelve — puede ser más de un golpe con el Doble Tajo del jefe — y lo registra una sola vez al final, en cada punto de salida de la función incluidos los `return` tempranos por fin de combate).
+
+**Capa de render (`render/combat_ui.cpp`), toda la animación/temporizado, nada de reglas de juego:**
+- Estado a nivel de archivo (namespace anónimo): `g_numerosFlotantes` (posición, edad, texto ya formateado, color, tamaño) y `g_flashesActivos` (a quién, cuánto le queda), más `g_ultimaSecuenciaVista` para detectar cuándo `SecuenciaEventos()` cambió desde el frame anterior.
+- Cada numerito nace justo **encima** del borde superior de la ficha (no adentro — se probó adentro primero y tapaba el nombre/turno que ya se dibuja ahí, ver más abajo), sube 42px/seg y se desvanece en 1 segundo. Un golpe (`Dano`) además dispara un flash: un rectángulo rojo semitransparente sobre toda la ficha que decae en 0.22s. Crítico usa texto más grande y dorado en vez de rojo (`"-N!"` en vez de `"-N"`); `Fallo` es un texto gris fijo (`"FALLO"`) sin flash ni monto.
+- Las posiciones de las fichas (`Rectangle` por aliado/enemigo) se capturan en el mismo bucle de `DibujarCombate` que ya las dibujaba (antes no se guardaban en ningún lado, se calculaban y usaban al toque) — así el spawn de un numerito no duplica el cálculo de layout, usa exactamente donde se dibujó la ficha ese frame.
+
+**Bug encontrado y corregido durante la verificación visual** (con un harness de prueba que fuerza golpes/curaciones/críticos/fallos y saca capturas bajo Xvfb, después borrado — no se shipea): el primer diseño intentaba detectar "empezó un combate nuevo" comparando `SecuenciaEventos()` contra el último valor visto (si bajó, se asumía combate nuevo) y, como refuerzo, comparando la dirección de memoria del `CombatEncounter&`. Ninguna de las dos señales alcanza por sí sola: dos combates distintos pueden coincidir en el mismo número de secuencia (si ambos llevan resuelto un solo paso), y un `CombatEncounter` nuevo puede perfectamente reusar la memoria de uno recién destruido (confirmado en la práctica: el harness lo reprodujo con dos `CombatEncounter` locales en bloques `{}` consecutivos). El resultado, sin la corrección, era un numerito viejo (de un combate ya terminado) reapareciendo superpuesto sobre el primer evento del combate siguiente. La solución: en vez de adivinar, `main.cpp` avisa explícitamente — `ui::ReiniciarFeedbackVisual()` se llama una sola vez, justo después de `encuentro = std::make_unique<CombatEncounter>(...)`, y limpia `g_numerosFlotantes`/`g_flashesActivos`/`g_ultimaSecuenciaVista` sin ambigüedad. Deja además una lección para el resto del proyecto: si en algún punto se necesita otro estado "por combate" en la capa de render, seguir este mismo patrón (reset explícito desde quien crea el `CombatEncounter`) en vez de inferirlo.
+
+Verificado con capturas de pantalla bajo Xvfb (un harness que fuerza cada uno de los cuatro casos — golpe normal, curación, crítico, fallo — sobre un `CombatEncounter` real y saca screenshots en distintos puntos de la animación) más una corrida completa del juego (`cmake --build build`, smoke test bajo Xvfb) antes de shippear.
+
+### Sonido
+
+El juego era 100% mudo hasta esta vuelta. Se agregó música de fondo (dos pistas en loop) y efectos de combate, con la misma filosofía de capas que el resto del proyecto: `render::Audio` (`render/audio.h`/`.cpp`) es una clase RAII — mismo patrón que `render::Renderer` con la ventana — que en el constructor llama `InitAudioDevice()` y carga todos los assets, y en el destructor los descarga y cierra el dispositivo.
+
+**De dónde salen los assets**: en vez de samples o música con licencia de terceros (fuera de alcance para un prototipo hecho enteramente por código), los 8 clips de `assets/audio/` son sintetizados por `tools/generar_audio.py` (numpy para la síntesis, scipy solo para escribir el WAV) — tonos simples con envolventes exponenciales tipo "pluck" para los efectos (`golpe`, `critico`, `curacion`, `fallo`, `victoria`, `derrota`), y dos loops musicales (`musica_exploracion`, 8s, calma, Re menor; `musica_combate`, 4s, más urgente, con un ostinato de bajo y percusión de ruido) armados como una serie de notas discretas cuya cola ya decayó a silencio antes del punto de loop, más un fade de seguridad de 15-20ms en los bordes — así el loop no clickea sin tener que cuadrar frecuencias a ciclos enteros. Es un placeholder deliberado: mismo nombre de archivo y misma carpeta, así que reemplazarlos por música/SFX definitivos más adelante no toca una línea de código.
+
+**Reutilización del sistema de eventos visuales**: en vez de armar un camino de datos paralelo para el audio, `Audio::ProcesarEventos(const CombatEncounter&)` consume exactamente `UltimosEventos()`/`SecuenciaEventos()` — la misma data que ya alimenta los numeritos flotantes (ver "Feedback visual de combate" arriba) — y reproduce `sonidoGolpe_`/`sonidoCritico_`/`sonidoCuracion_`/`sonidoFallo_` según `TipoEventoVisual` y el flag `critico`. Esto significa que agregar sonido no le agregó ningún dato nuevo a `game/combat.h`: la capa de juego ya exponía todo lo necesario para el feedback visual, y el audio es "otro consumidor" de la misma data estructurada.
+
+Por la misma razón que `ui::ReiniciarFeedbackVisual()` (ver el bug documentado arriba: `SecuenciaEventos()` por sí sola no distingue con certeza "combate nuevo" de "mismo combate, mismo paso"), `Audio::ReiniciarCombate()` se llama en el mismo punto exacto de `main.cpp`, justo después de crear el `CombatEncounter` — sin esto, un combate nuevo que coincide en secuencia con el anterior podría perderse su primer efecto de sonido. Verificado con un harness dedicado (50 `CombatEncounter` efímeros consecutivos en bloques `{}`, el mismo escenario adversarial que rompió el sistema visual) sin crashear.
+
+**Música**: `Audio::Actualizar(bool enCombate)`, llamada una vez por frame sin importar el estado del juego (raylib necesita `UpdateMusicStream` todos los frames para que el streaming no se corte), cambia de pista — para/arranca la música, corte directo, sin crossfade — apenas `enCombate` difiere del frame anterior.
+
+**Victoria/derrota**: `Audio::ReproducirVictoria()`/`ReproducirDerrota()` se llaman una sola vez al entrar a `Ganado`/`Perdido`, reusando el mismo patrón de flag "ya hecho una vez" que `lootRepartido` (para `Ganado`) y un flag nuevo, `derrotaSonada` (para `Perdido`, que hasta ahora no necesitaba ningún flag porque no hacía nada mientras se veía la pantalla de Game Over salvo esperar una tecla).
+
+**Sin hardware de audio**: si `InitAudioDevice()` falla (probado en este mismo sandbox de desarrollo, que no tiene tarjeta de sonido — ALSA tira una serie de warnings pero raylib no crashea), `Audio` lo detecta (`IsAudioDeviceReady()`) y todos sus métodos se vuelven no-ops — el juego sigue jugable en silencio en vez de crashear al arrancar. En la máquina real del usuario (con audio de verdad) este camino no debería activarse nunca.
+
 ### Sistema de inventario y loot
 
 Inventario único y compartido por todo el party (`game::Inventory`, dueño: `game::Party`), no uno por personaje — evita tener que decidir "a quién le doy este item" al momento de recogerlo, esa decisión se toma recién al usarlo. Apila items iguales en una sola entrada con cantidad (`PilaItem`, comparado por nombre) en vez de ocupar un slot por unidad.
@@ -157,11 +191,14 @@ rpg-mazmorras/
 │       ├── input.h/.cpp
 │       ├── ui.h/.cpp
 │       ├── combat_ui.h/.cpp
-│       └── inventory_ui.h/.cpp  # pantalla de inventario (tecla I)
+│       ├── inventory_ui.h/.cpp  # pantalla de inventario (tecla I)
+│       └── audio.h/.cpp         # musica + efectos, RAII (ver "Sonido" arriba)
 ├── assets/
 │   ├── sprites/
-│   ├── audio/
+│   ├── audio/            # WAV generados por tools/generar_audio.py
 │   └── tilesets/
+├── tools/
+│   └── generar_audio.py  # sintetiza los WAV de assets/audio/ (numpy/scipy)
 └── docs/
     └── design.md
 ```
@@ -202,7 +239,9 @@ De paso, la simulación de una mazmorra completa (4 salas, sin curación entre c
 12. ✅ **Jefe de mazmorra**: la última sala con contenido ya no tiene un grupo aleatorio más — tiene al Capitán Bandido, un enemigo único con más stats que cualquier otro, IA propia ("Doble Tajo" y furia por debajo del 40% de HP), botín garantizado y una pantalla de cierre distinta ("¡MAZMORRA DESPEJADA!") — ver "Jefe de mazmorra: Capitán Bandido" arriba. Balanceado con el mismo simulador: 87.5% de clears totales con el sistema de items activo (vs. 91.9% antes de agregar el jefe), una caída de dificultad esperable y buscada para el cierre de la run.
 13. ✅ **Curva de poder investigada**: se midió cuánto poder equipado (bonos de ataque/defensa de mejoras permanentes) acumula el party a lo largo de una run completa — con la duración actual (4 salas + jefe) llega al Capitán Bandido con menos de 1 punto de bono en promedio, sin efecto medible en la tasa de victoria contra él. Conclusión: no hay curva de poder que corregir por ahora — es un plus menor, no un factor de balance — ver "Balance: curva de poder de las mejoras permanentes" arriba. Sin acción tomada; queda como palanca disponible (subir drop rates) si el looteo necesita sentirse más impactante el día que la mazmorra sea más larga.
 14. ✅ **Catálogo de Mejoras ampliado**: de 2 a 4 piezas — Daga Veloz (Arma, +10 velocidad) y Talismán de Vitalidad (Accesorio, +5 vida máxima) se suman a Piedra de Fuerza y Amuleto de Protección, dándole a cada ranura dos sabores reales para elegir (más daño o actuar más seguido; esquivar más o aguantar más golpes) en vez de un solo camino obligado — ver "Sistema de inventario y loot" arriba.
-15. Pendiente: seguir iterando sobre contenido (más tipos de enemigo comunes, más variedad de salas o una mazmorra más larga) antes de evaluar el salto a mobile (build de Android vía NDK).
+15. ✅ **Feedback visual de combate**: numeritos flotantes de daño (rojo, dorado y más grande en crítico), curación (verde) y fallo ("FALLO", gris) sobre la ficha correspondiente, que suben y se desvanecen en 1 segundo, más un flash rojo breve en quien recibe un golpe. La capa de juego solo expone los eventos como datos estructurados (`EventoVisual`/`SecuenciaEventos()`); toda la animación vive en `combat_ui.cpp` — ver "Feedback visual de combate" arriba, incluida una corrección de un bug real (numeritos de un combate anterior reapareciendo en el siguiente) encontrado durante la verificación visual.
+16. ✅ **Sonido**: música de fondo (loop de exploración y de combate, cambia sola con `render::Audio::Actualizar`) y efectos de golpe/crítico/curación/fallo/victoria/derrota, reutilizando la misma data de `EventoVisual`/`SecuenciaEventos()` del feedback visual en vez de un camino paralelo. Todos los clips son sintetizados por código (`tools/generar_audio.py`), no assets con licencia de terceros. Sigue andando en silencio (no-op) si la máquina no tiene dispositivo de audio — ver "Sonido" arriba.
+17. Pendiente: seguir iterando sobre contenido (más tipos de enemigo comunes, más variedad de salas o una mazmorra más larga) antes de evaluar el salto a mobile (build de Android vía NDK).
 
 ## Notas sobre la futura migración a Unreal
 

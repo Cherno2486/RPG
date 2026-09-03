@@ -185,6 +185,19 @@ exploración hasta cerrarlo. El equipo también se puede ver sin abrir el
 inventario: el panel de party expandido (**TAB** en exploración) muestra
 el Arma/Accesorio de cada uno debajo de su barra de HP.
 
+## Sonido
+
+Música de fondo (dos pistas en loop: una calma para exploración, otra más
+tensa para combate — cambia sola al enganchar/salir de un combate) y
+efectos para golpe, crítico, curación, fallo, victoria y derrota. Todos los
+clips (`assets/audio/*.wav`) son sintetizados 100% por código
+(`tools/generar_audio.py`, con numpy/scipy) — sin samples ni música de
+terceros —, pensados como placeholder de prototipo, fáciles de reemplazar
+por assets definitivos más adelante sin tocar una línea de código (misma
+ruta y nombre de archivo). Si la máquina no tiene dispositivo de audio
+disponible, el juego lo detecta y sigue andando en silencio, sin crashear.
+Ver "Sonido" en `docs/design.md` para el detalle técnico (`render/audio.h`).
+
 ## Estado actual
 
 1. ✅ Proyecto base: ventana raylib (1280x720), loop principal, grilla de
@@ -251,7 +264,19 @@ el Arma/Accesorio de cada uno debajo de su barra de HP.
     +10 velocidad) y Talismán de Vitalidad (Accesorio, +5 vida máxima) se
     suman a Piedra de Fuerza y Amuleto de Protección, dándole a cada
     ranura dos sabores reales para elegir en vez de un solo camino.
-15. Pendiente: seguir sumando contenido (más enemigos comunes, más
+15. ✅ Feedback visual de combate: numeritos flotantes de daño (rojo) /
+    curación (verde) / fallo ("FALLO", gris) sobre la ficha correspondiente
+    — más grandes y dorados en un crítico —, que suben y se desvanecen
+    durante 1 segundo, más un flash rojo breve en la ficha de quien recibe
+    un golpe. Toda la lógica de animación vive en `render/combat_ui.cpp`
+    (game/combat.h sólo expone los eventos como datos estructurados) — ver
+    "Feedback visual de combate" en `docs/design.md` para el detalle.
+16. ✅ Sonido: música de fondo (loop de exploración/combate, cambia sola
+    según el estado) y efectos de golpe/crítico/curación/fallo/victoria/
+    derrota, todos generados por código (sin assets con licencia de
+    terceros) — sigue andando en silencio si la máquina no tiene
+    dispositivo de audio. Ver "Sonido" arriba y en `docs/design.md`.
+17. Pendiente: seguir sumando contenido (más enemigos comunes, más
     variedad de salas o una mazmorra más larga) antes del build de
     Android.
 
