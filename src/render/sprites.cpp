@@ -374,6 +374,48 @@ Image CrearCharcoSuelo() {
     return img;
 }
 
+// --- Trampas de piso ---
+// A diferencia de la decoracion suelta (grieta/musgo/escombros/charco, mas
+// arriba), estas SI afectan el gameplay -- van bien opacas y de colores
+// llamativos (fuego = naranja/rojo sobre tierra quemada, acido = verde
+// brillante sobre roca) para que se lean como "peligro" a simple vista, en
+// vez de mezclarse con el resto del piso como la decoracion cosmetica.
+
+Image CrearTrampaFuego() {
+    Image img = GenImageColor(kCanvasTile, kCanvasTile, BLANK);
+    Color tierraQuemada = { 42, 26, 20, 255 };
+    Color brasa = { 90, 32, 16, 255 };
+    Color fuegoOsc = { 200, 70, 30, 255 };
+    Color fuegoMed = { 235, 140, 40, 255 };
+    Color fuegoClaro = { 250, 210, 90, 255 };
+
+    ImageDrawRectangle(&img, 0, 0, kCanvasTile, kCanvasTile, tierraQuemada);
+    ImageDrawCircle(&img, 8, 12, 5, brasa);
+    ImageDrawTriangle(&img, Vector2{ 3, 13 }, Vector2{ 13, 13 }, Vector2{ 8, 2 }, fuegoOsc);
+    ImageDrawTriangle(&img, Vector2{ 5, 13 }, Vector2{ 11, 13 }, Vector2{ 8, 5 }, fuegoMed);
+    ImageDrawTriangle(&img, Vector2{ 6, 13 }, Vector2{ 10, 13 }, Vector2{ 8, 7 }, fuegoClaro);
+
+    return img;
+}
+
+Image CrearTrampaAcido() {
+    Image img = GenImageColor(kCanvasTile, kCanvasTile, BLANK);
+    Color roca = { 44, 48, 40, 255 };
+    Color acidoOsc = { 70, 130, 40, 235 };
+    Color acido = { 120, 200, 60, 235 };
+    Color acidoClaro = { 190, 240, 110, 220 };
+    Color burbuja = { 225, 250, 185, 210 };
+
+    ImageDrawRectangle(&img, 0, 0, kCanvasTile, kCanvasTile, roca);
+    ImageDrawCircle(&img, 8, 8, 7, acidoOsc);
+    ImageDrawCircle(&img, 8, 8, 5, acido);
+    ImageDrawCircle(&img, 6, 6, 2, acidoClaro);
+    ImageDrawCircle(&img, 5, 10, 1, burbuja);
+    ImageDrawCircle(&img, 11, 7, 1, burbuja);
+
+    return img;
+}
+
 // --- Antorcha de pared ---
 // Lienzo propio, mas angosto y alto que un tile (12x20): soporte + palo +
 // llama en capas de color (de afuera hacia adentro, mas clara al medio).
@@ -470,6 +512,9 @@ SpriteSet::SpriteSet() {
     decoracionesPiso_[3] = CargarPixelPerfecto(CrearCharcoSuelo());
     antorcha_ = CargarPixelPerfecto(CrearAntorcha());
 
+    trampas_[static_cast<int>(game::TipoTrampa::Fuego)] = CargarPixelPerfecto(CrearTrampaFuego());
+    trampas_[static_cast<int>(game::TipoTrampa::Acido)] = CargarPixelPerfecto(CrearTrampaAcido());
+
     tilePiso_ = CargarPixelPerfecto(CrearTilePiso());
     tilePared_ = CargarPixelPerfecto(CrearTilePared());
     SetTextureWrap(tilePiso_, TEXTURE_WRAP_REPEAT);
@@ -485,6 +530,7 @@ SpriteSet::~SpriteSet() {
     UnloadTexture(tilePared_);
     for (auto& tex : decoracionesPiso_) UnloadTexture(tex);
     UnloadTexture(antorcha_);
+    for (auto& tex : trampas_) UnloadTexture(tex);
 }
 
 void DibujarSpritePlantado(const Texture2D& textura, Vector2 posicionPies, float escala, Color tinte) {

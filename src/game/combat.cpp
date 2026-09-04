@@ -68,6 +68,15 @@ ResultadoAccion ResolverAtaque(Combatiente& atacante, Combatiente& objetivo,
         int dados = critico ? dadosDano * 2 : dadosDano;
         int dano = RollDados(dados, carasDano, bonus);
         r.dano = AplicarDano(*objetivo.stats, *objetivo.estado, dano);
+
+        // Mismo criterio que Character::RecibirDano (que este camino NO usa:
+        // ResolverAtaque trabaja sobre los punteros crudos de Combatiente,
+        // no sobre la clase Character) — si el objetivo usa Concentracion
+        // (Soporte/Control), el golpe se la rompe/reduce en la misma
+        // cantidad de dano que le llego a la vida.
+        if (r.dano > 0 && UsaConcentracion(objetivo.rol)) {
+            objetivo.stats->recurso -= std::min(objetivo.stats->recurso, r.dano);
+        }
     }
 
     char buffer[224];
@@ -99,6 +108,18 @@ ResultadoHabilidad EjecutarHabilidadDeRol(Combatiente& atacante, Combatiente& ob
 
     switch (atacante.rol) {
         case Role::Tanque: {
+            // Antes era gratis (el Tanque no participaba de ningun economia
+            // de recurso); ahora que Tanque tambien tiene Resistencia (ver
+            // NombreRecurso), Golpe Provocador cuesta lo mismo que le
+            // cuesta a Danio su habilidad — barato en relacion a lo seguido
+            // que un tanque necesita provocar/cubrirse en un combate largo.
+            const int costo = 5;
+            if (!PuedeUsarHabilidad(atacante, costo)) {
+                r.ejecutada = false;
+                r.texto = atacante.nombre + " no tiene resistencia suficiente para " + NombreHabilidadDeRol(Role::Tanque) + ".";
+                break;
+            }
+            atacante.stats->recurso -= costo;
             r.accion = ResolverAtaque(atacante, objetivoEnemigo, 1, 6, false, NombreHabilidadDeRol(Role::Tanque));
             r.ejecutada = true;
             r.texto = r.accion.texto;
@@ -116,7 +137,7 @@ ResultadoHabilidad EjecutarHabilidadDeRol(Combatiente& atacante, Combatiente& ob
             const int costo = 5;
             if (!PuedeUsarHabilidad(atacante, costo)) {
                 r.ejecutada = false;
-                r.texto = atacante.nombre + " no tiene energia suficiente para " + NombreHabilidadDeRol(Role::Danio) + ".";
+                r.texto = atacante.nombre + " no tiene resistencia suficiente para " + NombreHabilidadDeRol(Role::Danio) + ".";
                 break;
             }
             atacante.stats->recurso -= costo;
@@ -133,7 +154,9 @@ ResultadoHabilidad EjecutarHabilidadDeRol(Combatiente& atacante, Combatiente& ob
             const int costo = 8;
             if (!PuedeUsarHabilidad(atacante, costo) || objetivoAliado == nullptr) {
                 r.ejecutada = false;
-                r.texto = atacante.nombre + " no puede curar ahora.";
+                r.texto = (objetivoAliado == nullptr)
+                    ? (atacante.nombre + " no puede curar ahora.")
+                    : (atacante.nombre + " no tiene concentracion suficiente para curar.");
                 break;
             }
             atacante.stats->recurso -= costo;
@@ -151,7 +174,7 @@ ResultadoHabilidad EjecutarHabilidadDeRol(Combatiente& atacante, Combatiente& ob
             const int costo = 6;
             if (!PuedeUsarHabilidad(atacante, costo)) {
                 r.ejecutada = false;
-                r.texto = atacante.nombre + " no tiene energia suficiente para " + NombreHabilidadDeRol(Role::Control) + ".";
+                r.texto = atacante.nombre + " no tiene concentracion suficiente para " + NombreHabilidadDeRol(Role::Control) + ".";
                 break;
             }
             atacante.stats->recurso -= costo;
@@ -165,6 +188,30 @@ ResultadoHabilidad EjecutarHabilidadDeRol(Combatiente& atacante, Combatiente& ob
             break;
         }
     }
+    return r;
+}
+
+ResultadoUsoItem UsarItemDeEstadoEnCombate(const Item& item, Combatiente& objetivo) {
+    ResultadoUsoItem r;
+    if (item.tipo != TipoItem::Consumible) return r;
+
+    char buffer[192];
+    if (item.efecto == EfectoItem::AplicarEstado) {
+        objetivo.estado->AgregarEfecto(EfectoActivo{item.estado, item.dados, item.bono});
+        r.exitoso = true;
+        std::snprintf(buffer, sizeof(buffer), "%s sobre %s: queda con %s.",
+                      item.nombre.c_str(), objetivo.nombre.c_str(), NombreEfecto(item.estado));
+        r.texto = buffer;
+    } else if (item.efecto == EfectoItem::CurarEstados) {
+        objetivo.estado->QuitarEfecto(TipoEfecto::Aturdido);
+        objetivo.estado->QuitarEfecto(TipoEfecto::Veneno);
+        r.exitoso = true;
+        std::snprintf(buffer, sizeof(buffer), "%s sobre %s: se cura de aturdimiento y veneno.",
+                      item.nombre.c_str(), objetivo.nombre.c_str());
+        r.texto = buffer;
+    }
+    // Cualquier otro efecto (CurarVida, CurarRecurso, las Mejoras) no es
+    // responsabilidad de esta funcion -- ver game::UsarItem en item.h/.cpp.
     return r;
 }
 
@@ -408,6 +455,71 @@ void CombatEncounter::AccionHabilidadDeRol() {
             r.accion.impacto ? TipoEventoVisual::Dano : TipoEventoVisual::Fallo,
             r.accion.impacto ? r.accion.dano : 0, r.accion.critico}});
     }
+
+    if (ChequearFinDeCombate()) return;
+    AsegurarObjetivoValido();
+    AvanzarIndice();
+    ProcesarInicioDeTurnoActual();
+}
+
+void CombatEncounter::AccionUsarItem(size_t indiceItem, size_t indiceAliado) {
+    if (fase_ != FaseCombate::TurnoAliado) return;
+
+    const auto& pilas = party_.Inventario().Pilas();
+    if (indiceItem >= pilas.size()) return;
+    Item item = pilas[indiceItem].item;  // copia: el stack puede borrarse antes de terminar
+    if (item.tipo != TipoItem::Consumible) return;
+
+    bool exitoso = false;
+    std::string texto;
+    std::vector<EventoVisual> eventos;
+
+    if (item.efecto == EfectoItem::AplicarEstado && item.apuntaAEnemigo) {
+        // Unico caso que apunta a un enemigo (Bomba de Veneno): usa el
+        // objetivo de combate ya seleccionado con [TAB], igual que Atacar y
+        // la Habilidad de Rol.
+        AsegurarObjetivoValido();
+        if (objetivoActual_ < 0) return;
+        Enemy& objetivo = *enemigos_[objetivoActual_];
+        Combatiente cObjetivo{objetivo.Nombre(), &objetivo.GetStatsMut(), &objetivo.Combate(), false, Role::Tanque};
+        ResultadoUsoItem r = UsarItemDeEstadoEnCombate(item, cObjetivo);
+        if (!r.exitoso) return;
+        exitoso = true;
+        texto = r.texto;
+        party_.Inventario().ConsumirUnidad(indiceItem);
+        // El Veneno recien aplicado no mata al toque (es dano por turno, se
+        // resuelve en ProcesarInicioDeTurnoActual) -- no hace falta chequear
+        // si el enemigo murio aca, a diferencia de un ataque.
+    } else {
+        // Resto de los casos apuntan a un aliado del party (Pocion, Elixir,
+        // Frasco de Escudo, Antidoto).
+        if (indiceAliado >= party_.Miembros().size()) return;
+        Character& aliado = party_.Miembros()[indiceAliado];
+        if (!aliado.EstaVivo()) return;
+
+        if (item.efecto == EfectoItem::CurarVida || item.efecto == EfectoItem::CurarRecurso) {
+            // Mismo camino que ya usaba la pantalla de inventario en
+            // exploracion (Inventory::Usar ya descuenta el stack).
+            ResultadoUsoItem r = party_.Inventario().Usar(indiceItem, aliado);
+            if (!r.exitoso) return;
+            exitoso = true;
+            texto = r.texto;
+            if (item.efecto == EfectoItem::CurarVida) {
+                eventos.push_back(EventoVisual{true, (int)indiceAliado, TipoEventoVisual::Curacion, r.valor, false});
+            }
+        } else {
+            Combatiente cAliado{aliado.Nombre(), &aliado.GetStatsMut(), &aliado.Combate(), true, aliado.Rol()};
+            ResultadoUsoItem r = UsarItemDeEstadoEnCombate(item, cAliado);
+            if (!r.exitoso) return;
+            exitoso = true;
+            texto = r.texto;
+            party_.Inventario().ConsumirUnidad(indiceItem);
+        }
+    }
+
+    if (!exitoso) return;
+    log_.push_back(texto);
+    RegistrarEventos(std::move(eventos));
 
     if (ChequearFinDeCombate()) return;
     AsegurarObjetivoValido();

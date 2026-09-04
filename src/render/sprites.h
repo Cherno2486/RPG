@@ -2,6 +2,7 @@
 #include "raylib.h"
 #include "../game/character.h"
 #include "../game/enemy.h"
+#include "../game/dungeon.h"
 
 namespace render {
 
@@ -55,6 +56,13 @@ public:
     }
     const Texture2D& Antorcha() const { return antorcha_; }
 
+    // Trampas de piso (ver game::Trampa): fuego y acido, dibujadas encima
+    // del tile de piso normal en las casillas donde haya una (ver
+    // renderer.cpp) -- a diferencia de las decoraciones sueltas de arriba,
+    // estas SI importan para el gameplay, asi que van bien opacas/vistosas
+    // en vez de sutiles, para que se puedan esquivar a simple vista.
+    const Texture2D& Trampa(game::TipoTrampa tipo) const { return trampas_[static_cast<int>(tipo)]; }
+
 private:
     Texture2D personajes_[4];  // indexado por game::Role
     Texture2D enemigos_[4];    // indexado por game::TipoEnemigo
@@ -64,6 +72,7 @@ private:
     Texture2D tilePared_;
     Texture2D decoracionesPiso_[kNumDecoracionesPiso];
     Texture2D antorcha_;
+    Texture2D trampas_[2];  // indexado por game::TipoTrampa
 };
 
 // Dibuja un sprite de personaje/enemigo "parado en el piso": centrado en X

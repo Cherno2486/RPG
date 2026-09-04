@@ -41,6 +41,14 @@ public:
     // para Consumibles).
     ResultadoEquipar Equipar(size_t indice, Character& personaje);
 
+    // Resta 1 al stack de Pilas()[indice] (lo saca de la lista si llega a
+    // 0), sin aplicar ningun efecto. La usa game::CombatEncounter::
+    // AccionUsarItem despues de aplicar un consumible de combate (Bomba de
+    // Veneno/Frasco de Escudo/Antidoto) con game::UsarItemDeEstadoEnCombate:
+    // esa funcion trabaja sobre Combatiente (para poder apuntar tambien a un
+    // Enemy) en vez de Character, asi que no puede pasar por Usar().
+    void ConsumirUnidad(size_t indice);
+
 private:
     std::vector<PilaItem> pilas_;
 };

@@ -32,9 +32,15 @@ void DibujarFichaObjetivo(const game::Character& personaje, bool esObjetivo, int
     DrawText(nombre, x + 36, y + 6, 14, RAYWHITE);
 
     const auto& stats = personaje.GetStats();
-    char linea[48];
+    char linea[64];
     if (stats.recursoMax > 0) {
-        std::snprintf(linea, sizeof(linea), "HP %d/%d  R %d/%d", stats.hp, stats.hpMax, stats.recurso, stats.recursoMax);
+        // Abreviado ("Res"/"Conc") en vez del nombre completo de
+        // game::NombreRecurso — esta ficha es angosta (ver kAltoFicha/
+        // anchoFicha en DibujarInventario) y "Concentracion 18/25" no entra
+        // en una sola linea junto con el HP.
+        const char* abreviatura = game::UsaConcentracion(personaje.Rol()) ? "Conc" : "Res";
+        std::snprintf(linea, sizeof(linea), "HP %d/%d  %s %d/%d", stats.hp, stats.hpMax,
+                      abreviatura, stats.recurso, stats.recursoMax);
     } else {
         std::snprintf(linea, sizeof(linea), "HP %d/%d", stats.hp, stats.hpMax);
     }
@@ -85,6 +91,8 @@ void DibujarInventario(const game::Party& party, size_t indiceObjetivo, const re
         for (size_t i = 0; i < pilas.size() && i < 9; ++i) {
             const auto& pila = pilas[i];
             bool esMejora = pila.item.tipo == game::TipoItem::Mejora;
+            bool esConsumibleDeCombate = pila.item.efecto == game::EfectoItem::AplicarEstado
+                || pila.item.efecto == game::EfectoItem::CurarEstados;
             int y = yLista + (int)i * 46;
             DrawRectangle(xLista, y, anchoVentana - 80, 40, Color{ 22, 22, 28, 220 });
             DrawRectangleLines(xLista, y, anchoVentana - 80, 40, Color{ 80, 80, 90, 255 });
@@ -101,10 +109,19 @@ void DibujarInventario(const game::Party& party, size_t indiceObjetivo, const re
                 const char* ranura = pila.item.ranura == game::RanuraEquipo::Arma ? "Arma" : "Accesorio";
                 std::snprintf(nombreYCantidad, sizeof(nombreYCantidad), "%s x%d  [Equipar: %s]",
                               pila.item.nombre.c_str(), pila.cantidad, ranura);
+            } else if (esConsumibleDeCombate) {
+                // Se pueden juntar y ver desde aca, pero solo se usan desde
+                // el sub-menu "[3] Usar item" durante un combate (ver
+                // combat_ui.cpp) -- Bomba de Veneno necesita un enemigo como
+                // objetivo, que no existe en la exploracion.
+                std::snprintf(nombreYCantidad, sizeof(nombreYCantidad), "%s x%d  [Solo en combate]",
+                              pila.item.nombre.c_str(), pila.cantidad);
             } else {
                 std::snprintf(nombreYCantidad, sizeof(nombreYCantidad), "%s x%d", pila.item.nombre.c_str(), pila.cantidad);
             }
-            DrawText(nombreYCantidad, xLista + 56, y + 4, 16, esMejora ? Color{ 210, 170, 90, 255 } : RAYWHITE);
+            Color colorNombre = esMejora ? Color{ 210, 170, 90, 255 }
+                : (esConsumibleDeCombate ? Color{ 150, 190, 220, 255 } : RAYWHITE);
+            DrawText(nombreYCantidad, xLista + 56, y + 4, 16, colorNombre);
             DrawText(pila.item.descripcion.c_str(), xLista + 56, y + 22, 12, LIGHTGRAY);
         }
     }

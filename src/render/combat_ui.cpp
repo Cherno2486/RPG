@@ -65,8 +65,20 @@ void DibujarFichaAliado(const game::Character& personaje, bool esSuTurno, int x,
     DrawText(textoHp, x + 36, y + 52, 10, LIGHTGRAY);
 
     if (stats.recursoMax > 0) {
+        // Color distinto segun el tipo de recurso (ver game::NombreRecurso):
+        // anaranjado para la Resistencia fisica (Tanque/Danio), violeta para
+        // la Concentracion de los magos (Soporte/Control) — asi se nota a
+        // simple vista cual es cual sin tener que leer la etiqueta.
+        bool esConcentracion = game::UsaConcentracion(personaje.Rol());
+        Color colorRecurso = esConcentracion ? Color{ 150, 110, 220, 255 } : Color{ 220, 150, 70, 255 };
+        Color colorRecursoFondo = esConcentracion ? Color{ 40, 30, 55, 255 } : Color{ 55, 40, 20, 255 };
         float ratioRecurso = (float)stats.recurso / (float)stats.recursoMax;
-        DibujarBarra(x + 36, y + 62, ancho - 50, 6, ratioRecurso, Color{ 90, 140, 220, 255 }, Color{ 25, 35, 55, 255 });
+        DibujarBarra(x + 36, y + 62, ancho - 50, 6, ratioRecurso, colorRecurso, colorRecursoFondo);
+
+        char textoRecurso[32];
+        std::snprintf(textoRecurso, sizeof(textoRecurso), "%s %d/%d",
+                      game::NombreRecurso(personaje.Rol()), stats.recurso, stats.recursoMax);
+        DrawText(textoRecurso, x + 140, y + 52, 9, LIGHTGRAY);
     }
 
     DibujarEfectos(personaje.Combate(), x + ancho - 90, y + 4);
@@ -306,12 +318,12 @@ void DibujarCombate(game::CombatEncounter& encuentro, int anchoVentana, int alto
         int enemigosVivos = 0;
         for (auto* e : enemigos) if (e->EstaVivo()) enemigosVivos++;
 
-        char menu[200];
+        char menu[220];
         if (enemigosVivos > 1) {
-            std::snprintf(menu, sizeof(menu), "Turno de %s  -  [1] Atacar    [2] %s    [TAB] Cambiar objetivo",
+            std::snprintf(menu, sizeof(menu), "Turno de %s  -  [1] Atacar    [2] %s    [3] Usar item    [TAB] Cambiar objetivo",
                           enTurno->Nombre().c_str(), game::NombreHabilidadDeRol(enTurno->Rol()));
         } else {
-            std::snprintf(menu, sizeof(menu), "Turno de %s  -  [1] Atacar    [2] %s",
+            std::snprintf(menu, sizeof(menu), "Turno de %s  -  [1] Atacar    [2] %s    [3] Usar item",
                           enTurno->Nombre().c_str(), game::NombreHabilidadDeRol(enTurno->Rol()));
         }
         int anchoTexto = MeasureText(menu, 20);
@@ -362,6 +374,74 @@ void ReiniciarFeedbackVisual() {
     g_numerosFlotantes.clear();
     g_flashesActivos.clear();
     g_ultimaSecuenciaVista = -1;
+}
+
+void DibujarSubmenuUsarItem(const game::Party& party, size_t indiceAliadoObjetivo) {
+    int anchoVentana = GetScreenWidth();
+
+    // Panel centrado, mas angosto que la pantalla entera para que se note
+    // que es un sub-menu encima del combate (que sigue dibujado detras).
+    int anchoPanel = 620;
+    int xPanel = (anchoVentana - anchoPanel) / 2;
+    int yPanel = 90;
+
+    const auto& miembros = party.Miembros();
+    const auto& pilas = party.Inventario().Pilas();
+
+    // Solo los Consumibles tienen sentido aca (las Mejoras se equipan desde
+    // el inventario en exploracion, no se "usan") -- se cuentan aparte de
+    // 'pilas' porque el numero que se muestra y el que espera main.cpp
+    // (NumeroPresionado) es el indice DENTRO de Pilas(), no el de esta lista
+    // filtrada, asi que se muestra el mismo indice que tiene en Pilas().
+    int consumiblesVisibles = 0;
+    for (const auto& pila : pilas) {
+        if (pila.item.tipo == game::TipoItem::Consumible) consumiblesVisibles++;
+    }
+    int altoLista = consumiblesVisibles > 0 ? consumiblesVisibles * 40 : 30;
+    int altoPanel = 76 + altoLista + 40;
+
+    DrawRectangle(xPanel, yPanel, anchoPanel, altoPanel, Color{ 18, 18, 24, 245 });
+    DrawRectangleLines(xPanel, yPanel, anchoPanel, altoPanel, Color{ 230, 200, 90, 255 });
+
+    DrawText("Usar item", xPanel + 20, yPanel + 14, 22, RAYWHITE);
+
+    const char* nombreAliado = indiceAliadoObjetivo < miembros.size()
+        ? miembros[indiceAliadoObjetivo].Nombre().c_str() : "?";
+    char subtitulo[96];
+    std::snprintf(subtitulo, sizeof(subtitulo), "Aliado seleccionado: %s  (TAB para cambiar)", nombreAliado);
+    DrawText(subtitulo, xPanel + 20, yPanel + 42, 14, Color{ 210, 210, 210, 255 });
+
+    int y = yPanel + 76;
+    if (consumiblesVisibles == 0) {
+        DrawText("No tenes consumibles para usar.", xPanel + 20, y, 15, LIGHTGRAY);
+    } else {
+        for (size_t i = 0; i < pilas.size() && i < 9; ++i) {
+            const auto& pila = pilas[i];
+            if (pila.item.tipo != game::TipoItem::Consumible) continue;
+
+            DrawRectangle(xPanel + 16, y, anchoPanel - 32, 34, Color{ 26, 26, 32, 220 });
+            DrawRectangleLines(xPanel + 16, y, anchoPanel - 32, 34, Color{ 80, 80, 90, 255 });
+
+            char etiqueta[16];
+            std::snprintf(etiqueta, sizeof(etiqueta), "[%zu]", i + 1);
+            DrawText(etiqueta, xPanel + 26, y + 8, 16, Color{ 230, 200, 90, 255 });
+
+            char nombreYCantidad[96];
+            std::snprintf(nombreYCantidad, sizeof(nombreYCantidad), "%s x%d", pila.item.nombre.c_str(), pila.cantidad);
+            DrawText(nombreYCantidad, xPanel + 66, y + 2, 15, RAYWHITE);
+
+            // "-> enemigo" o "-> <aliado>" segun a quien apunte, para que se
+            // note antes de confirmar sobre quien va a caer el efecto.
+            const char* destino = pila.item.apuntaAEnemigo ? "-> objetivo enemigo" : "-> aliado seleccionado";
+            int anchoDestino = MeasureText(destino, 13);
+            DrawText(destino, xPanel + anchoPanel - 32 - anchoDestino, y + 10, 13, Color{ 190, 190, 160, 255 });
+
+            y += 40;
+        }
+    }
+
+    const char* instrucciones = "[1-9] Usar    [TAB] Cambiar aliado    [ESC] Cancelar";
+    DrawText(instrucciones, xPanel + 20, yPanel + altoPanel - 26, 14, Color{ 255, 235, 180, 255 });
 }
 
 } // namespace ui

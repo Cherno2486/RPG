@@ -51,6 +51,26 @@ constexpr int kNumTemplates = 6;
 constexpr int kNumSalas = 5;       // 1 inicial + 4 con contenido
 constexpr int kAnchoPasillo = 3;   // en tiles
 
+// Trampas de piso (ver Trampa en dungeon.h): chance por sala CON CONTENIDO
+// (la 0, inicial, nunca tiene) de llevar una sola trampa -- "pocas,
+// salteadas" fue lo elegido explicitamente sobre "varias por sala", para que
+// se sienta como una sorpresa puntual a esquivar y no un piso lleno de
+// peligro. Con 4 salas elegibles al 40% cada una, el promedio es menos de 2
+// trampas por mazmorra (a veces ninguna, rara vez mas de dos).
+constexpr int kChanceTrampaPorSalaDe100 = 40;
+
+// Radio (en tiles) alrededor del centro geometrico de la sala que queda
+// libre de trampas -- ahi es donde aparece el grupo de enemigos (ver
+// CrearGrupoDeSala en main.cpp), asi que una trampa justo debajo seria
+// inevitable en vez de esquivable. 2.2 tiles cubre con margen el spread mas
+// ancho posible del grupo (hasta 5 enemigos en grilla de 3 columnas).
+constexpr float kRadioLibreDeTrampaEnTiles = 2.2f;
+
+// Esquina superior izquierda (2x2 tiles) reservada para el cofre de la sala
+// (ver CrearCofreEnEsquina en main.cpp) -- misma logica que el radio libre
+// de arriba, pero para esa otra zona con contenido fijo.
+constexpr int kMargenCofreEnTiles = 2;
+
 // True si la celda local (lx, ly) -- relativa a la esquina superior
 // izquierda de una sala ConPilares de 'ancho' x 'alto' -- cae dentro de uno
 // de los 4 pilares 2x2. Los 4 quedan simetricos y bien adentro del
@@ -83,6 +103,45 @@ void GenerarTilesDeSala(std::set<std::pair<int, int>>& piso, const RoomTemplate&
             piso.insert({x, y});
         }
     }
+}
+
+// Intenta ubicar UNA trampa dentro de la sala 'h' (con chance
+// kChanceTrampaPorSalaDe100), sobre un tile de piso real (ver 'piso') que no
+// caiga ni en la zona de spawn de enemigos (circulo alrededor del centro) ni
+// en la esquina reservada para el cofre. Si no hay ningun tile candidato (no
+// deberia pasar con los templates actuales, pero una sala rarisima podria
+// agotarlos) simplemente no agrega nada -- una trampa de menos no rompe
+// nada, a diferencia de una mal ubicada.
+void IntentarUbicarTrampa(std::vector<Trampa>& trampas, const std::set<std::pair<int, int>>& piso,
+                           const Habitacion& h) {
+    if (Roll(100) > kChanceTrampaPorSalaDe100) return;
+
+    float centroX = h.x + h.ancho / 2.0f;
+    float centroY = h.y + h.alto / 2.0f;
+    float radioLibre2 = kRadioLibreDeTrampaEnTiles * kRadioLibreDeTrampaEnTiles;
+
+    std::vector<std::pair<int, int>> candidatos;
+    for (int ty = h.y; ty < h.y + h.alto; ++ty) {
+        for (int tx = h.x; tx < h.x + h.ancho; ++tx) {
+            if (piso.count({tx, ty}) == 0) continue;  // muesca de sala en L o pilar: no es piso
+
+            if (tx < h.x + kMargenCofreEnTiles && ty < h.y + kMargenCofreEnTiles) continue;
+
+            float dx = (tx + 0.5f) - centroX;
+            float dy = (ty + 0.5f) - centroY;
+            if (dx * dx + dy * dy < radioLibre2) continue;
+
+            candidatos.push_back({tx, ty});
+        }
+    }
+    if (candidatos.empty()) return;
+
+    auto [tx, ty] = candidatos[Roll(static_cast<int>(candidatos.size())) - 1];
+    TipoTrampa tipo = (Roll(2) == 1) ? TipoTrampa::Fuego : TipoTrampa::Acido;
+    trampas.push_back(Trampa{
+        tipo,
+        Rect{tx * kTileSize, ty * kTileSize, kTileSize, kTileSize}
+    });
 }
 
 } // namespace
@@ -139,6 +198,13 @@ Dungeon::Dungeon() {
         prevAlto = t.alto;
     }
 
+    // Trampas de piso: una chance por sala CON CONTENIDO (nunca en la 0,
+    // inicial, para que arrancar la run sea siempre seguro) de llevar una
+    // sola trampa -- ver IntentarUbicarTrampa e "Trampas de piso" mas arriba.
+    for (int i = 1; i < kNumSalas; ++i) {
+        IntentarUbicarTrampa(trampas_, piso, habitaciones_[i]);
+    }
+
     // Bounding box de todo el layout generado, con 1 tile de margen para
     // poder cerrar las paredes exteriores.
     int minX = 0, minY = 0, maxX = 0, maxY = 0;
@@ -164,8 +230,8 @@ Dungeon::Dungeon() {
     }
 }
 
-Dungeon::Dungeon(std::vector<Habitacion> habitaciones, std::vector<Rect> paredes)
-    : habitaciones_(std::move(habitaciones)), paredes_(std::move(paredes)) {}
+Dungeon::Dungeon(std::vector<Habitacion> habitaciones, std::vector<Rect> paredes, std::vector<Trampa> trampas)
+    : habitaciones_(std::move(habitaciones)), paredes_(std::move(paredes)), trampas_(std::move(trampas)) {}
 
 Vec2 Dungeon::CentroDeSala(size_t indice) const {
     if (indice >= habitaciones_.size()) return Vec2{0.0f, 0.0f};

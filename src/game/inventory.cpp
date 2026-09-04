@@ -26,6 +26,14 @@ ResultadoUsoItem Inventory::Usar(size_t indice, Character& objetivo) {
     return r;
 }
 
+void Inventory::ConsumirUnidad(size_t indice) {
+    if (indice >= pilas_.size()) return;
+    pilas_[indice].cantidad -= 1;
+    if (pilas_[indice].cantidad <= 0) {
+        pilas_.erase(pilas_.begin() + (long)indice);
+    }
+}
+
 ResultadoEquipar Inventory::Equipar(size_t indice, Character& personaje) {
     if (indice >= pilas_.size()) return ResultadoEquipar{};
     if (pilas_[indice].item.tipo != TipoItem::Mejora) return ResultadoEquipar{};

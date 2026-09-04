@@ -3,4 +3,4 @@ external/
 .cache/
 *.user
 CMakeUserPresets.json
-savegame.txt
+savegame_slot*.txt

@@ -22,4 +22,15 @@ void DibujarCombate(game::CombatEncounter& encuentro, int anchoVentana, int alto
 // medio desvanecer.
 void ReiniciarFeedbackVisual();
 
+// Dibuja el sub-menu de "[3] Usar item" encima de la pantalla de combate ya
+// dibujada (llamar DESPUES de DibujarCombate, mientras el sub-menu esta
+// abierto -- ver main.cpp): la lista de Consumibles del inventario
+// compartido del party (con un numero al lado, mismo criterio que
+// ui::DibujarInventario) y, para el aliado elegido con [TAB]
+// ('indiceAliadoObjetivo'), su ficha resaltada -- los consumibles que
+// apuntan a un enemigo (Bomba de Veneno) en cambio se aplican sobre el
+// objetivo de combate ya elegido en la pantalla principal, sin necesidad de
+// elegir aliado.
+void DibujarSubmenuUsarItem(const game::Party& party, size_t indiceAliadoObjetivo);
+
 } // namespace ui

@@ -112,8 +112,8 @@ CMakeFiles/rpg_mazmorras.dir/src/game/inventory.cpp.obj: \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/vector.tcc \
  C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\item.h \
  C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\item_types.h \
+ C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\effects.h \
  C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\character.h \
  C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\mathtypes.h \
  C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\combat_state.h \
- C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\effects.h \
  C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game\enemy.h

@@ -1,4 +1,5 @@
 #include "character.h"
+#include <algorithm>
 
 namespace game {
 
@@ -10,6 +11,14 @@ const char* RoleName(Role role) {
         case Role::Control: return "Control";
     }
     return "?";
+}
+
+const char* NombreRecurso(Role rol) {
+    return UsaConcentracion(rol) ? "Concentración" : "Resistencia";
+}
+
+bool UsaConcentracion(Role rol) {
+    return rol == Role::Soporte || rol == Role::Control;
 }
 
 Character::Character(std::string nombre, Role rol, Stats stats, Vec2 posicionInicial)
@@ -25,7 +34,16 @@ Rect Character::Colisionador() const {
 }
 
 int Character::RecibirDano(int cantidad) {
-    return AplicarDano(stats_, combate_, cantidad);
+    int danoReal = AplicarDano(stats_, combate_, cantidad);
+    // La Concentracion se rompe/reduce al recibir dano (a diferencia de la
+    // Resistencia fisica, que solo se gasta al usar la habilidad de rol) —
+    // se le resta el mismo dano que efectivamente llego a la vida (ya
+    // descontado el Escudo), sin bajar de 0. Solo afecta a Soporte/Control:
+    // Tanque y Danio no usan Concentracion (ver NombreRecurso/UsaConcentracion).
+    if (danoReal > 0 && UsaConcentracion(rol_)) {
+        stats_.recurso -= std::min(stats_.recurso, danoReal);
+    }
+    return danoReal;
 }
 
 int Character::Curar(int cantidad) {

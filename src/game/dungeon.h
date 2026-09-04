@@ -16,6 +16,21 @@ struct Habitacion {
     int alto = 0;
 };
 
+// Trampa de piso: casilla que hace dano a quien se quede parado en ella
+// (jugador o enemigo -- pedido explicito del usuario, "que afecte a los dos
+// por igual", ver el chequeo en main.cpp) mientras dure el cooldown propio
+// de esa entidad (ver Character::CooldownTrampa/Enemy::CooldownTrampa, que
+// evita un tick de dano por frame). Fuego pega fuerte y de a poco (cooldown
+// largo); Acido pega mas seguido pero mas suave (cooldown corto) -- las dos
+// dan un dano por segundo similar en total, la diferencia es el "ritmo": el
+// fuego castiga quedarse parado, el acido castiga demorarse en salir.
+enum class TipoTrampa { Fuego, Acido };
+
+struct Trampa {
+    TipoTrampa tipo = TipoTrampa::Fuego;
+    Rect area;  // un tile completo (kTileSize x kTileSize), misma convencion que Paredes()
+};
+
 // Mazmorra procedural: una cadena de salas de distinto tamaño (elegidas al
 // azar de un set fijo de "room templates"), conectadas por pasillos rectos,
 // que se van extendiendo siempre hacia el Este o el Sur — así nunca hace
@@ -28,18 +43,20 @@ public:
     Dungeon();
 
     // Reconstruye una mazmorra a partir de datos YA CALCULADOS (salas +
-    // paredes), en vez de generarlos de nuevo — la usa el sistema de
-    // guardado (game/save.h) para restaurar exactamente la mazmorra
+    // paredes + trampas), en vez de generarlos de nuevo — la usa el sistema
+    // de guardado (game/save.h) para restaurar exactamente la mazmorra
     // guardada. No alcanza con volver a tirar la generacion procedural con
     // la misma "receta": las paredes de una sala en L o con pilares no se
     // pueden derivar solo del bounding box de la sala (ver
     // FormaSala/GenerarTilesDeSala en dungeon.cpp, que son un detalle
     // interno y no se exponen), asi que hay que guardar el resultado ya
-    // resuelto tal cual quedo.
-    Dungeon(std::vector<Habitacion> habitaciones, std::vector<Rect> paredes);
+    // resuelto tal cual quedo. Mismo motivo para las trampas: son parte del
+    // layout ya resuelto, no algo que tenga sentido volver a tirar al azar.
+    Dungeon(std::vector<Habitacion> habitaciones, std::vector<Rect> paredes, std::vector<Trampa> trampas);
 
     const std::vector<Rect>& Paredes() const { return paredes_; }
     const std::vector<Habitacion>& Habitaciones() const { return habitaciones_; }
+    const std::vector<Trampa>& Trampas() const { return trampas_; }
 
     // Centro de la sala 'indice' (mismo orden que Habitaciones()), en
     // pixeles. El indice 0 es la sala inicial, donde arranca el party y
@@ -59,6 +76,7 @@ public:
 private:
     std::vector<Habitacion> habitaciones_;
     std::vector<Rect> paredes_;
+    std::vector<Trampa> trampas_;
 };
 
 } // namespace game

@@ -5,6 +5,7 @@
 #include "party.h"
 #include "enemy.h"
 #include "effects.h"
+#include "item.h"  // Item, ResultadoUsoItem, para AccionUsarItem/UsarItemDeEstadoEnCombate
 
 // Sistema de combate por turnos "tipo BG3": tiradas de d20 contra una
 // dificultad para impactar, dados de daño, ventaja en algunas habilidades,
@@ -36,6 +37,17 @@ struct ResultadoAccion {
 
 // Nombre de la habilidad de rol de cada uno (para mostrar en la UI).
 const char* NombreHabilidadDeRol(Role rol);
+
+// Aplica el efecto de un item Consumible de "estado" (EfectoItem::
+// AplicarEstado o CurarEstados, ver item_types.h) sobre 'objetivo'. A
+// diferencia de game::UsarItem (item.h), que solo puede curar vida/recurso
+// sobre un Character, esta funcion trabaja sobre Combatiente para poder
+// apuntar tambien a un enemigo (caso de Bomba de Veneno, la unica que
+// apunta a un Enemy en vez de a un aliado). No consume el item del
+// inventario -- eso lo maneja CombatEncounter::AccionUsarItem. Devuelve
+// exitoso=false sin hacer nada si 'item' no es Consumible o su efecto no es
+// AplicarEstado/CurarEstados (para eso esta game::UsarItem).
+ResultadoUsoItem UsarItemDeEstadoEnCombate(const Item& item, Combatiente& objetivo);
 
 // Ataque basico: 1d6 + bono de ataque, sin ventaja, sin efecto adicional.
 ResultadoAccion EjecutarAtaqueBasico(Combatiente& atacante, Combatiente& objetivo);
@@ -107,6 +119,21 @@ public:
     // se consume, para que el jugador elija otra cosa.
     void AccionAtaqueBasico();
     void AccionHabilidadDeRol();
+
+    // Usa un consumible del inventario compartido del party durante el
+    // turno del aliado en juego: cura vida/recurso (Pocion de Curacion
+    // Menor, Elixir de Energia -- mismo efecto que ya aplicaba la pantalla
+    // de inventario en exploracion) o aplica/cura un estado (Bomba de
+    // Veneno, Frasco de Escudo, Antidoto -- ver item_types.h,
+    // EfectoItem::AplicarEstado/CurarEstados). 'indiceItem' es el indice en
+    // PartyRef().Inventario().Pilas(); 'indiceAliado' es a que miembro del
+    // party se le aplica (ignorado si el item apunta a un enemigo, ver
+    // Item::apuntaAEnemigo, que en ese caso usa el enemigo en
+    // IndiceObjetivo()). Si el item no se pudo usar (indice de item
+    // invalido, no es un Consumible, o el aliado elegido es invalido o ya
+    // cayo) no hace nada y el turno NO se consume, igual criterio que las
+    // otras Accion*.
+    void AccionUsarItem(size_t indiceItem, size_t indiceAliado);
 
     // Llamar cada frame: si es turno de un enemigo, hace avanzar un pequeño
     // temporizador y cuando se cumple resuelve su turno solo.

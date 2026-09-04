@@ -176,6 +176,25 @@ void Renderer::DibujarEscenarioSinUI(const game::Dungeon& mazmorra, const game::
         }
     }
 
+    // Trampas de piso: fuego con un parpadeo de escala (mismo recurso visual
+    // que ya usa la antorcha, GetTime() variando el tamano cuadro a cuadro)
+    // y acido con un pulso de opacidad, para que se lean como "algo activo"
+    // en vez de una decoracion mas del piso -- coherente con que SI hacen
+    // dano (ver el chequeo de trampas en main.cpp).
+    {
+        float tiempo = (float)GetTime();
+        for (const auto& trampa : mazmorra.Trampas()) {
+            Vector2 centro{ trampa.area.x + trampa.area.width * 0.5f, trampa.area.y + trampa.area.height * 0.5f };
+            if (trampa.tipo == game::TipoTrampa::Fuego) {
+                float escala = kEscalaTile * (1.0f + 0.08f * sinf(tiempo * 7.0f + centro.x));
+                DibujarSpriteCentrado(sprites_->Trampa(trampa.tipo), centro, escala);
+            } else {
+                unsigned char alfa = (unsigned char)(200 + 55 * sinf(tiempo * 3.0f + centro.y));
+                DibujarSpriteCentrado(sprites_->Trampa(trampa.tipo), centro, kEscalaTile, Color{ 255, 255, 255, alfa });
+            }
+        }
+    }
+
     // Cofres
     for (const auto& cofre : cofres) {
         DibujarCofre(cofre, *sprites_);
@@ -199,8 +218,18 @@ void Renderer::DibujarEscenarioSinUI(const game::Dungeon& mazmorra, const game::
         }
         DibujarSpritePlantado(sprites_->Enemigo(enemigo.Tipo()), posEnemigo, escala);
 
+        // Los agresivos (ver game::EsAgresivo) persiguen al jugador durante
+        // la exploracion en vez de esperar [E] — el nombre en rojo mas un
+        // "!" arriba avisan de eso antes de que se acerquen demasiado.
+        bool esAgresivo = game::EsAgresivo(enemigo.Tipo());
+        Color colorNombre = esAgresivo ? Color{ 255, 120, 120, 255 } : RAYWHITE;
         int anchoTexto = MeasureText(enemigo.Nombre().c_str(), 12);
-        DrawText(enemigo.Nombre().c_str(), (int)posEnemigo.x - anchoTexto / 2, (int)(posEnemigo.y - alturaSprite - 14), 12, RAYWHITE);
+        DrawText(enemigo.Nombre().c_str(), (int)posEnemigo.x - anchoTexto / 2, (int)(posEnemigo.y - alturaSprite - 14), 12, colorNombre);
+        if (esAgresivo) {
+            const char* marca = "!";
+            int anchoMarca = MeasureText(marca, 16);
+            DrawText(marca, (int)posEnemigo.x - anchoMarca / 2, (int)(posEnemigo.y - alturaSprite - 30), 16, Color{ 255, 60, 60, 255 });
+        }
     }
 
     // Party: se dibuja del ultimo al primero para que el lider quede arriba de los demas

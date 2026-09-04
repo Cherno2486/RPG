@@ -22,6 +22,18 @@ enum class TipoEnemigo {
                         // debajo del 40% de HP (siempre Doble Tajo).
 };
 
+// True si los enemigos de este tipo persiguen al lider durante la
+// exploracion y fuerzan el combate al alcanzarlo (ver el chequeo de
+// persecucion en main.cpp), en vez de quedarse quietos hasta que el
+// jugador confirma con [E] como el resto. Solo el Bandido Aturdidor es
+// agresivo por ahora — pedido explicito del usuario: "que persigan y
+// peleen, pero no todos los enemigos". El Capitan Bandido queda afuera a
+// proposito (es un jefe unico al fondo de la mazmorra: perseguir no le
+// suma nada, el jugador ya tiene que enfrentarlo si o si para terminar la
+// run) y los otros dos tipos comunes se quedan con el comportamiento
+// pasivo original.
+bool EsAgresivo(TipoEnemigo tipo);
+
 // Enemigo simple: mismos stats base que un personaje, pero sin rol ni
 // habilidades propias del party (su "habilidad", si tiene una especial
 // segun el tipo, la resuelve la capa de combate).
@@ -56,6 +68,18 @@ public:
     bool Vencido() const { return vencido_; }
     void MarcarVencido() { vencido_ = true; }
 
+    // Cooldown de dano de trampa de piso (ver game::Trampa en dungeon.h):
+    // mientras sea mayor a 0, este enemigo no puede recibir otro tick de
+    // dano de trampa, aunque siga parado/persiguiendo sobre una. Estado
+    // puramente de exploracion, sin relacion con el combate -- por eso no
+    // se persiste en el guardado (perder el cooldown a mitad de una trampa
+    // al cargar una partida es un detalle menor, no cambia el resultado).
+    float CooldownTrampa() const { return cooldownTrampa_; }
+    void ActualizarCooldownTrampa(float deltaSeconds) {
+        if (cooldownTrampa_ > 0.0f) cooldownTrampa_ -= deltaSeconds;
+    }
+    void ReiniciarCooldownTrampa(float duracion) { cooldownTrampa_ = duracion; }
+
 private:
     std::string nombre_;
     TipoEnemigo tipo_;
@@ -64,6 +88,7 @@ private:
     EstadoCombate combate_;
     bool vencido_ = false;
     int sala_ = -1;
+    float cooldownTrampa_ = 0.0f;
     static constexpr float kRadioColision = 16.0f;
 };
 

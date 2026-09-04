@@ -13,7 +13,18 @@ namespace {
 // CargarPartida devuelva 'valido=false' (el jugador arranca partida nueva
 // en vez de crashear).
 constexpr const char* kEncabezado = "RPGMAZMORRAS_SAVE";
-constexpr int kVersion = 1;
+// v2: se agrego el bloque de trampas de piso (ver game::Trampa en
+// dungeon.h), justo despues del de paredes.
+// v3: se agrego el bloque del mapa de mazmorras (mazmorraSuperada/enMapa/
+// mazmorraActivaIndice, ver DatosPartida en save.h) al final del archivo, y
+// se agregaron los dos campos nuevos de Item (estado/apuntaAEnemigo, ver
+// item_types.h — sumados para los consumibles de combate: Bomba de Veneno,
+// Frasco de Escudo, Antidoto) a EscribirItem/LeerItem. Un archivo de una
+// version anterior no tiene ninguno de los dos, asi que no se puede leer
+// con el parser actual sin desalinear todo lo que viene despues -- se
+// rechaza como cualquier otra version vieja/desconocida (ver CargarPartida),
+// el jugador simplemente arranca una partida nueva en vez de crashear.
+constexpr int kVersion = 3;
 constexpr char kDelimitador = '|';
 
 // --- Escritura: cada registro es una linea con campos separados por '|'.
@@ -28,7 +39,8 @@ void EscribirItem(std::ostream& out, const Item& item) {
     out << item.nombre << kDelimitador << item.descripcion << kDelimitador
         << static_cast<int>(item.tipo) << kDelimitador << static_cast<int>(item.efecto) << kDelimitador
         << static_cast<int>(item.ranura) << kDelimitador << item.dados << kDelimitador
-        << item.caras << kDelimitador << item.bono;
+        << item.caras << kDelimitador << item.bono << kDelimitador
+        << static_cast<int>(item.estado) << kDelimitador << (item.apuntaAEnemigo ? 1 : 0);
 }
 
 void EscribirItemEquipado(std::ostream& out, const ItemEquipado& equipado) {
@@ -87,6 +99,8 @@ Item LeerItem(LectorCampos& l) {
     item.dados = l.Int();
     item.caras = l.Int();
     item.bono = l.Int();
+    item.estado = static_cast<TipoEfecto>(l.Int());
+    item.apuntaAEnemigo = l.Bool();
     return item;
 }
 
@@ -105,14 +119,19 @@ bool LeerLinea(std::istream& in, std::string& out) {
 
 }  // namespace
 
-bool HayPartidaGuardada() {
-    std::ifstream archivo(kRutaGuardado);
+std::string RutaGuardado(int slot) {
+    return "savegame_slot" + std::to_string(slot + 1) + ".txt";
+}
+
+bool HayPartidaGuardada(int slot) {
+    std::ifstream archivo(RutaGuardado(slot));
     return archivo.good();
 }
 
-bool GuardarPartida(const Dungeon& mazmorra, const Party& party,
-                     const std::vector<Enemy>& enemigos, const std::vector<Cofre>& cofres) {
-    std::ofstream out(kRutaGuardado, std::ios::trunc);
+bool GuardarPartida(int slot, const Dungeon& mazmorra, const Party& party,
+                     const std::vector<Enemy>& enemigos, const std::vector<Cofre>& cofres,
+                     const bool mazmorraSuperada[kNumMazmorrasMapa], bool enMapa, int mazmorraActivaIndice) {
+    std::ofstream out(RutaGuardado(slot), std::ios::trunc);
     if (!out.is_open()) return false;
 
     out << kEncabezado << kDelimitador << kVersion << "\n";
@@ -129,6 +148,12 @@ bool GuardarPartida(const Dungeon& mazmorra, const Party& party,
     out << paredes.size() << "\n";
     for (const auto& p : paredes) {
         out << p.x << kDelimitador << p.y << kDelimitador << p.width << kDelimitador << p.height << "\n";
+    }
+    const auto& trampas = mazmorra.Trampas();
+    out << trampas.size() << "\n";
+    for (const auto& t : trampas) {
+        out << static_cast<int>(t.tipo) << kDelimitador << t.area.x << kDelimitador << t.area.y << kDelimitador
+            << t.area.width << kDelimitador << t.area.height << "\n";
     }
 
     // --- Party: stats actuales (ya incluyen cualquier bono de equipo
@@ -185,13 +210,19 @@ bool GuardarPartida(const Dungeon& mazmorra, const Party& party,
         out << "\n";
     }
 
+    // --- Mapa de mazmorras (ver DatosPartida en save.h) ---
+    for (int i = 0; i < kNumMazmorrasMapa; ++i) {
+        out << (mazmorraSuperada[i] ? 1 : 0) << (i + 1 < kNumMazmorrasMapa ? kDelimitador : '\n');
+    }
+    out << (enMapa ? 1 : 0) << kDelimitador << mazmorraActivaIndice << "\n";
+
     return static_cast<bool>(out);
 }
 
-ResultadoCarga CargarPartida() {
+ResultadoCarga CargarPartida(int slot) {
     ResultadoCarga resultado;
 
-    std::ifstream in(kRutaGuardado);
+    std::ifstream in(RutaGuardado(slot));
     if (!in.is_open()) return resultado;  // sin archivo: valido=false
 
     std::string linea;
@@ -231,6 +262,23 @@ ResultadoCarga CargarPartida() {
         r.x = l.Float(); r.y = l.Float(); r.width = l.Float(); r.height = l.Float();
         if (l.huboFaltante) return resultado;
         datos.paredes.push_back(r);
+    }
+
+    if (!LeerLinea(in, linea)) return resultado;
+    int numTrampas = 0;
+    try { numTrampas = std::stoi(linea); } catch (...) { return resultado; }
+    if (numTrampas < 0) return resultado;
+    for (int i = 0; i < numTrampas; ++i) {
+        if (!LeerLinea(in, linea)) return resultado;
+        LectorCampos l(linea);
+        Trampa t;
+        t.tipo = static_cast<TipoTrampa>(l.Int());
+        t.area.x = l.Float();
+        t.area.y = l.Float();
+        t.area.width = l.Float();
+        t.area.height = l.Float();
+        if (l.huboFaltante) return resultado;
+        datos.trampas.push_back(t);
     }
 
     // --- Party ---
@@ -322,6 +370,21 @@ ResultadoCarga CargarPartida() {
         cofre.contenido = LeerItem(l);
         if (l.huboFaltante) return resultado;
         datos.cofres.push_back(std::move(cofre));
+    }
+
+    // --- Mapa de mazmorras ---
+    if (!LeerLinea(in, linea)) return resultado;
+    {
+        LectorCampos l(linea);
+        for (int i = 0; i < kNumMazmorrasMapa; ++i) datos.mazmorraSuperada[i] = l.Bool();
+        if (l.huboFaltante) return resultado;
+    }
+    if (!LeerLinea(in, linea)) return resultado;
+    {
+        LectorCampos l(linea);
+        datos.enMapa = l.Bool();
+        datos.mazmorraActivaIndice = l.Int();
+        if (l.huboFaltante) return resultado;
     }
 
     resultado.valido = true;

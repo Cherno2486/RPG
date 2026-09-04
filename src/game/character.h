@@ -15,10 +15,26 @@ enum class Role {
 
 const char* RoleName(Role role);
 
+// Nombre del recurso de habilidad segun el rol — ya no hay un "mana"
+// generico: Tanque y Danio (roles fisicos) gastan Resistencia al pelear
+// cuerpo a cuerpo (el cansancio de un espadazo o lanzazo), y Soporte y
+// Control (los magos del party) gastan Concentracion al castear, que ademas
+// se les rompe/reduce al recibir dano en combate (ver
+// combat.cpp::ResolverAtaque y Character::RecibirDano) — es mas fragil que
+// la Resistencia fisica, en linea con "necesitan concentracion para
+// castear el hechizo".
+const char* NombreRecurso(Role rol);
+
+// True si 'rol' usa Concentracion (Soporte/Control) en vez de Resistencia
+// (Tanque/Danio) — ver NombreRecurso. Centraliza el chequeo para no repetir
+// "rol == Soporte || rol == Control" en cada lugar que necesita distinguir
+// el comportamiento (ahora mismo, solo Character::RecibirDano).
+bool UsaConcentracion(Role rol);
+
 struct Stats {
     int hpMax = 10;
     int hp = 10;
-    int recursoMax = 0;        // energia / mana / stamina, segun el rol
+    int recursoMax = 0;        // Resistencia o Concentracion, segun el rol — ver NombreRecurso(Role)
     int recurso = 0;
     int ataque = 1;
     int defensa = 0;
@@ -52,7 +68,14 @@ public:
     const EstadoCombate& Combate() const { return combate_; }
 
     bool EstaVivo() const { return stats_.hp > 0; }
-    // Aplica dano (consumiendo escudo si tiene) y devuelve el dano real a la vida.
+    // Aplica dano (consumiendo escudo si tiene) y devuelve el dano real a la
+    // vida. Si el rol usa Concentracion (Soporte/Control — ver
+    // UsaConcentracion), ademas le rompe/reduce esa cantidad de recurso: a
+    // un mago le cuesta mantener el hechizo mientras lo golpean. Es el unico
+    // punto de entrada para dano que pasa por esta clase (los golpes de
+    // combate via Combatiente/AplicarDano en combat.cpp aplican la misma
+    // regla por separado, ver ResolverAtaque — este cubre el resto, como el
+    // dano de veneno por turno).
     int RecibirDano(int cantidad);
     // Cura vida sin pasarse del maximo y devuelve lo curado.
     int Curar(int cantidad);
@@ -87,6 +110,16 @@ public:
     // veces.
     void CargarEquipoGuardado(ItemEquipado arma, ItemEquipado accesorio);
 
+    // Cooldown de dano de trampa de piso (ver game::Trampa en dungeon.h) --
+    // mismo mecanismo que Enemy::CooldownTrampa, ver ese comentario. Solo lo
+    // usa el lider del party durante la exploracion (es el unico personaje
+    // con colision propia contra el mundo, ver Party::ActualizarFormacion).
+    float CooldownTrampa() const { return cooldownTrampa_; }
+    void ActualizarCooldownTrampa(float deltaSeconds) {
+        if (cooldownTrampa_ > 0.0f) cooldownTrampa_ -= deltaSeconds;
+    }
+    void ReiniciarCooldownTrampa(float duracion) { cooldownTrampa_ = duracion; }
+
 private:
     std::string nombre_;
     Role rol_;
@@ -95,6 +128,7 @@ private:
     EstadoCombate combate_;
     ItemEquipado arma_;
     ItemEquipado accesorio_;
+    float cooldownTrampa_ = 0.0f;
     static constexpr float kRadioColision = 14.0f;
 };
 

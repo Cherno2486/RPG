@@ -1,10 +1,11 @@
 #pragma once
 #include <string>
+#include "effects.h"  // TipoEfecto, para items que aplican/curan un estado (ver EfectoItem)
 
 namespace game {
 
 enum class TipoItem {
-    Consumible,  // cura vida o recurso tirando dados; se gasta al usarse
+    Consumible,  // cura vida/recurso o aplica/cura un estado; se gasta al usarse
     Mejora,      // sube una stat un monto fijo, para siempre; se EQUIPA
                  // (ver RanuraEquipo, Character::Equipar) en vez de "usarse"
                  // directo, asi no se puede apilar la misma mejora sin limite
@@ -18,6 +19,9 @@ enum class EfectoItem {
     MejorarDefensa,
     MejorarVelocidad,    // Mejora de ranura Arma, alternativa a MejorarAtaque
     MejorarVidaMaxima,   // Mejora de ranura Accesorio, alternativa a MejorarDefensa
+    AplicarEstado,       // aplica el TipoEfecto de Item::estado sobre el objetivo,
+                         // sin tirada de impacto (Bomba de Veneno, Frasco de Escudo)
+    CurarEstados,        // quita Aturdido y Veneno del objetivo (Antidoto)
 };
 
 // Ranura de equipo donde va un item de tipo Mejora una vez equipado. Cada
@@ -48,6 +52,19 @@ struct Item {
     int dados = 0;
     int caras = 0;
     int bono = 0;
+
+    // Solo usados cuando efecto == AplicarEstado: 'estado' es el TipoEfecto a
+    // aplicar (reutiliza 'dados' como duracionTurnos y 'bono' como magnitud
+    // del EfectoActivo resultante, mismo criterio que Mejora reutiliza 'bono'
+    // para el monto de su stat — asi no hace falta un struct aparte). No se
+    // usan con CurarEstados (Antidoto no necesita magnitud/duracion, quita
+    // Aturdido y Veneno directo).
+    TipoEfecto estado = TipoEfecto::Aturdido;
+    // True si este item apunta a un ENEMIGO en vez de a un aliado (caso de
+    // Bomba de Veneno) — ver game::CombatEncounter::AccionUsarItem, que lo
+    // usa para decidir si aplica el efecto sobre IndiceObjetivo() o sobre el
+    // aliado elegido en el sub-menu de "[3] Usar item".
+    bool apuntaAEnemigo = false;
 };
 
 } // namespace game

@@ -23,6 +23,16 @@ Item AmuletoDeProteccion();     // Mejora (ranura Accesorio): +1 de defensa perm
 Item DagaVeloz();               // Mejora (ranura Arma): +10 de velocidad permanente
 Item TalismanDeVitalidad();     // Mejora (ranura Accesorio): +5 de vida maxima permanente
 
+// Consumibles de combate: no curan vida/recurso, aplican o curan un estado
+// (ver TipoEfecto en effects.h). Solo tienen sentido durante un
+// CombatEncounter (ver AccionUsarItem en game/combat.h) -- usarlos desde la
+// pantalla de inventario en exploracion no hace nada (ver UsarItem mas
+// abajo), asi que la UI de exploracion los marca como "solo en combate" en
+// vez de dejarlos gastarse sin efecto.
+Item BombaDeVeneno();           // Aplica Veneno a un enemigo (3 de daño x 3 turnos), sin tirada de impacto
+Item FrascoDeEscudo();          // Aplica Escudo a un aliado (absorbe 6 de daño)
+Item Antidoto();                // Cura Aturdido y Veneno de un aliado
+
 // Una Mejora al azar entre las 4 del catalogo (una de cada ranura x sabor),
 // para no repetir la misma logica de sorteo en ItemAleatorioDeCofre y
 // TirarLootDeEnemigo.
@@ -42,7 +52,11 @@ struct ResultadoUsoItem {
 // vida o recurso). No saca el item del inventario — eso lo maneja
 // Inventory::Usar. Devuelve exitoso=false sin hacer nada si 'item' no es de
 // tipo Consumible (una Mejora se equipa con Character::Equipar /
-// Inventory::Equipar, no se "usa" con esta funcion).
+// Inventory::Equipar, no se "usa" con esta funcion) o si su efecto es
+// AplicarEstado/CurarEstados (Bomba de Veneno, Frasco de Escudo, Antidoto) —
+// esos necesitan poder apuntar tambien a un Enemy, no solo a un Character, y
+// por eso se resuelven aparte con game::UsarItemDeEstadoEnCombate (ver
+// game/combat.h), que trabaja sobre Combatiente en vez de Character.
 ResultadoUsoItem UsarItem(const Item& item, Character& objetivo);
 
 // Botin que puede soltar un enemigo derrotado, segun su tipo. 'hay' en
