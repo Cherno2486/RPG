@@ -40,6 +40,12 @@ constexpr const char* kDescripcionesMazmorrasMapa[kNumMazmorrasMapa] = {
     "Mas enemigos, enemigos mas fuertes. Mejor botin.",
 };
 
+// Tarjeta "Volver a la ciudad", agregada al final de los dos pasos del mapa
+// (ver kNumOpcionesMapaTema/kNumOpcionesMapaDificultad en menu_ui.h) — mismo
+// texto en los dos pasos, asi que vive una sola vez aca.
+constexpr const char* kNombreVolverACiudad = "Volver a la ciudad";
+constexpr const char* kDescripcionVolverACiudad = "Volver a la Ciudad a comprar, aprender o descansar.";
+
 // El titulo va siempre en el mismo lugar en las dos pantallas (menu y
 // "Sobre mi") para que la transicion entre las dos no salte.
 constexpr int kTamanoTitulo = 56;
@@ -330,15 +336,27 @@ void DibujarTarjetasDeSeleccion(int anchoVentana, int altoVentana, const char* s
 
 void DibujarMapaTema(int anchoVentana, int altoVentana, int opcionSeleccionada,
                       const int progresoPorTema[kNumTemasMapa]) {
-    std::string etiquetas[kNumTemasMapa];
+    // Arma un array de kNumOpcionesMapaTema (temas reales + "Volver a la
+    // ciudad" al final, ver el comentario de esa constante en menu_ui.h) en
+    // vez de agrandar kNombresTemasMapa/kDescripcionesTemasMapa -- esos dos
+    // siguen siendo solo los 3 temas reales, indexables directo por
+    // game::Tema desde main.cpp (DibujarMapaDificultad los reusa asi).
+    const char* nombres[kNumOpcionesMapaTema];
+    const char* descripciones[kNumOpcionesMapaTema];
+    std::string etiquetas[kNumOpcionesMapaTema];
     for (int i = 0; i < kNumTemasMapa; ++i) {
+        nombres[i] = kNombresTemasMapa[i];
+        descripciones[i] = kDescripcionesTemasMapa[i];
         if (progresoPorTema[i] > 0) {
             etiquetas[i] = std::to_string(progresoPorTema[i]) + "/" + std::to_string(kNumMazmorrasMapa) + " superadas";
         }
     }
-    DibujarTarjetasDeSeleccion(anchoVentana, altoVentana, "Elegi un tema", kNumTemasMapa,
-                               kNombresTemasMapa, kDescripcionesTemasMapa, etiquetas, opcionSeleccionada,
-                               "[flechas o A/D] moverse    [ENTER] elegir    [ESC] pausa");
+    nombres[kNumTemasMapa] = kNombreVolverACiudad;
+    descripciones[kNumTemasMapa] = kDescripcionVolverACiudad;
+
+    DibujarTarjetasDeSeleccion(anchoVentana, altoVentana, "Elegi un tema", kNumOpcionesMapaTema,
+                               nombres, descripciones, etiquetas, opcionSeleccionada,
+                               "[flechas o A/D] moverse    [ENTER] elegir    [ESC] volver a la ciudad");
 }
 
 void DibujarMapaDificultad(int anchoVentana, int altoVentana, int temaElegido, int opcionSeleccionada,
@@ -347,14 +365,23 @@ void DibujarMapaDificultad(int anchoVentana, int altoVentana, int temaElegido, i
     // raylib no cubre glyphs fuera de ASCII (mismo motivo por el que el
     // resto del juego usa "?"/"CAIDO"/"DERROTADO" como texto en vez de
     // iconos).
-    std::string etiquetas[kNumMazmorrasMapa];
+    // Mismo criterio que DibujarMapaTema: array de kNumOpcionesMapaDificultad
+    // (dificultades reales + "Volver a la ciudad" al final).
+    const char* nombres[kNumOpcionesMapaDificultad];
+    const char* descripciones[kNumOpcionesMapaDificultad];
+    std::string etiquetas[kNumOpcionesMapaDificultad];
     for (int i = 0; i < kNumMazmorrasMapa; ++i) {
+        nombres[i] = kNombresMazmorrasMapa[i];
+        descripciones[i] = kDescripcionesMazmorrasMapa[i];
         if (superada[i]) etiquetas[i] = "(Superada)";
     }
+    nombres[kNumMazmorrasMapa] = kNombreVolverACiudad;
+    descripciones[kNumMazmorrasMapa] = kDescripcionVolverACiudad;
+
     int tema = ((temaElegido % kNumTemasMapa) + kNumTemasMapa) % kNumTemasMapa;
     std::string subtitulo = std::string(kNombresTemasMapa[tema]) + " - elegi la dificultad";
-    DibujarTarjetasDeSeleccion(anchoVentana, altoVentana, subtitulo.c_str(), kNumMazmorrasMapa,
-                               kNombresMazmorrasMapa, kDescripcionesMazmorrasMapa, etiquetas, opcionSeleccionada,
+    DibujarTarjetasDeSeleccion(anchoVentana, altoVentana, subtitulo.c_str(), kNumOpcionesMapaDificultad,
+                               nombres, descripciones, etiquetas, opcionSeleccionada,
                                "[flechas o A/D] moverse    [ENTER] entrar    [ESC] volver");
 }
 

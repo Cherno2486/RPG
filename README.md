@@ -52,25 +52,31 @@ siguientes veces es mucho más rápido.
 **La Ciudad (hub central):**
 - **WASD / flechas**: mover al líder por la Ciudad (mismo movimiento libre y
   formación de fila que en la exploración de una mazmorra, sin enemigos ni
-  trampas acá) — dos zonas conectadas por una calle: la **Plaza Central**
-  (donde se arranca, con una fuente al medio y la Entrada a las mazmorras) y
+  trampas acá) — tres zonas conectadas por calles: la **Plaza Central**
+  (donde se arranca, con una fuente al medio y la Entrada a las mazmorras),
   la **Calle de Comercios** (Herrería + Tienda + Academia), a la que se
-  llega caminando hacia la derecha desde la plaza. Los 4 edificios (Herrería,
-  Tienda, Academia y la Entrada a las mazmorras) tienen cada uno su propia
-  silueta — no son la misma casa con el techo pintado de otro color. Un
-  perro, unos pájaros y algunos aldeanos caminan solos por las dos zonas,
-  dándole vida al lugar. Un badge de **"Oro: N"** en el HUD muestra el oro
-  actual del party — se gana en combates y cofres dentro de las mazmorras
-  (más en Dificultades más altas), nunca dentro de la Ciudad.
+  llega caminando hacia la derecha desde la plaza, y el **Rincón de la
+  Posada**, al que se llega caminando hacia abajo desde la plaza. Los 5
+  edificios (Herrería, Tienda, Academia, Posada y la Entrada a las
+  mazmorras) tienen cada uno su propia silueta — no son la misma casa con el
+  techo pintado de otro color. Un perro, unos pájaros y algunos aldeanos
+  caminan solos por las tres zonas, dándole vida al lugar. Un badge de
+  **"Oro: N"** en el HUD muestra el oro actual del party — se gana en
+  combates y cofres dentro de las mazmorras (más en Dificultades más altas),
+  nunca dentro de la Ciudad.
 - **E**: sobre el interactuable más cercano, sea edificio o aldeano — el
   cartel de abajo indica cuál con "[E] Entrar a Herrería" / "[E] Entrar a
-  Tienda" / "[E] Entrar a Academia" / "[E] Ir a la Entrada a las mazmorras" /
-  "[E] Hablar". La Herrería y la Tienda abren la pantalla de comercio (ver
-  abajo); la Academia abre la pantalla de aprender habilidades (ver abajo);
-  la Entrada lleva al mapa de mazmorras de siempre (elegir tema y dificultad
-  — ver "Mapa de mazmorras" abajo), que funciona exactamente igual que antes
-  desde ahí para abajo; un aldeano tira una línea de flavor text al azar (sin
-  diálogo ni elección) — el perro y los pájaros siguen sin nada que hablar.
+  Tienda" / "[E] Entrar a Academia" / "[E] Descansar en la Posada (30 oro)" /
+  "[E] Ir a la Entrada a las mazmorras" / "[E] Hablar". La Herrería y la
+  Tienda abren la pantalla de comercio (ver abajo); la Academia abre la
+  pantalla de aprender habilidades (ver abajo); la **Posada** no abre ninguna
+  pantalla — descansa al instante, curando al party entero (HP y recurso al
+  máximo, sin efectos de estado) a cambio de 30 de oro fijos, o avisa que no
+  alcanza el oro sin cobrar nada; la Entrada lleva al mapa de mazmorras de
+  siempre (elegir tema y dificultad — ver "Mapa de mazmorras" abajo), que
+  funciona exactamente igual que antes desde ahí para abajo; un aldeano tira
+  una línea de flavor text al azar (sin diálogo ni elección) — el perro y
+  los pájaros siguen sin nada que hablar.
 - **I**, **TAB**, **F5**, **ESC**: mismas funciones que durante la
   exploración (inventario, ficha de personajes, guardar, pausa).
 
@@ -98,22 +104,29 @@ siguientes veces es mucho más rápido.
 
 **Mapa de mazmorras (dos pasos — tema primero, dificultad después):**
 - **Paso 1, elegir tema**: **Flechas izquierda/derecha o A/D** mueven la
-  selección entre **Bosque**, **Cárcel** y **Castillo** — tres ambientaciones
-  independientes, cada una con sus propios enemigos comunes y su propio
-  jefe (mismo patrón de IA en los 3, solo cambia nombre/sprite). Una
-  tarjeta con progreso muestra "x/3 superadas" debajo. **ENTER o ESPACIO**
-  pasa al paso 2; **ESC** vuelve directo a la Ciudad (no abre la pausa —
-  pensado para el que se olvidó de comprar algo y quiere volver rápido).
+  selección entre **Bosque**, **Cárcel**, **Castillo** y una cuarta tarjeta,
+  **"Volver a la ciudad"** — tres ambientaciones independientes (cada una
+  con sus propios enemigos comunes y su propio jefe, mismo patrón de IA en
+  los 3, solo cambia nombre/sprite) más la opción de arrepentirse de golpe.
+  Una tarjeta con progreso muestra "x/3 superadas" debajo de cada tema.
+  **ENTER o ESPACIO**: sobre un tema, pasa al paso 2; sobre "Volver a la
+  ciudad", vuelve directo a la Ciudad. **ESC** también vuelve directo a la
+  Ciudad (no abre la pausa — pensado para el que se olvidó de comprar algo y
+  quiere volver rápido); hace lo mismo que confirmar la tarjeta, es solo un
+  atajo más rápido.
 - **Paso 2, elegir dificultad**: dentro del tema ya elegido, **Flechas
-  izquierda/derecha o A/D** mueven la selección entre **Fácil**, **Media**
-  y **Difícil** (dificultad creciente: más enemigos, enemigos más fuertes y
-  mejor botín cuanto más difícil) — 9 combinaciones tema×dificultad en
-  total, todas elegibles en cualquier orden y rejugables sin límite (cada
-  vez que se entra se genera un layout nuevo). Una combinación ya ganada
-  muestra "(Superada)" pero se puede volver a jugar igual. **ENTER o
-  ESPACIO** entra a esa mazmorra — el party conserva su HP, inventario y
-  equipo tal cual estaban, no hay curación completa al cambiar de mazmorra.
-  **ESC** vuelve al paso 1 (no a la pausa).
+  izquierda/derecha o A/D** mueven la selección entre **Fácil**, **Media**,
+  **Difícil** y, otra vez, **"Volver a la ciudad"** (dificultad creciente:
+  más enemigos, enemigos más fuertes y mejor botín cuanto más difícil) — 9
+  combinaciones tema×dificultad en total, todas elegibles en cualquier orden
+  y rejugables sin límite (cada vez que se entra se genera un layout
+  nuevo). Una combinación ya ganada muestra "(Superada)" pero se puede
+  volver a jugar igual. **ENTER o ESPACIO**: sobre una dificultad, entra a
+  esa mazmorra — el party conserva su HP, inventario y equipo tal cual
+  estaban, no hay curación completa al cambiar de mazmorra; sobre "Volver a
+  la ciudad", vuelve directo a la Ciudad, sin pasar por el paso 1. **ESC**,
+  a diferencia de la tarjeta, solo retrocede al paso 1 (no a la Ciudad ni a
+  la pausa) — es un paso atrás nomás, no "me arrepentí de todo".
 
 **Exploración:**
 - **WASD / flechas**: mover al líder del party (movimiento libre, no por
@@ -635,7 +648,22 @@ Ver "Sonido" en `docs/design.md` para el detalle técnico (`render/audio.h`).
     color del techo) y ESC en la selección de tema de mazmorra ahora
     vuelve directo a la Ciudad en vez de abrir la pausa. Ver "Academia:
     aprender habilidades en la Ciudad" en `docs/design.md`.
-37. Pendiente: contenido para "Sobre mi", seguir sumando contenido de
+37. ✅ Ciudad más grande, Posada y "Volver a la ciudad": la Plaza Central y
+    la Calle de Comercios crecieron, y se sumó una quinta sala (Rincón de
+    la Posada) con un edificio nuevo — la Posada, que por 30 oro fijos cura
+    al party entero al instante (sin abrir ninguna pantalla propia, a
+    diferencia de Herrería/Tienda/Academia). Además, tanto el paso 1 como
+    el paso 2 del mapa de mazmorras suman una tarjeta explícita "Volver a
+    la ciudad" (además del ESC ya existente), con destino siempre directo a
+    la Ciudad desde cualquiera de los dos pasos — a diferencia de ESC, que
+    sigue retrocediendo de a un paso nomás. De paso se corrigió un texto de
+    pie de página desactualizado ("[ESC] pausa" en el paso 1, de antes de
+    que ese ESC fuera directo a la Ciudad). Sin cambios en el guardado (v7
+    sin tocar). Pedido directo del usuario ("agregues una opcion que diga
+    volver a la ciudad, por si me arrepenti... me gustaria una ciudad mas
+    grande"). Ver "Ciudad más grande, Posada y 'Volver a la ciudad'" en
+    `docs/design.md`.
+38. Pendiente: contenido para "Sobre mi", seguir sumando contenido de
     juego (más enemigos comunes, o retomar la historia de ambientación
     shelveada) antes del build de Android.
 

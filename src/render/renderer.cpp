@@ -75,15 +75,20 @@ void DibujarCofre(const game::Cofre& cofre, const SpriteSet& sprites) {
 // version) -- pedido directo del usuario tras ver los 3 originales ("todos
 // los edificios son iguales"): Herreria suma una chimenea (forja), Tienda
 // cambia el techo a punta por un toldo de mercado a rayas, Academia suma dos
-// columnas clasicas, y la Entrada a las mazmorras deja de ser una casa del
+// columnas clasicas, la Entrada a las mazmorras deja de ser una casa del
 // todo -- pasa a ser un arco de piedra con un hueco oscuro en el medio (ver
 // DibujarPortalEntrada mas abajo), que ya venia siendo su lectura ("portal")
-// en el color de techo de la version vieja.
+// en el color de techo de la version vieja -- y la Posada (quinto edificio,
+// ver "La Ciudad" en docs/design.md) suma un cartel de madera con un farol
+// encendido colgando junto a la puerta (poste + brazo + tabla + luz calida),
+// sobre un techo del mismo triangulo de siempre pero en un tono terracota
+// propio, para leerse como posada y no como una casa mas.
 Color ColorDeTechoEdificio(game::TipoEdificio tipo) {
     switch (tipo) {
         case game::TipoEdificio::Herreria: return Color{ 168, 92, 48, 255 };   // tejas oxidadas
         case game::TipoEdificio::Tienda:   return Color{ 70, 128, 168, 255 };  // toldo azulado
         case game::TipoEdificio::Academia: return Color{ 92, 158, 96, 255 };   // techo verde biblioteca
+        case game::TipoEdificio::Posada:   return Color{ 196, 112, 64, 255 };  // paja/teja calida de posada
         default:                           return Color{ 132, 64, 158, 255 }; // EntradaMazmorras: portal violeta
     }
 }
@@ -210,6 +215,18 @@ void DibujarEdificio(const game::Edificio& edificio) {
             Color colorColumna = Color{ 210, 205, 190, 255 };
             DrawRectangle((int)xColIzq, (int)(yBase - altoPuerta), (int)anchoColumna, (int)altoPuerta, colorColumna);
             DrawRectangle((int)xColDer, (int)(yBase - altoPuerta), (int)anchoColumna, (int)altoPuerta, colorColumna);
+        } else if (edificio.tipo == game::TipoEdificio::Posada) {
+            // Cartel colgante con farol junto a la puerta, como el cartel de
+            // una posada real -- poste, brazo horizontal, tabla y una luz
+            // calida (circulo) colgando debajo.
+            Color madera = Color{ 60, 48, 38, 255 };
+            float xPoste = x1 + 6.0f;
+            float yPosteTope = yTechoBase - 6.0f;
+            DrawLineEx(Vector2{ xPoste, yBase }, Vector2{ xPoste, yPosteTope }, 2.0f, madera);
+            DrawLineEx(Vector2{ xPoste, yPosteTope }, Vector2{ xPoste + 16.0f, yPosteTope }, 2.0f, madera);
+            DrawRectangle((int)(xPoste + 5.0f), (int)(yPosteTope + 2.0f), 11, 9, Color{ 150, 112, 70, 255 });
+            DrawRectangleLines((int)(xPoste + 5.0f), (int)(yPosteTope + 2.0f), 11, 9, madera);
+            DrawCircle((int)(xPoste + 10.0f), (int)(yPosteTope + 22.0f), 4.0f, Color{ 255, 205, 110, 255 });
         }
     }
 

@@ -9,7 +9,7 @@ namespace game {
 // datos-ya-resueltos de Dungeon, ver dungeon.h), asi que estos edificios se
 // reconstruyen identicos cada vez que se entra a la Ciudad y no hace falta
 // guardarlos en el sistema de guardado (game/save.h).
-enum class TipoEdificio { Herreria, Tienda, EntradaMazmorras, Academia };
+enum class TipoEdificio { Herreria, Tienda, EntradaMazmorras, Academia, Posada };
 
 struct Edificio {
     TipoEdificio tipo = TipoEdificio::Herreria;
@@ -25,6 +25,7 @@ inline const char* NombreDeEdificio(TipoEdificio tipo) {
         case TipoEdificio::Herreria:         return "Herreria";
         case TipoEdificio::Tienda:           return "Tienda";
         case TipoEdificio::Academia:         return "Academia";
+        case TipoEdificio::Posada:           return "Posada";
         default:                             return "Entrada a las mazmorras";  // EntradaMazmorras
     }
 }

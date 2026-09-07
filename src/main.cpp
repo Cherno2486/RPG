@@ -394,8 +394,8 @@ MazmorraGenerada GenerarMazmorra(Tema tema, Dificultad dificultad) {
 // comentario de esa constante.
 
 // Todo lo que hace falta para dibujar y explorar la Ciudad: la mazmorra en
-// si (varias zonas fijas conectadas por una calle, armada a mano en vez de
-// procedural — ver mas abajo), sus 3 edificios interactuables, la fuente
+// si (varias zonas fijas conectadas por calles, armada a mano en vez de
+// procedural — ver mas abajo), sus 5 edificios interactuables, la fuente
 // decorativa de la plaza, y el perro/pajaros/aldeanos que la recorren (ver
 // game::Deambulante). A diferencia de MazmorraGenerada, esto NO varia entre
 // visitas: la Ciudad es siempre el mismo layout, asi que ConstruirCiudad()
@@ -411,29 +411,40 @@ struct CiudadGenerada {
 
 // Arma la Ciudad a mano con el constructor de datos-ya-resueltos de
 // game::Dungeon (el mismo que usa game/save.h para reconstruir una mazmorra
-// guardada, ver el comentario de ese constructor en dungeon.h): dos salas —
+// guardada, ver el comentario de ese constructor en dungeon.h): tres salas —
 // la Plaza Central (donde esta la Entrada a las mazmorras y arranca el
-// party) y la Calle de Comercios (Herreria + Tienda) — unidas por un tramo
-// de calle mas angosto, en vez de la unica sala chica de la primera version
-// (descartada por sentirse "como una mazmorra mas", ver el comentario de
-// arriba). Paredes de borde calculadas con el mismo criterio de siempre
-// (cualquier tile del bounding box combinado, con 1 de margen, que no sea
-// parte de NINGUNA de las 3 salas es pared) — generalizacion directa del
-// caso de una sola sala que ya usaba Dungeon::Dungeon(int). Da colision y
-// camara gratis sin escribir logica de movimiento nueva para la Ciudad.
+// party), la Calle de Comercios (Herreria + Academia + Tienda) y el Rincon
+// de la Posada — unidas por dos tramos de calle mas angostos, en vez de la
+// unica sala chica de la primera version (descartada por sentirse "como una
+// mazmorra mas", ver el comentario de arriba). Paredes de borde calculadas
+// con el mismo criterio de siempre (cualquier tile del bounding box
+// combinado, con 1 de margen, que no sea parte de NINGUNA de las 5 salas es
+// pared) — generalizacion directa del caso de una sola sala que ya usaba
+// Dungeon::Dungeon(int). Da colision y camara gratis sin escribir logica de
+// movimiento nueva para la Ciudad.
+//
+// Ciudad mas grande (esta vuelta): la Plaza y la Calle de Comercios crecieron
+// (14x10→18x12, 10x6→13x7) y se sumo una quinta sala, el Rincon de la Posada,
+// conectada por un segundo tramo de calle que sale del borde SUR de la
+// Plaza (el de Comercios sigue saliendo del borde ESTE) — pedido directo del
+// usuario tras ver la Ciudad ("una ciudad mas grande"), scoping acordado via
+// preguntas: agrandar el espacio existente Y sumar una zona/edificio nuevo
+// en la misma vuelta (ver Posada mas abajo).
 CiudadGenerada ConstruirCiudad() {
-    // Coordenadas en tiles. La Plaza (0,0)-(14,10) y la Calle de Comercios
-    // (17,2)-(27,8) quedan centradas en la misma fila (y=5 tiles en las
-    // dos), asi el tramo de calle que las conecta (14,4)-(17,8) es un
-    // pasillo recto sin quiebres. 4 tiles de alto (no 3): con 3, el borde
-    // de la calle quedaba justo en el mismo pixel que 'posicionInicial' de
-    // mas abajo (spawn 2 tiles abajo del centro de la plaza) y el lider
-    // quedaba trabado contra esa pared apenas cruzaba a la Calle de
-    // Comercios -- encontrado y corregido tras probar el cruce bajo Xvfb.
-    const game::Habitacion plaza{ 0, 0, 14, 10 };
-    const game::Habitacion calle{ 14, 4, 3, 4 };
-    const game::Habitacion comercio{ 17, 2, 10, 6 };
-    std::vector<game::Habitacion> habitaciones{ plaza, calle, comercio };
+    // Coordenadas en tiles. La Plaza (0,0)-(18,12) y la Calle de Comercios
+    // (21,3)-(34,10) quedan unidas por el tramo de calle (18,5)-(21,9), igual
+    // criterio de "pasillo recto sin quiebres, sin coincidir con el spawn"
+    // que la version anterior (con las salas agrandadas, la franja de union
+    // se recalculo entera, no solo se escalo a ojo). El Rincon de la Posada
+    // (4,15)-(14,23) cuelga del borde SUR de la Plaza via un segundo tramo
+    // (6,12)-(10,15) — un brazo perpendicular al de Comercios, para que la
+    // Ciudad se sienta una cruz de zonas y no un pasillo unico mas largo.
+    const game::Habitacion plaza{ 0, 0, 18, 12 };
+    const game::Habitacion calleComercio{ 18, 5, 3, 4 };
+    const game::Habitacion comercio{ 21, 3, 13, 7 };
+    const game::Habitacion callePosada{ 6, 12, 4, 3 };
+    const game::Habitacion posada{ 4, 15, 10, 8 };
+    std::vector<game::Habitacion> habitaciones{ plaza, calleComercio, comercio, callePosada, posada };
 
     auto esPiso = [&](int x, int y) {
         for (const auto& h : habitaciones) {
@@ -462,6 +473,7 @@ CiudadGenerada ConstruirCiudad() {
     game::Dungeon mazmorra(std::move(habitaciones), std::move(paredes), /*trampas*/{});
     game::Vec2 centroPlaza = mazmorra.CentroDeSala(0);
     game::Vec2 centroComercio = mazmorra.CentroDeSala(2);
+    game::Vec2 centroPosada = mazmorra.CentroDeSala(4);
 
     // El party arranca abajo de la plaza, mirando "hacia arriba" a la
     // fuente y a la Entrada a las mazmorras — mismo criterio de composicion
@@ -486,6 +498,15 @@ CiudadGenerada ConstruirCiudad() {
         // docs/design.md).
         game::Edificio{ game::TipoEdificio::Academia, game::Vec2{ centroComercio.x, centroComercio.y - 1.0f * game::kTileSize } },
         game::Edificio{ game::TipoEdificio::Tienda, game::Vec2{ centroComercio.x + 3.0f * game::kTileSize, centroComercio.y - 1.0f * game::kTileSize } },
+        // Posada (nueva, ver TipoEdificio::Posada): sola en su propio
+        // Rincon -- pedido directo del usuario ("una ciudad mas grande"),
+        // scoping acordado con el usuario: cuarto/quinto edificio nuevo que
+        // paga oro y cura por completo al party, sin pantalla propia (una
+        // sola accion, ver el bloque de EstadoJuego::Ciudad mas abajo que
+        // resuelve el descanso al toque con [E], igual criterio que hablarle
+        // a un aldeano o abrir un cofre en vez de abrir un estado nuevo como
+        // Herreria/Tienda/Academia).
+        game::Edificio{ game::TipoEdificio::Posada, game::Vec2{ centroPosada.x, centroPosada.y - 1.0f * game::kTileSize } },
     };
 
     // Fuente al centro de la plaza -- puramente decorativa (ver
@@ -514,6 +535,13 @@ CiudadGenerada ConstruirCiudad() {
             game::Vec2{ centroComercio.x + 1.5f * game::kTileSize, centroComercio.y + 1.5f * game::kTileSize }, 60.0f, 20.0f),
         game::CrearDeambulante(game::TipoDeambulante::Pajaro,
             game::Vec2{ centroComercio.x, centroComercio.y - 2.0f * game::kTileSize }, 60.0f, 45.0f),
+        // Dos mas para la Plaza agrandada y el Rincon de la Posada nuevo
+        // (ver "Ciudad mas grande" arriba) -- sin esto, el espacio extra se
+        // hubiera sentido vacio en vez de "mas grande y viva".
+        game::CrearDeambulante(game::TipoDeambulante::AldeanoA,
+            game::Vec2{ centroPlaza.x - 6.0f * game::kTileSize, centroPlaza.y + 3.5f * game::kTileSize }, 70.0f, 25.0f),
+        game::CrearDeambulante(game::TipoDeambulante::AldeanoB,
+            game::Vec2{ centroPosada.x + 1.5f * game::kTileSize, centroPosada.y + 1.5f * game::kTileSize }, 60.0f, 20.0f),
     };
 
     return CiudadGenerada{ std::move(mazmorra), posicionInicial, std::move(edificios), std::move(fuentes), std::move(deambulantes) };
@@ -549,6 +577,16 @@ constexpr OfertaComercio kOfertasTienda[] = {
     { 12, game::Antidoto },
 };
 constexpr int kNumOfertasTienda = 5;
+
+// Costo fijo de descansar en la Posada (ver TipoEdificio::Posada) -- una
+// sola tarifa, no un catalogo, asi que no hace falta un array de
+// OfertaComercio para esto. Mismo orden de magnitud que un item caro de
+// Herreria (40-45); tiene que doler un poco para que no sea la solucion
+// obvia a cualquier desgaste, pero seguir siendo mas barato que perder una
+// mazmorra entera de progreso. No escala con Dificultad (a diferencia del
+// oro que se gana, ver OroDeEnemigoPorDificultad/OroDeCofrePorDificultad
+// abajo) -- es contenido de la Ciudad, no de una mazmorra en curso.
+constexpr int kCostoPosada = 30;
 
 // Frases sueltas de los 3 aldeanos de la Ciudad (ver game::TipoDeambulante,
 // game::EsAldeano) al hablarles con [E] desde EstadoJuego::Ciudad -- puro
@@ -588,9 +626,9 @@ const char* FraseDeAldeano(game::TipoDeambulante tipo) {
 // lea el input igual que cualquier otra pantalla de la maquina de estados.
 // Ciudad es el hub central donde se prepara la run (ver ConstruirCiudad):
 // una plaza explorable igual que una mazmorra, pero estatica y sin
-// enemigos/cofres, con 3 edificios interactuables (ver game::Edificio) —
-// Herreria y Tienda (ver mas abajo) y la Entrada a las mazmorras, que lleva
-// a MapaTema. Se llega aca al elegir "Nueva partida", al elegir "Volver a
+// enemigos/cofres, con 5 edificios interactuables (ver game::Edificio) —
+// Herreria, Tienda, Academia y Posada (ver mas abajo) y la Entrada a las
+// mazmorras, que lleva a MapaTema. Se llega aca al elegir "Nueva partida", al elegir "Volver a
 // la ciudad" en la pausa (ver ui::OpcionPausa::VolverAlMapa — el nombre del
 // enum quedo igual, solo cambio el texto y el destino), al ganarle al jefe
 // de una mazmorra, tras un Game Over, o al cargar una partida guardada
@@ -773,9 +811,9 @@ int main() {
     // --- Mapa de mazmorras (ver EstadoJuego::MapaTema/MapaDificultad) ---
     bool mazmorraSuperada[game::kNumCombinacionesMapa] = {};  // que combinaciones tema+dificultad se ganaron esta run
     int mazmorraActivaIndice = -1;   // indice combinado (0..8, ver IndiceCombinado) de la mazmorra en curso, o -1
-    int opcionMapaTemaSeleccionada = 0;        // indice sobre ui::kNumTemasMapa (paso 1)
+    int opcionMapaTemaSeleccionada = 0;        // indice sobre ui::kNumOpcionesMapaTema (paso 1) -- el ultimo es "Volver a la ciudad"
     Tema temaMapaElegido = Tema::Bosque;       // tema fijado al pasar de MapaTema a MapaDificultad (paso 2)
-    int opcionMapaDificultadSeleccionada = 0;  // indice sobre ui::kNumMazmorrasMapa (paso 2)
+    int opcionMapaDificultadSeleccionada = 0;  // indice sobre ui::kNumOpcionesMapaDificultad (paso 2) -- el ultimo es "Volver a la ciudad"
     // Adonde vuelve "Continuar"/ESC en la pausa — se pisa cada vez que se
     // entra a Pausa (desde Exploracion o desde MapaTema), ver mas abajo.
     EstadoJuego estadoPrevioAPausa = EstadoJuego::Exploracion;
@@ -915,9 +953,9 @@ int main() {
             EndDrawing();
         } else if (estado == EstadoJuego::MapaTema) {
             if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D)) {
-                opcionMapaTemaSeleccionada = (opcionMapaTemaSeleccionada + 1) % ui::kNumTemasMapa;
+                opcionMapaTemaSeleccionada = (opcionMapaTemaSeleccionada + 1) % ui::kNumOpcionesMapaTema;
             } else if (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_A)) {
-                opcionMapaTemaSeleccionada = (opcionMapaTemaSeleccionada + ui::kNumTemasMapa - 1) % ui::kNumTemasMapa;
+                opcionMapaTemaSeleccionada = (opcionMapaTemaSeleccionada + ui::kNumOpcionesMapaTema - 1) % ui::kNumOpcionesMapaTema;
             }
 
             if (IsKeyPressed(KEY_ESCAPE)) {
@@ -933,12 +971,21 @@ int main() {
                 // apretando ESC de nuevo una vez de vuelta en la Ciudad.
                 EntrarALaCiudad();
             } else if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
-                // Fija el tema elegido y pasa al paso 2 (elegir dificultad
-                // dentro de ese tema, ver EstadoJuego::MapaDificultad) — no
-                // genera ninguna mazmorra todavia.
-                temaMapaElegido = static_cast<Tema>(opcionMapaTemaSeleccionada);
-                opcionMapaDificultadSeleccionada = 0;
-                estado = EstadoJuego::MapaDificultad;
+                if (opcionMapaTemaSeleccionada == ui::kNumTemasMapa) {
+                    // Tarjeta "Volver a la ciudad" (el indice extra, ver
+                    // ui::kNumOpcionesMapaTema) -- pedido directo del
+                    // usuario para tener la opcion visible en el menu, no
+                    // solo el atajo de ESC de arriba. Mismo destino.
+                    EntrarALaCiudad();
+                } else {
+                    // Fija el tema elegido y pasa al paso 2 (elegir
+                    // dificultad dentro de ese tema, ver
+                    // EstadoJuego::MapaDificultad) — no genera ninguna
+                    // mazmorra todavia.
+                    temaMapaElegido = static_cast<Tema>(opcionMapaTemaSeleccionada);
+                    opcionMapaDificultadSeleccionada = 0;
+                    estado = EstadoJuego::MapaDificultad;
+                }
             }
 
             // Progreso por tema (cuantas de las 3 dificultades ya estan
@@ -959,10 +1006,10 @@ int main() {
             EndDrawing();
         } else if (estado == EstadoJuego::MapaDificultad) {
             if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D)) {
-                opcionMapaDificultadSeleccionada = (opcionMapaDificultadSeleccionada + 1) % ui::kNumMazmorrasMapa;
+                opcionMapaDificultadSeleccionada = (opcionMapaDificultadSeleccionada + 1) % ui::kNumOpcionesMapaDificultad;
             } else if (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_A)) {
                 opcionMapaDificultadSeleccionada =
-                    (opcionMapaDificultadSeleccionada + ui::kNumMazmorrasMapa - 1) % ui::kNumMazmorrasMapa;
+                    (opcionMapaDificultadSeleccionada + ui::kNumOpcionesMapaDificultad - 1) % ui::kNumOpcionesMapaDificultad;
             }
 
             if (IsKeyPressed(KEY_ESCAPE)) {
@@ -970,27 +1017,41 @@ int main() {
                 // solo se abre desde MapaTema o desde la exploracion.
                 estado = EstadoJuego::MapaTema;
             } else if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
-                // Entrar genera SIEMPRE una mazmorra nueva (layout fresco),
-                // incluso si esta combinacion ya se habia superado antes —
-                // las 9 combinaciones son rejugables sin limite (pedido
-                // explicito: "dificultad creciente, cada una rejugable
-                // indefinidamente con un layout regenerado"). El party NO se
-                // toca — sigue con el HP/inventario/equipo que traia del
-                // mapa ("sigue con el desgaste" entre mazmorras).
-                Dificultad dificultad = static_cast<Dificultad>(opcionMapaDificultadSeleccionada);
-                MazmorraGenerada generada = GenerarMazmorra(temaMapaElegido, dificultad);
-                mazmorra = std::move(generada.mazmorra);
-                posicionInicial = generada.posicionInicial;
-                enemigos = std::move(generada.enemigos);
-                cofres = std::move(generada.cofres);
-                temaMazmorraCargada = temaMapaElegido;
-                mazmorraActivaIndice = IndiceCombinado(temaMapaElegido, dificultad);
-                edificiosCiudad.clear();
-                fuentesCiudad.clear();
-                deambulantesCiudad.clear();
-                enCiudad = false;
-                party.ReiniciarFormacion(posicionInicial);
-                estado = EstadoJuego::Exploracion;
+                if (opcionMapaDificultadSeleccionada == ui::kNumMazmorrasMapa) {
+                    // Tarjeta "Volver a la ciudad" (el indice extra, ver
+                    // ui::kNumOpcionesMapaDificultad) -- a diferencia de ESC
+                    // en esta misma pantalla (que vuelve solo al paso 1),
+                    // esta va derecho a la Ciudad: mismo pedido del usuario
+                    // que en el paso 1 ("por si me arrepenti"), y ahi el
+                    // arrepentimiento es sobre toda la eleccion, no solo la
+                    // dificultad. Todavia no se genero ninguna mazmorra en
+                    // este paso, asi que no hace falta tocar
+                    // mazmorraActivaIndice (sigue en -1).
+                    EntrarALaCiudad();
+                } else {
+                    // Entrar genera SIEMPRE una mazmorra nueva (layout
+                    // fresco), incluso si esta combinacion ya se habia
+                    // superado antes -- las 9 combinaciones son rejugables
+                    // sin limite (pedido explicito: "dificultad creciente,
+                    // cada una rejugable indefinidamente con un layout
+                    // regenerado"). El party NO se toca — sigue con el
+                    // HP/inventario/equipo que traia del mapa ("sigue con
+                    // el desgaste" entre mazmorras).
+                    Dificultad dificultad = static_cast<Dificultad>(opcionMapaDificultadSeleccionada);
+                    MazmorraGenerada generada = GenerarMazmorra(temaMapaElegido, dificultad);
+                    mazmorra = std::move(generada.mazmorra);
+                    posicionInicial = generada.posicionInicial;
+                    enemigos = std::move(generada.enemigos);
+                    cofres = std::move(generada.cofres);
+                    temaMazmorraCargada = temaMapaElegido;
+                    mazmorraActivaIndice = IndiceCombinado(temaMapaElegido, dificultad);
+                    edificiosCiudad.clear();
+                    fuentesCiudad.clear();
+                    deambulantesCiudad.clear();
+                    enCiudad = false;
+                    party.ReiniciarFormacion(posicionInicial);
+                    estado = EstadoJuego::Exploracion;
+                }
             }
 
             bool superadaDeEsteTema[game::kNumDificultadesMapa];
@@ -1414,9 +1475,16 @@ int main() {
                     // propio nombre (ver game::NombreDeEdificio) — anteponer
                     // "Entrar a" ahi sonaba redundante ("Entrar a Entrada a
                     // las mazmorras"), asi que ese caso arma su propio texto.
-                    prompt = (edificioCercano->tipo == game::TipoEdificio::EntradaMazmorras)
-                        ? "[E] Ir a la Entrada a las mazmorras"
-                        : std::string("[E] Entrar a ") + game::NombreDeEdificio(edificioCercano->tipo);
+                    // La Posada tampoco usa "Entrar a" — no abre una pantalla
+                    // propia, descansa al toque (ver mas abajo), asi que el
+                    // prompt ya adelanta la accion y el costo.
+                    if (edificioCercano->tipo == game::TipoEdificio::EntradaMazmorras) {
+                        prompt = "[E] Ir a la Entrada a las mazmorras";
+                    } else if (edificioCercano->tipo == game::TipoEdificio::Posada) {
+                        prompt = "[E] Descansar en la Posada (" + std::to_string(kCostoPosada) + " oro)";
+                    } else {
+                        prompt = std::string("[E] Entrar a ") + game::NombreDeEdificio(edificioCercano->tipo);
+                    }
                 } else if (aldeanoCercano != nullptr) {
                     prompt = "[E] Hablar";
                 }
@@ -1434,6 +1502,30 @@ int main() {
                         mensajeFlotante.clear();
                         timerMensaje = 0.0f;
                         estado = EstadoJuego::Academia;
+                    } else if (edificioCercano->tipo == game::TipoEdificio::Posada) {
+                        // Sin pantalla propia (ver el comentario junto a
+                        // TipoEdificio::Posada en ConstruirCiudad) -- [E]
+                        // resuelve todo al toque, mismo criterio que abrir un
+                        // cofre: si alcanza el oro, descuenta el costo fijo y
+                        // llama Character::Revivir() en TODO el party (HP y
+                        // recurso a full, efectos de combate limpios --
+                        // pensado originalmente para revivir tras un Game
+                        // Over, pero hace exactamente lo que un descanso
+                        // deberia hacer, sin necesitar un metodo nuevo; de
+                        // paso, si algun miembro hubiera quedado en 0 HP sin
+                        // que el resto del party perdiera del todo, la
+                        // Posada tambien lo revive). Si no alcanza, mismo
+                        // aviso que Herreria/Tienda sin cobrar nada.
+                        if (party.Oro() >= kCostoPosada) {
+                            party.GanarOro(-kCostoPosada);
+                            for (auto& miembro : party.Miembros()) {
+                                miembro.Revivir();
+                            }
+                            mensajeFlotante = "Descansaste en la Posada. Party recuperado.";
+                        } else {
+                            mensajeFlotante = "No te alcanza el oro para descansar en la Posada.";
+                        }
+                        timerMensaje = kDuracionMensaje;
                     } else {  // EntradaMazmorras
                         // Mismo fondo "de entrada" que el juego mostraba
                         // antes de que existiera la Ciudad (ver
@@ -1754,7 +1846,7 @@ int main() {
                                 // en vez de usar las habitaciones/paredes/
                                 // trampas guardadas (serian identicas de
                                 // todos modos) para no tener que guardar
-                                // tambien los 3 edificios, que no viajan en
+                                // tambien los edificios, que no viajan en
                                 // el archivo (ver el comentario de
                                 // game::Edificio en edificio.h).
                                 CiudadGenerada generada = ConstruirCiudad();

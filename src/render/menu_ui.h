@@ -93,25 +93,45 @@ void DibujarSeleccionSlot(int anchoVentana, int altoVentana, int opcionSeleccion
 constexpr int kNumTemasMapa = 3;
 constexpr int kNumMazmorrasMapa = 3;  // dificultades por tema
 
-// Paso 1: elegir tema. 'opcionSeleccionada' (0..kNumTemasMapa-1) lo maneja
-// quien llama, igual que en las otras pantallas de este archivo.
-// 'progresoPorTema[i]' es cuantas de las kNumMazmorrasMapa dificultades de
-// ese tema ya estan superadas esta run (0..kNumMazmorrasMapa) — se muestra
-// como "x/3 superadas" en la tarjeta, o nada si todavia es 0. ENTER pasa al
-// paso 2 (ver DibujarMapaDificultad); ESC abre la pausa.
+// Cada paso suma una tarjeta extra al final, "Volver a la ciudad" — pedido
+// directo del usuario tras el primer intento de esta pantalla, que ya dejaba
+// volver con ESC pero sin ninguna opcion visible en el menu ("agregale una
+// opcion que diga volver a la ciudad, por si me arrepenti"). El indice
+// kNumTemasMapa/kNumMazmorrasMapa (el ultimo, uno mas alla de los temas o
+// dificultades reales) es esa tarjeta — main.cpp la reconoce por indice y
+// llama a EntrarALaCiudad() en vez de avanzar de paso.
+constexpr int kNumOpcionesMapaTema = kNumTemasMapa + 1;
+constexpr int kNumOpcionesMapaDificultad = kNumMazmorrasMapa + 1;
+
+// Paso 1: elegir tema. 'opcionSeleccionada' (0..kNumOpcionesMapaTema-1) lo
+// maneja quien llama, igual que en las otras pantallas de este archivo —
+// el ultimo indice (kNumTemasMapa) es la tarjeta "Volver a la ciudad", no
+// un tema real. 'progresoPorTema[i]' es cuantas de las kNumMazmorrasMapa
+// dificultades de ese tema ya estan superadas esta run (0..kNumMazmorrasMapa)
+// — se muestra como "x/3 superadas" en la tarjeta, o nada si todavia es 0.
+// ENTER en un tema real pasa al paso 2 (ver DibujarMapaDificultad); ENTER en
+// "Volver a la ciudad" vuelve a la Ciudad (lo resuelve quien llama, esta
+// funcion solo dibuja); ESC vuelve a la Ciudad directo, sin pasar por la
+// pausa (mismo destino que la tarjeta, atajo para quien prefiere teclado).
 void DibujarMapaTema(int anchoVentana, int altoVentana, int opcionSeleccionada,
                       const int progresoPorTema[kNumTemasMapa]);
 
 // Paso 2: elegir dificultad DENTRO del tema ya elegido en el paso 1
 // ('temaElegido', 0..kNumTemasMapa-1, solo para el titulo de la pantalla).
-// 'opcionSeleccionada' (0..kNumMazmorrasMapa-1) lo maneja quien llama.
-// 'superada[i]' son los flags de ESTE tema nomas (el llamador ya extrajo el
-// sub-rango correspondiente del array de kNumCombinacionesMapa
-// combinaciones, ver game/save.h) — se resetea a todo false al empezar una
-// run nueva o al perder del todo (Game Over reinicia la run completa, ver
-// EstadoJuego::Combate/FaseCombate::Perdido en main.cpp), pero NO al volver
-// al mapa sin terminar una mazmorra (VolverAlMapa en la pausa). ENTER genera
-// la mazmorra y entra a explorar; ESC vuelve al paso 1 (no a la pausa).
+// 'opcionSeleccionada' (0..kNumOpcionesMapaDificultad-1) lo maneja quien
+// llama — el ultimo indice (kNumMazmorrasMapa) es la tarjeta "Volver a la
+// ciudad", mismo criterio que en el paso 1, pero volviendo derecho a la
+// Ciudad (no al paso 1) ya que es la misma intencion ("me arrepenti,
+// quiero volver"). 'superada[i]' son los flags de ESTE tema nomas (el
+// llamador ya extrajo el sub-rango correspondiente del array de
+// kNumCombinacionesMapa combinaciones, ver game/save.h) — se resetea a todo
+// false al empezar una run nueva o al perder del todo (Game Over reinicia
+// la run completa, ver EstadoJuego::Combate/FaseCombate::Perdido en
+// main.cpp), pero NO al volver al mapa sin terminar una mazmorra
+// (VolverAlMapa en la pausa). ENTER en una dificultad real genera la
+// mazmorra y entra a explorar; ESC vuelve al paso 1 (no a la Ciudad
+// directo, a diferencia de la tarjeta "Volver a la ciudad" — dos formas de
+// volver con alcance distinto, un paso atras o el hub entero).
 void DibujarMapaDificultad(int anchoVentana, int altoVentana, int temaElegido, int opcionSeleccionada,
                             const bool superada[kNumMazmorrasMapa]);
 
