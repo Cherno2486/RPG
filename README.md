@@ -54,20 +54,23 @@ siguientes veces es mucho más rápido.
   formación de fila que en la exploración de una mazmorra, sin enemigos ni
   trampas acá) — dos zonas conectadas por una calle: la **Plaza Central**
   (donde se arranca, con una fuente al medio y la Entrada a las mazmorras) y
-  la **Calle de Comercios** (Herrería + Tienda), a la que se llega caminando
-  hacia la derecha desde la plaza. Un perro, unos pájaros y algunos aldeanos
-  caminan solos por las dos zonas, dándole vida al lugar. Un badge de
-  **"Oro: N"** en el HUD muestra el oro actual del party — se gana en
-  combates y cofres dentro de las mazmorras (más en Dificultades más altas),
-  nunca dentro de la Ciudad.
+  la **Calle de Comercios** (Herrería + Tienda + Academia), a la que se
+  llega caminando hacia la derecha desde la plaza. Los 4 edificios (Herrería,
+  Tienda, Academia y la Entrada a las mazmorras) tienen cada uno su propia
+  silueta — no son la misma casa con el techo pintado de otro color. Un
+  perro, unos pájaros y algunos aldeanos caminan solos por las dos zonas,
+  dándole vida al lugar. Un badge de **"Oro: N"** en el HUD muestra el oro
+  actual del party — se gana en combates y cofres dentro de las mazmorras
+  (más en Dificultades más altas), nunca dentro de la Ciudad.
 - **E**: sobre el interactuable más cercano, sea edificio o aldeano — el
   cartel de abajo indica cuál con "[E] Entrar a Herrería" / "[E] Entrar a
-  Tienda" / "[E] Ir a la Entrada a las mazmorras" / "[E] Hablar". La Herrería
-  y la Tienda abren la pantalla de comercio (ver abajo); la Entrada lleva al
-  mapa de mazmorras de siempre (elegir tema y dificultad — ver "Mapa de
-  mazmorras" abajo), que funciona exactamente igual que antes desde ahí para
-  abajo; un aldeano tira una línea de flavor text al azar (sin diálogo ni
-  elección) — el perro y los pájaros siguen sin nada que hablar.
+  Tienda" / "[E] Entrar a Academia" / "[E] Ir a la Entrada a las mazmorras" /
+  "[E] Hablar". La Herrería y la Tienda abren la pantalla de comercio (ver
+  abajo); la Academia abre la pantalla de aprender habilidades (ver abajo);
+  la Entrada lleva al mapa de mazmorras de siempre (elegir tema y dificultad
+  — ver "Mapa de mazmorras" abajo), que funciona exactamente igual que antes
+  desde ahí para abajo; un aldeano tira una línea de flavor text al azar (sin
+  diálogo ni elección) — el perro y los pájaros siguen sin nada que hablar.
 - **I**, **TAB**, **F5**, **ESC**: mismas funciones que durante la
   exploración (inventario, ficha de personajes, guardar, pausa).
 
@@ -83,13 +86,24 @@ siguientes veces es mucho más rápido.
   loot.
 - **ESC**: vuelve a la Ciudad.
 
+**Academia (tras [E] en la Ciudad):**
+- Una fila por personaje y habilidad (hasta 8: los 4 del party x 2 cada
+  uno) — "Mejorar <habilidad de rol>" (nivel 3) y "Aprender <habilidad
+  nueva>" (nivel 6). No hay costo de oro: el nivel es el único requisito.
+- **1-8**: aprende la fila elegida, si el personaje ya llegó al nivel
+  requerido y todavía no la tiene aprendida. Una fila ya aprendida se ve
+  atenuada en verde ("Aprendida"); una que todavía no llega al nivel se ve
+  atenuada en rojo ("Requiere nivel N") y no hace nada al elegirla.
+- **ESC**: vuelve a la Ciudad.
+
 **Mapa de mazmorras (dos pasos — tema primero, dificultad después):**
 - **Paso 1, elegir tema**: **Flechas izquierda/derecha o A/D** mueven la
   selección entre **Bosque**, **Cárcel** y **Castillo** — tres ambientaciones
   independientes, cada una con sus propios enemigos comunes y su propio
   jefe (mismo patrón de IA en los 3, solo cambia nombre/sprite). Una
   tarjeta con progreso muestra "x/3 superadas" debajo. **ENTER o ESPACIO**
-  pasa al paso 2; **ESC** abre el menú de pausa.
+  pasa al paso 2; **ESC** vuelve directo a la Ciudad (no abre la pausa —
+  pensado para el que se olvidó de comprar algo y quiere volver rápido).
 - **Paso 2, elegir dificultad**: dentro del tema ya elegido, **Flechas
   izquierda/derecha o A/D** mueven la selección entre **Fácil**, **Media**
   y **Difícil** (dificultad creciente: más enemigos, enemigos más fuertes y
@@ -183,6 +197,14 @@ siguientes veces es mucho más rápido.
   ataque), **TAB** cicla a qué aliado apunta (Bomba de Veneno en cambio
   siempre apunta al enemigo ya seleccionado como objetivo) y **ESC** cierra
   el sub-menú sin gastar el turno.
+- **4** (solo si el personaje en turno ya aprendió su segunda habilidad de
+  rol en la Academia — ver "Academia" arriba): ejecuta esa habilidad,
+  mecánicamente distinta de la básica de `[2]` — Tanque cambia una tirada de
+  ataque por un Escudo garantizado sobre sí mismo más Marcado al enemigo
+  ("Muro de Escudos"), Daño pega dos veces en vez de una ("Tajo Doble"),
+  Soporte protege con Escudo en vez de curar ("Bendición"), Control aturde
+  en vez de debilitar ("Grillete Arcano"). No aparece en el menú para quien
+  todavía no la aprendió.
 - **TAB** (solo si hay más de un enemigo vivo): cambia a cuál de los
   enemigos le apuntan las acciones del aliado en turno — se marca con "▶"
   y un borde dorado en su ficha.
@@ -228,6 +250,11 @@ Habilidad de rol:
   que, si impacta, aplica **Debilitado** al enemigo (resta a su bono de
   ataque mientras dura). El party de ejemplo ya incluye un personaje de
   este rol (Milo).
+
+A partir del nivel 3, cada personaje puede ir a la Academia (en la Ciudad)
+a mejorar los números de su habilidad de rol de arriba (mismo mecanismo,
+más fuerte); a partir del nivel 6, puede aprender ahí una segunda habilidad
+de rol, mecánicamente distinta — ver "Academia" y "[4]" más arriba.
 
 Efectos de estado ya soportados por el sistema (`game/effects.h`):
 Aturdido (pierde el turno), Veneno (daño por turno), Escudo (absorbe
@@ -596,10 +623,21 @@ Ver "Sonido" en `docs/design.md` para el detalle técnico (`render/audio.h`).
     aldeanos: `[E]` junto a uno muestra una línea de flavor text al azar,
     sin árbol de diálogo. Ver "La Ciudad: hub central, oro y comercio" en
     `docs/design.md`.
-36. Pendiente: aprender habilidades en la Ciudad (parte del pedido
-    original, deferida esta vuelta), contenido para "Sobre mi", seguir
-    sumando contenido de juego (más enemigos comunes, o retomar la
-    historia de ambientación shelveada) antes del build de Android.
+36. ✅ Academia: aprender habilidades en la Ciudad: cierra el pendiente de
+    la vuelta anterior — nuevo edificio Academia donde cada personaje, por
+    nivel y gratis, mejora su habilidad de rol original (nivel 3) y
+    aprende una segunda habilidad de rol mecánicamente distinta (nivel 6),
+    con su opción `[4]` correspondiente en combate una vez aprendida.
+    Obligó a subir la versión del guardado (v6 → v7). En la misma vuelta,
+    a partir de feedback directo del usuario sobre la Ciudad ya entregada
+    ("todos los edificios son iguales", "no tengo forma de volver atrás"),
+    se le dio a cada edificio una silueta propia (antes solo cambiaba el
+    color del techo) y ESC en la selección de tema de mazmorra ahora
+    vuelve directo a la Ciudad en vez de abrir la pausa. Ver "Academia:
+    aprender habilidades en la Ciudad" en `docs/design.md`.
+37. Pendiente: contenido para "Sobre mi", seguir sumando contenido de
+    juego (más enemigos comunes, o retomar la historia de ambientación
+    shelveada) antes del build de Android.
 
 Ver `docs/design.md` para el detalle completo de arquitectura y roadmap.
 
@@ -654,21 +692,25 @@ paredes + trampas, formas incluidas), los 4 personajes del party (stats,
 posición, Arma/Accesorio equipados), el inventario compartido, los
 enemigos (con cuáles ya están derrotados), los cofres (con cuáles ya se
 abrieron), el progreso en el mapa de mazmorras (qué mazmorras ya se
-ganaron esta run, y si la partida quedó guardada parada en el mapa o a
-mitad de una mazmorra) y el nivel/experiencia de cada personaje. No se
-puede guardar en medio de un combate.
+ganaron esta run, y si la partida quedó guardada parada en la Ciudad, en
+el mapa o a mitad de una mazmorra), el oro del party, el nivel/experiencia
+de cada personaje y qué habilidades de la Academia tiene aprendidas cada
+uno. No se puede guardar en medio de un combate.
 
-El formato de archivo subió de versión cuatro veces: v1 → v2 al agregar
+El formato de archivo subió de versión seis veces: v1 → v2 al agregar
 las trampas de piso, v2 → v3 al agregar el mapa de mazmorras (de paso se
 corrigió ahí un bug real: los consumibles de combate — Bomba de Veneno,
 Frasco de Escudo, Antídoto — no se guardaban bien desde que se agregaron, y
 un save/load los corrompía en silencio), v3 → v4 al agregar las
 mazmorras temáticas (el progreso pasó de 3 a 9 flags, y los enemigos
 guardados de una v3 tampoco se podrían interpretar bien porque los tipos
-cambiaron de significado), y v4 → v5 al agregar el sistema de niveles (2
-campos nuevos por personaje: nivel y experiencia). Una partida guardada
-con una versión anterior de este prototipo ya no se puede cargar (se
-rechaza igual que un archivo corrupto, sin crashear).
+cambiaron de significado), v4 → v5 al agregar el sistema de niveles (2
+campos nuevos por personaje: nivel y experiencia), v5 → v6 al agregar la
+Ciudad (oro del party más el campo `pantalla` que reemplazó al viejo
+booleano `enMapa`), y v6 → v7 al agregar la Academia (2 campos nuevos por
+personaje: mejora de habilidad y habilidad nueva aprendidas). Una partida
+guardada con una versión anterior de este prototipo ya no se puede cargar
+(se rechaza igual que un archivo corrupto, sin crashear).
 
 El menú de inicio dibuja "Cargar" habilitada apenas **algún** slot tiene
 partida guardada (atenuada y sin efecto si los 3 están vacíos) — al

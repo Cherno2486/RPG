@@ -143,4 +143,33 @@ struct OfertaComercio {
 void DibujarComercio(int anchoVentana, int altoVentana, bool esHerreria, const std::vector<OfertaComercio>& ofertas,
                       int oro, const std::string& mensaje);
 
+// --- Academia (tercer edificio de la Ciudad, ver TipoEdificio::Academia en
+// edificio.h) -- aprender las habilidades de game::kNivelMejoraHabilidad/
+// kNivelHabilidadNueva pedidas por el usuario tras terminar la Ciudad
+// ("aprender habilidades", parte del pedido original que habia quedado
+// pendiente). Una fila por personaje x habilidad (a lo sumo 4x2 = 8, ver
+// kMaxFilasAcademia) en vez de un catalogo de precios como Comercio -- no
+// hay oro de por medio, el nivel ya es el "costo". main.cpp arma la lista
+// cada frame a partir de los 4 Character reales (mismo criterio que ya usa
+// con OfertaComercio: este archivo no incluye game/character.h, para no
+// acoplar render/ a game/ mas de lo que ya esta).
+constexpr int kMaxFilasAcademia = 8;
+
+struct FilaAcademia {
+    std::string nombrePersonaje;   // "Bruna (Tanque) - Nv.5"
+    std::string nombreHabilidad;   // "Mejorar Golpe Provocador" / "Aprender Muro de Escudos"
+    int nivelRequerido = 0;
+    bool aprendida = false;   // ya aprendida -- fila atenuada, sin numero activo
+    bool disponible = false;  // nivel alcanzado y sin aprender -- fila normal, [N] activo
+};
+
+// Titulo "Academia", una fila numerada [1]-[8] por entrada de 'filas' (en
+// blanco+numero activo si disponible, verde "(Aprendida)" si ya se aprendio,
+// atenuada en rojo "(Requiere nivel N)" si todavia no alcanza el nivel --
+// mismo criterio visual que DibujarComercio atenua lo que no se puede
+// pagar). 'mensaje' (puede venir vacio) confirma la ultima habilidad
+// aprendida en esta visita. Sin BeginDrawing/EndDrawing propios. ESC vuelve
+// a EstadoJuego::Ciudad (ver main.cpp).
+void DibujarAcademia(int anchoVentana, int altoVentana, const std::vector<FilaAcademia>& filas, const std::string& mensaje);
+
 }  // namespace ui

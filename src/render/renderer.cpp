@@ -67,19 +67,77 @@ void DibujarCofre(const game::Cofre& cofre, const SpriteSet& sprites) {
 
 // Edificios de la Ciudad (ver EstadoJuego::Ciudad en main.cpp): no tienen
 // arte pixel-art propio (a proposito, para no sumar otro juego de texturas
-// solo para 3 construcciones estaticas) -- se dibujan con primitivas de
-// raylib, cuerpo de piedra + techo de color segun el tipo, mas el nombre
-// arriba (mismo recurso que el nombre de un enemigo) para que se lea que
-// son interactuables.
+// solo para 4 construcciones estaticas) -- se dibujan con primitivas de
+// raylib, mas el nombre arriba (mismo recurso que el nombre de un enemigo)
+// para que se lea que son interactuables.
+//
+// Silueta distinta por tipo (no solo el color del techo, como en la primera
+// version) -- pedido directo del usuario tras ver los 3 originales ("todos
+// los edificios son iguales"): Herreria suma una chimenea (forja), Tienda
+// cambia el techo a punta por un toldo de mercado a rayas, Academia suma dos
+// columnas clasicas, y la Entrada a las mazmorras deja de ser una casa del
+// todo -- pasa a ser un arco de piedra con un hueco oscuro en el medio (ver
+// DibujarPortalEntrada mas abajo), que ya venia siendo su lectura ("portal")
+// en el color de techo de la version vieja.
 Color ColorDeTechoEdificio(game::TipoEdificio tipo) {
     switch (tipo) {
         case game::TipoEdificio::Herreria: return Color{ 168, 92, 48, 255 };   // tejas oxidadas
         case game::TipoEdificio::Tienda:   return Color{ 70, 128, 168, 255 };  // toldo azulado
+        case game::TipoEdificio::Academia: return Color{ 92, 158, 96, 255 };   // techo verde biblioteca
         default:                           return Color{ 132, 64, 158, 255 }; // EntradaMazmorras: portal violeta
     }
 }
 
+// Arco de piedra para la Entrada a las mazmorras -- reemplaza el viejo
+// "casa con techo violeta" por algo que se lea como un pasaje, no como un
+// cuarto edificio mas: dos pilares + un dintel curvo, con un hueco oscuro
+// en el medio (mismo color que el interior de una puerta, pero mas alto,
+// para que se note que ahi "se entra a otro lado", no a un local).
+void DibujarPortalEntrada(const game::Edificio& edificio) {
+    constexpr float kAnchoHueco = game::kTileSize * 0.9f;
+    constexpr float kAltoHueco = game::kTileSize * 1.5f;
+    constexpr float kAnchoPilar = 10.0f;
+    constexpr float kAltoDintel = 16.0f;
+
+    float yBase = edificio.posicion.y;
+    float yTope = yBase - kAltoHueco;
+    float xHuecoIzq = edificio.posicion.x - kAnchoHueco * 0.5f;
+    float xHuecoDer = edificio.posicion.x + kAnchoHueco * 0.5f;
+
+    Color piedra = Color{ 110, 100, 96, 255 };
+    Color piedraOsc = Color{ 70, 64, 60, 255 };
+    Color violeta = ColorDeTechoEdificio(game::TipoEdificio::EntradaMazmorras);
+
+    // Pilares a los costados del hueco.
+    DrawRectangle((int)(xHuecoIzq - kAnchoPilar), (int)yTope, (int)kAnchoPilar, (int)kAltoHueco, piedra);
+    DrawRectangle((int)xHuecoDer, (int)yTope, (int)kAnchoPilar, (int)kAltoHueco, piedra);
+    DrawRectangleLines((int)(xHuecoIzq - kAnchoPilar), (int)yTope, (int)kAnchoPilar, (int)kAltoHueco, piedraOsc);
+    DrawRectangleLines((int)xHuecoDer, (int)yTope, (int)kAnchoPilar, (int)kAltoHueco, piedraOsc);
+
+    // Dintel curvo (semicirculo) uniendo los dos pilares por arriba, con un
+    // filo violeta -- lo unico que conserva del color de techo viejo.
+    float xCentro = edificio.posicion.x;
+    float radioDintel = kAnchoHueco * 0.5f + kAnchoPilar;
+    DrawCircleSector(Vector2{ xCentro, yTope }, radioDintel, 180.0f, 360.0f, 24, piedra);
+    DrawRing(Vector2{ xCentro, yTope }, radioDintel - 4.0f, radioDintel, 180.0f, 360.0f, 24, violeta);
+    DrawLine((int)(xCentro - radioDintel), (int)yTope, (int)(xCentro + radioDintel), (int)yTope, piedraOsc);
+
+    // Hueco oscuro (el "pasaje" en si) -- mas alto que una puerta comun a
+    // proposito, para que no se lea como la puerta de una casa.
+    DrawRectangle((int)xHuecoIzq, (int)(yTope + kAltoDintel * 0.3f), (int)kAnchoHueco,
+                  (int)(kAltoHueco - kAltoDintel * 0.3f), Color{ 18, 14, 22, 255 });
+
+    const char* nombre = game::NombreDeEdificio(edificio.tipo);
+    int anchoTexto = MeasureText(nombre, 14);
+    DrawText(nombre, (int)(edificio.posicion.x - anchoTexto / 2.0f), (int)(yTope - 24), 14, RAYWHITE);
+}
+
 void DibujarEdificio(const game::Edificio& edificio) {
+    if (edificio.tipo == game::TipoEdificio::EntradaMazmorras) {
+        DibujarPortalEntrada(edificio);
+        return;
+    }
+
     constexpr float kAncho = game::kTileSize * 1.7f;
     constexpr float kAltoCuerpo = game::kTileSize * 1.1f;
     constexpr float kAltoTecho = game::kTileSize * 0.7f;
@@ -95,7 +153,10 @@ void DibujarEdificio(const game::Edificio& edificio) {
     float yTechoBase = yBase - kAltoCuerpo;
     float yCumbre = yTechoBase - kAltoTecho;
 
-    Color colorCuerpo = Color{ 96, 88, 76, 255 };
+    // Herreria tiene el cuerpo de piedra mas oscura (forja), Tienda/Academia
+    // el tono calido de siempre.
+    Color colorCuerpo = (edificio.tipo == game::TipoEdificio::Herreria)
+        ? Color{ 72, 66, 60, 255 } : Color{ 96, 88, 76, 255 };
     DrawRectangle((int)x0, (int)yTechoBase, (int)kAncho, (int)kAltoCuerpo, colorCuerpo);
     DrawRectangleLines((int)x0, (int)yTechoBase, (int)kAncho, (int)kAltoCuerpo, Color{ 40, 36, 30, 255 });
 
@@ -105,10 +166,52 @@ void DibujarEdificio(const game::Edificio& edificio) {
     DrawRectangle((int)(edificio.posicion.x - anchoPuerta * 0.5f), (int)(yBase - altoPuerta),
                   (int)anchoPuerta, (int)altoPuerta, Color{ 30, 26, 22, 255 });
 
-    Vector2 puntaTecho{ edificio.posicion.x, yCumbre };
-    Vector2 baseIzq{ x0 - kAleroTecho, yTechoBase };
-    Vector2 baseDer{ x1 + kAleroTecho, yTechoBase };
-    DrawTriangle(baseIzq, puntaTecho, baseDer, ColorDeTechoEdificio(edificio.tipo));
+    if (edificio.tipo == game::TipoEdificio::Tienda) {
+        // Toldo de mercado: en vez del techo a dos aguas de siempre, una
+        // sola faldilla inclinada que sobresale hacia el frente, a rayas
+        // azul/blanco -- silueta bien distinta de una casa con techo.
+        constexpr int kFranjas = 5;
+        float anchoFranja = (kAncho + kAleroTecho * 2.0f) / kFranjas;
+        float yToldoFrente = yTechoBase + kAltoTecho * 0.9f;
+        for (int i = 0; i < kFranjas; ++i) {
+            float xi = x0 - kAleroTecho + anchoFranja * i;
+            Color franja = (i % 2 == 0) ? ColorDeTechoEdificio(game::TipoEdificio::Tienda)
+                                         : Color{ 235, 235, 230, 255 };
+            Vector2 p1{ xi, yTechoBase };
+            Vector2 p2{ xi + anchoFranja, yTechoBase };
+            Vector2 p3{ xi + anchoFranja * 0.6f, yToldoFrente };
+            Vector2 p4{ xi + anchoFranja * 0.4f, yToldoFrente };
+            DrawTriangle(p1, p4, p2, franja);
+            DrawTriangle(p2, p4, p3, franja);
+        }
+        DrawLine((int)(x0 - kAleroTecho), (int)yTechoBase, (int)(x1 + kAleroTecho), (int)yTechoBase,
+                 Color{ 40, 36, 30, 255 });
+    } else {
+        Vector2 puntaTecho{ edificio.posicion.x, yCumbre };
+        Vector2 baseIzq{ x0 - kAleroTecho, yTechoBase };
+        Vector2 baseDer{ x1 + kAleroTecho, yTechoBase };
+        DrawTriangle(baseIzq, puntaTecho, baseDer, ColorDeTechoEdificio(edificio.tipo));
+
+        if (edificio.tipo == game::TipoEdificio::Herreria) {
+            // Chimenea: un rectangulo angosto asomando del lado derecho del
+            // techo -- lectura rapida de "aca se forja algo".
+            float anchoChimenea = 10.0f;
+            float xChimenea = edificio.posicion.x + kAncho * 0.22f;
+            float yChimeneaTope = yCumbre + (yTechoBase - yCumbre) * 0.35f - 14.0f;
+            DrawRectangle((int)(xChimenea - anchoChimenea * 0.5f), (int)yChimeneaTope,
+                          (int)anchoChimenea, (int)(yTechoBase - yChimeneaTope + 4.0f),
+                          Color{ 80, 74, 68, 255 });
+        } else if (edificio.tipo == game::TipoEdificio::Academia) {
+            // Dos columnas clasicas flanqueando la puerta -- lectura de
+            // "academia/biblioteca", no una casa mas.
+            float anchoColumna = 7.0f;
+            float xColIzq = edificio.posicion.x - anchoPuerta * 0.5f - anchoColumna - 4.0f;
+            float xColDer = edificio.posicion.x + anchoPuerta * 0.5f + 4.0f;
+            Color colorColumna = Color{ 210, 205, 190, 255 };
+            DrawRectangle((int)xColIzq, (int)(yBase - altoPuerta), (int)anchoColumna, (int)altoPuerta, colorColumna);
+            DrawRectangle((int)xColDer, (int)(yBase - altoPuerta), (int)anchoColumna, (int)altoPuerta, colorColumna);
+        }
+    }
 
     const char* nombre = game::NombreDeEdificio(edificio.tipo);
     int anchoTexto = MeasureText(nombre, 14);

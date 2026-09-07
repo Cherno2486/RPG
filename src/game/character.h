@@ -43,6 +43,21 @@ bool UsaConcentracion(Role rol);
 // hace nada mas (la experiencia de sobra no se acumula sin efecto).
 constexpr int kNivelMaximo = 10;
 
+// Habilidades aprendibles en la Academia de la Ciudad (ver TipoEdificio::
+// Academia en edificio.h y "La Ciudad" en docs/design.md) -- pedido directo
+// del usuario tras terminar la Ciudad ("aprender habilidades", parte del
+// pedido original que había quedado pendiente): a diferencia del
+// crecimiento de stats por nivel (automatico, sin eleccion del jugador —
+// ver AplicarCrecimientoDeNivel mas abajo), estas dos SI requieren que el
+// jugador visite la Academia para confirmarlas, una vez que el nivel
+// necesario esta alcanzado. Los dos umbrales son fijos e iguales para los 4
+// personajes (a diferencia del crecimiento de stats, que varia por rol) —
+// lo que varia por rol es EN QUE consiste cada una, ver
+// combat::NombreHabilidadDeRol/NombreHabilidadNueva y
+// combat::EjecutarHabilidadDeRol/CombatEncounter::AccionHabilidadNueva.
+constexpr int kNivelMejoraHabilidad = 3;   // mejora la habilidad de rol ya existente
+constexpr int kNivelHabilidadNueva = 6;    // desbloquea una segunda habilidad de rol
+
 // Experiencia necesaria para pasar de 'nivelActual' a 'nivelActual+1' (ver
 // Character::GanarExperiencia). Devuelve 0 si 'nivelActual' ya esta en
 // kNivelMaximo o mas — no hay siguiente nivel al que subir. Curva simple,
@@ -168,6 +183,29 @@ public:
     // patron que CargarEquipoGuardado.
     void CargarNivelGuardado(int nivel, int experiencia);
 
+    // --- Habilidades de la Academia (ver el comentario de
+    // kNivelMejoraHabilidad mas arriba) ---
+    bool MejoraHabilidadAprendida() const { return mejoraHabilidadAprendida_; }
+    bool HabilidadNuevaAprendida() const { return habilidadNuevaAprendida_; }
+    // True si el nivel ya alcanza pero todavia no se aprendio -- es lo que
+    // la Academia usa para decidir si mostrar cada una como "aprendible
+    // ahora" (ver ui::DibujarAcademia).
+    bool MejoraHabilidadDisponible() const { return nivel_ >= kNivelMejoraHabilidad && !mejoraHabilidadAprendida_; }
+    bool HabilidadNuevaDisponible() const { return nivel_ >= kNivelHabilidadNueva && !habilidadNuevaAprendida_; }
+    // No hacen nada si todavia no esta disponible (ver de arriba) -- la
+    // Academia solo deberia llamarlas cuando ya lo esta, pero quedan a
+    // prueba de un click de mas de todos modos.
+    void AprenderMejoraHabilidad() { if (MejoraHabilidadDisponible()) mejoraHabilidadAprendida_ = true; }
+    void AprenderHabilidadNueva() { if (HabilidadNuevaDisponible()) habilidadNuevaAprendida_ = true; }
+
+    // Fija las dos flags directo, sin pasar por Aprender*HabilidadNueva (que
+    // exigirian el nivel de nuevo) -- lo usa el sistema de guardado, mismo
+    // criterio que CargarNivelGuardado/CargarEquipoGuardado.
+    void CargarHabilidadesGuardado(bool mejora, bool nueva) {
+        mejoraHabilidadAprendida_ = mejora;
+        habilidadNuevaAprendida_ = nueva;
+    }
+
     // Recupera una porcion del recurso (Resistencia/Concentracion) MAXIMO al
     // ganar un combate (ver kPorcentajeRegenRecursoPorVictoria en
     // character.cpp y "Regeneracion de recurso" en docs/design.md) —
@@ -197,6 +235,8 @@ private:
     ItemEquipado accesorio_;
     int nivel_ = 1;
     int xp_ = 0;
+    bool mejoraHabilidadAprendida_ = false;
+    bool habilidadNuevaAprendida_ = false;
     void AplicarCrecimientoDeNivel();
     float cooldownTrampa_ = 0.0f;
     static constexpr float kRadioColision = 14.0f;

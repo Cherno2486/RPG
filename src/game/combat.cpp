@@ -36,6 +36,21 @@ const char* NombreHabilidadDeRol(Role rol) {
     return "?";
 }
 
+// Ver el comentario junto a la declaracion en combat.h -- distinta mecanica
+// por rol, no solo "mas fuerte" (eso ya lo cubre 'mejorada' en
+// EjecutarHabilidadDeRol): Tanque cambia un ataque por control garantizado,
+// Danio pega dos veces, Soporte pasa de curar a proteger, Control aturde en
+// vez de debilitar.
+const char* NombreHabilidadNueva(Role rol) {
+    switch (rol) {
+        case Role::Tanque:  return "Muro de Escudos";
+        case Role::Danio:   return "Tajo Doble";
+        case Role::Soporte: return "Bendicion";
+        case Role::Control: return "Grillete Arcano";
+    }
+    return "?";
+}
+
 ResultadoAccion ResolverAtaque(Combatiente& atacante, Combatiente& objetivo,
                                 int dadosDano, int carasDano, bool conVentaja,
                                 const char* nombreAccion) {
@@ -103,7 +118,7 @@ ResultadoAccion EjecutarAtaqueBasico(Combatiente& atacante, Combatiente& objetiv
     return ResolverAtaque(atacante, objetivo, 1, 6, false, "un ataque");
 }
 
-ResultadoHabilidad EjecutarHabilidadDeRol(Combatiente& atacante, Combatiente& objetivoEnemigo, Combatiente* objetivoAliado) {
+ResultadoHabilidad EjecutarHabilidadDeRol(Combatiente& atacante, Combatiente& objetivoEnemigo, Combatiente* objetivoAliado, bool mejorada) {
     ResultadoHabilidad r;
 
     switch (atacante.rol) {
@@ -120,7 +135,13 @@ ResultadoHabilidad EjecutarHabilidadDeRol(Combatiente& atacante, Combatiente& ob
                 break;
             }
             atacante.stats->recurso -= costo;
-            r.accion = ResolverAtaque(atacante, objetivoEnemigo, 1, 6, false, NombreHabilidadDeRol(Role::Tanque));
+            // Mejorada (nivel 3, ver kNivelMejoraHabilidad): mas dado (1d6 ->
+            // 1d8) y mas Escudo (4 -> 6) — el resto de la mecanica (marca,
+            // costo) no cambia.
+            int carasDano = mejorada ? 8 : 6;
+            int magnitudEscudo = mejorada ? 6 : 4;
+            const char* nombreAccion = mejorada ? "Golpe Provocador (mejorado)" : NombreHabilidadDeRol(Role::Tanque);
+            r.accion = ResolverAtaque(atacante, objetivoEnemigo, 1, carasDano, false, nombreAccion);
             r.ejecutada = true;
             r.texto = r.accion.texto;
             if (r.accion.impacto) {
@@ -129,8 +150,8 @@ ResultadoHabilidad EjecutarHabilidadDeRol(Combatiente& atacante, Combatiente& ob
             }
             // Se expone para provocar, pero tambien se cubre: gana Escudo
             // propio (independiente de si el golpe conecto o no).
-            atacante.estado->AgregarEfecto(EfectoActivo{TipoEfecto::Escudo, 99, 4});
-            r.texto += " " + atacante.nombre + " se cubre (Escudo 4).";
+            atacante.estado->AgregarEfecto(EfectoActivo{TipoEfecto::Escudo, 99, magnitudEscudo});
+            r.texto += " " + atacante.nombre + " se cubre (Escudo " + std::to_string(magnitudEscudo) + ").";
             break;
         }
         case Role::Danio: {
@@ -141,7 +162,10 @@ ResultadoHabilidad EjecutarHabilidadDeRol(Combatiente& atacante, Combatiente& ob
                 break;
             }
             atacante.stats->recurso -= costo;
-            r.accion = ResolverAtaque(atacante, objetivoEnemigo, 1, 8, true, NombreHabilidadDeRol(Role::Danio));
+            // Mejorada (nivel 3): 1d8 -> 2d8, mismo costo y ventaja de siempre.
+            int dadosDano = mejorada ? 2 : 1;
+            const char* nombreAccion = mejorada ? "Golpe Certero (mejorado)" : NombreHabilidadDeRol(Role::Danio);
+            r.accion = ResolverAtaque(atacante, objetivoEnemigo, dadosDano, 8, true, nombreAccion);
             r.ejecutada = true;
             r.texto = r.accion.texto;
             if (r.accion.impacto && r.accion.critico) {
@@ -160,13 +184,15 @@ ResultadoHabilidad EjecutarHabilidadDeRol(Combatiente& atacante, Combatiente& ob
                 break;
             }
             atacante.stats->recurso -= costo;
-            int tirada = RollDados(1, 8, 2);
+            // Mejorada (nivel 3): 1d8+2 -> 2d8+3.
+            int tirada = mejorada ? RollDados(2, 8, 3) : RollDados(1, 8, 2);
             int curado = AplicarCuracion(*objetivoAliado->stats, tirada);
             r.ejecutada = true;
             r.montoCurado = curado;
-            char buffer[192];
-            std::snprintf(buffer, sizeof(buffer), "%s usa Curar sobre %s: 1d8+2 (%d) -> recupera %d de vida.",
-                          atacante.nombre.c_str(), objetivoAliado->nombre.c_str(), tirada, curado);
+            char buffer[224];
+            std::snprintf(buffer, sizeof(buffer), "%s usa %s sobre %s: %s (%d) -> recupera %d de vida.",
+                          atacante.nombre.c_str(), mejorada ? "Curar (mejorado)" : "Curar",
+                          objetivoAliado->nombre.c_str(), mejorada ? "2d8+3" : "1d8+2", tirada, curado);
             r.texto = buffer;
             break;
         }
@@ -178,11 +204,17 @@ ResultadoHabilidad EjecutarHabilidadDeRol(Combatiente& atacante, Combatiente& ob
                 break;
             }
             atacante.stats->recurso -= costo;
-            r.accion = ResolverAtaque(atacante, objetivoEnemigo, 1, 4, false, NombreHabilidadDeRol(Role::Control));
+            // Mejorada (nivel 3): 1d4 -> 1d6, Debilitado 2/2 -> 3/3
+            // (magnitud/duracion).
+            int carasDano = mejorada ? 6 : 4;
+            int magnitudDebil = mejorada ? 3 : 2;
+            int duracionDebil = mejorada ? 3 : 2;
+            const char* nombreAccion = mejorada ? "Grito Debilitante (mejorado)" : NombreHabilidadDeRol(Role::Control);
+            r.accion = ResolverAtaque(atacante, objetivoEnemigo, 1, carasDano, false, nombreAccion);
             r.ejecutada = true;
             r.texto = r.accion.texto;
             if (r.accion.impacto) {
-                objetivoEnemigo.estado->AgregarEfecto(EfectoActivo{TipoEfecto::Debilitado, 2, 2});
+                objetivoEnemigo.estado->AgregarEfecto(EfectoActivo{TipoEfecto::Debilitado, duracionDebil, magnitudDebil});
                 r.texto += " " + objetivoEnemigo.nombre + " queda debilitado.";
             }
             break;
@@ -435,7 +467,7 @@ void CombatEncounter::AccionHabilidadDeRol() {
         }
     }
 
-    ResultadoHabilidad r = EjecutarHabilidadDeRol(cAtacante, cEnemigo, objetivoAliado);
+    ResultadoHabilidad r = EjecutarHabilidadDeRol(cAtacante, cEnemigo, objetivoAliado, atacante.MejoraHabilidadAprendida());
     log_.push_back(r.texto);
     if (!objetivo.EstaVivo()) objetivo.MarcarVencido();
 
@@ -455,6 +487,135 @@ void CombatEncounter::AccionHabilidadDeRol() {
             r.accion.impacto ? TipoEventoVisual::Dano : TipoEventoVisual::Fallo,
             r.accion.impacto ? r.accion.dano : 0, r.accion.critico}});
     }
+
+    if (ChequearFinDeCombate()) return;
+    AsegurarObjetivoValido();
+    AvanzarIndice();
+    ProcesarInicioDeTurnoActual();
+}
+
+void CombatEncounter::AccionHabilidadNueva() {
+    if (fase_ != FaseCombate::TurnoAliado) return;
+    AsegurarObjetivoValido();
+    if (objetivoActual_ < 0) return;
+    Character& atacante = party_.Miembros()[orden_[turnoActual_].indice];
+    if (!atacante.HabilidadNuevaAprendida()) return;  // ver kNivelHabilidadNueva/Academia
+    Enemy& objetivo = *enemigos_[objetivoActual_];
+
+    Combatiente cAtacante{atacante.Nombre(), &atacante.GetStatsMut(), &atacante.Combate(), true, atacante.Rol()};
+    Combatiente cEnemigo{objetivo.Nombre(), &objetivo.GetStatsMut(), &objetivo.Combate(), false, Role::Tanque};
+
+    // A diferencia de EjecutarHabilidadDeRol (funcion libre en combat.h,
+    // reusada por cualquier llamador futuro), esta va directo aca porque
+    // Tajo Doble necesita acumular mas de un EventoVisual -- mismo patron
+    // que ya usa el turno de un enemigo con "Doble Tajo" en Actualizar() de
+    // mas abajo (una lista de eventos, una sola RegistrarEventos al final).
+    std::vector<EventoVisual> eventos;
+    std::string texto;
+    bool ejecutada = false;
+
+    switch (atacante.Rol()) {
+        case Role::Tanque: {
+            // Muro de Escudos: sin tirada de ataque -- a cambio de no pegar,
+            // GARANTIZA un Escudo grande propio y marca al objetivo, en vez
+            // de depender de que Golpe Provocador conecte. Costo mas alto
+            // que la habilidad base porque reemplaza tirada por certeza.
+            const int costo = 7;
+            if (!PuedeUsarHabilidad(cAtacante, costo)) {
+                texto = atacante.Nombre() + " no tiene resistencia suficiente para Muro de Escudos.";
+                break;
+            }
+            cAtacante.stats->recurso -= costo;
+            cAtacante.estado->AgregarEfecto(EfectoActivo{TipoEfecto::Escudo, 99, 10});
+            cEnemigo.estado->AgregarEfecto(EfectoActivo{TipoEfecto::Marcado, 2, 1});
+            texto = atacante.Nombre() + " usa Muro de Escudos: se cubre (Escudo 10) y marca a " + objetivo.Nombre() + ".";
+            ejecutada = true;
+            break;
+        }
+        case Role::Danio: {
+            // Tajo Doble: dos golpes de 1d6 con ventaja cada uno (en vez de
+            // un solo 1d8) -- mas potencial de dano total, pero cada golpe
+            // individual es mas debil y puede fallar por separado.
+            const int costo = 9;
+            if (!PuedeUsarHabilidad(cAtacante, costo)) {
+                texto = atacante.Nombre() + " no tiene resistencia suficiente para Tajo Doble.";
+                break;
+            }
+            cAtacante.stats->recurso -= costo;
+            ejecutada = true;
+            std::string log1, log2;
+            for (int golpe = 0; golpe < 2; ++golpe) {
+                if (!objetivo.EstaVivo()) break;  // el primer golpe ya lo mato
+                ResultadoAccion r = ResolverAtaque(cAtacante, cEnemigo, 1, 6, true, "Tajo Doble");
+                (golpe == 0 ? log1 : log2) = r.texto;
+                eventos.push_back(EventoVisual{
+                    false, objetivoActual_,
+                    r.impacto ? TipoEventoVisual::Dano : TipoEventoVisual::Fallo,
+                    r.impacto ? r.dano : 0, r.critico});
+                if (r.impacto && r.critico) {
+                    cEnemigo.estado->AgregarEfecto(EfectoActivo{TipoEfecto::Veneno, 3, 3});
+                    (golpe == 0 ? log1 : log2) += " " + objetivo.Nombre() + " queda envenenado.";
+                }
+            }
+            texto = log1 + (log2.empty() ? "" : ("  " + log2));
+            break;
+        }
+        case Role::Soporte: {
+            // Bendicion: en vez de curar vida (eso ya lo hace Curar), le da
+            // Escudo a un aliado -- proteccion proactiva antes del golpe, no
+            // recuperacion despues. Mismo criterio de "peor herido" que ya
+            // usa Curar para elegir a quien.
+            const int costo = 8;
+            if (!PuedeUsarHabilidad(cAtacante, costo)) {
+                texto = atacante.Nombre() + " no tiene concentracion suficiente para Bendicion.";
+                break;
+            }
+            Character* peorHerido = nullptr;
+            for (auto& m : party_.Miembros()) {
+                if (!m.EstaVivo()) continue;
+                if (peorHerido == nullptr || m.GetStats().hp < peorHerido->GetStats().hp) peorHerido = &m;
+            }
+            if (peorHerido == nullptr) {
+                texto = atacante.Nombre() + " no puede usar Bendicion ahora.";
+                break;
+            }
+            cAtacante.stats->recurso -= costo;
+            peorHerido->Combate().AgregarEfecto(EfectoActivo{TipoEfecto::Escudo, 99, 8});
+            texto = atacante.Nombre() + " usa Bendicion sobre " + peorHerido->Nombre() + ": gana Escudo 8.";
+            ejecutada = true;
+            break;
+        }
+        case Role::Control: {
+            // Grillete Arcano: mismo dado que Grito Debilitante (1d4) pero
+            // aturde en vez de debilitar -- pierde el turno entero, control
+            // mucho mas fuerte por eso el costo mayor.
+            const int costo = 9;
+            if (!PuedeUsarHabilidad(cAtacante, costo)) {
+                texto = atacante.Nombre() + " no tiene concentracion suficiente para Grillete Arcano.";
+                break;
+            }
+            cAtacante.stats->recurso -= costo;
+            ResultadoAccion r = ResolverAtaque(cAtacante, cEnemigo, 1, 4, false, "Grillete Arcano");
+            ejecutada = true;
+            texto = r.texto;
+            eventos.push_back(EventoVisual{
+                false, objetivoActual_,
+                r.impacto ? TipoEventoVisual::Dano : TipoEventoVisual::Fallo,
+                r.impacto ? r.dano : 0, r.critico});
+            if (r.impacto) {
+                cEnemigo.estado->AgregarEfecto(EfectoActivo{TipoEfecto::Aturdido, 1, 0});
+                texto += " " + objetivo.Nombre() + " queda aturdido.";
+            }
+            break;
+        }
+    }
+
+    log_.push_back(texto);
+    if (!objetivo.EstaVivo()) objetivo.MarcarVencido();
+
+    if (!ejecutada) return;  // sin recurso u objetivo: no se consume el turno
+
+    RegistrarEventos(std::move(eventos));  // vacio para Tanque/Soporte (sin tirada) — valido igual
 
     if (ChequearFinDeCombate()) return;
     AsegurarObjetivoValido();

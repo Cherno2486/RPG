@@ -38,6 +38,13 @@ struct ResultadoAccion {
 // Nombre de la habilidad de rol de cada uno (para mostrar en la UI).
 const char* NombreHabilidadDeRol(Role rol);
 
+// Nombre de la SEGUNDA habilidad de rol, desbloqueable en la Academia de la
+// Ciudad a partir de game::kNivelHabilidadNueva (ver character.h y "La
+// Ciudad" en docs/design.md) -- distinta en mecanica de la habilidad base,
+// no solo mas fuerte (ver CombatEncounter::AccionHabilidadNueva en
+// combat.cpp para el detalle de cada una).
+const char* NombreHabilidadNueva(Role rol);
+
 // Aplica el efecto de un item Consumible de "estado" (EfectoItem::
 // AplicarEstado o CurarEstados, ver item_types.h) sobre 'objetivo'. A
 // diferencia de game::UsarItem (item.h), que solo puede curar vida/recurso
@@ -61,7 +68,11 @@ struct ResultadoHabilidad {
 
 // Ejecuta la habilidad de rol de 'atacante'. 'objetivoEnemigo' se usa para
 // Tanque/Danio; 'objetivoAliado' (puede ser nullptr) se usa para Soporte.
-ResultadoHabilidad EjecutarHabilidadDeRol(Combatiente& atacante, Combatiente& objetivoEnemigo, Combatiente* objetivoAliado);
+// 'mejorada' (ver Character::MejoraHabilidadAprendida, desbloqueable en la
+// Academia a partir de nivel 3) sube los numeros de la MISMA habilidad --
+// mas dado, mas escudo, mas curacion segun el rol -- sin cambiar de que se
+// trata ni su costo de recurso.
+ResultadoHabilidad EjecutarHabilidadDeRol(Combatiente& atacante, Combatiente& objetivoEnemigo, Combatiente* objetivoAliado, bool mejorada);
 
 enum class FaseCombate {
     TurnoAliado,   // esperando que el jugador elija accion para AliadoEnTurno()
@@ -119,6 +130,11 @@ public:
     // se consume, para que el jugador elija otra cosa.
     void AccionAtaqueBasico();
     void AccionHabilidadDeRol();
+    // Segunda habilidad de rol (ver NombreHabilidadNueva arriba) -- no hace
+    // nada si AliadoEnTurno() todavia no la aprendio en la Academia (ver
+    // Character::HabilidadNuevaAprendida), mismo criterio defensivo que ya
+    // usan las otras Accion* con un indice invalido.
+    void AccionHabilidadNueva();
 
     // Usa un consumible del inventario compartido del party durante el
     // turno del aliado en juego: cura vida/recurso (Pocion de Curacion

@@ -412,4 +412,62 @@ void DibujarComercio(int anchoVentana, int altoVentana, bool esHerreria, const s
     DrawText(prompt, (anchoVentana - anchoPrompt) / 2, altoVentana - 48, 18, Color{ 255, 235, 180, 255 });
 }
 
+void DibujarAcademia(int anchoVentana, int altoVentana, const std::vector<FilaAcademia>& filas, const std::string& mensaje) {
+    DrawRectangle(0, 0, anchoVentana, altoVentana, Color{ 10, 8, 15, 235 });
+
+    DrawText("Academia", 40, 32, 28, RAYWHITE);
+
+    // Misma tarjeta que DibujarComercio, pero con 3 estados en vez de 2
+    // (alcanza/no alcanza): disponible (numero activo, texto normal),
+    // aprendida (atenuada en verde, sin numero activo) y bloqueada por nivel
+    // (atenuada en rojo, sin numero activo) -- no hay precio, el nivel
+    // requerido ocupa ese lugar a la derecha.
+    int xLista = 40;
+    int yLista = 96;
+    int anchoTarjeta = anchoVentana - 80;
+    for (size_t i = 0; i < filas.size() && i < (size_t)kMaxFilasAcademia; ++i) {
+        const auto& fila = filas[i];
+        int y = yLista + (int)i * 52;
+
+        DrawRectangle(xLista, y, anchoTarjeta, 46, Color{ 22, 22, 28, 220 });
+        DrawRectangleLines(xLista, y, anchoTarjeta, 46, Color{ 80, 80, 90, 255 });
+
+        if (fila.disponible) {
+            char etiqueta[16];
+            std::snprintf(etiqueta, sizeof(etiqueta), "[%zu]", i + 1);
+            DrawText(etiqueta, xLista + 10, y + 14, 18, Color{ 230, 200, 90, 255 });
+        }
+
+        Color colorNombre = fila.disponible ? RAYWHITE
+            : (fila.aprendida ? Color{ 120, 170, 120, 255 } : Color{ 140, 100, 100, 255 });
+        DrawText(fila.nombrePersonaje.c_str(), xLista + 56, y + 6, 16, colorNombre);
+        DrawText(fila.nombreHabilidad.c_str(), xLista + 56, y + 26, 12, LIGHTGRAY);
+
+        char estadoTexto[32];
+        Color colorEstado;
+        if (fila.aprendida) {
+            std::snprintf(estadoTexto, sizeof(estadoTexto), "Aprendida");
+            colorEstado = Color{ 120, 200, 120, 255 };
+        } else if (fila.disponible) {
+            std::snprintf(estadoTexto, sizeof(estadoTexto), "Nv.%d", fila.nivelRequerido);
+            colorEstado = Color{ 230, 200, 90, 255 };
+        } else {
+            std::snprintf(estadoTexto, sizeof(estadoTexto), "Requiere Nv.%d", fila.nivelRequerido);
+            colorEstado = Color{ 190, 90, 90, 255 };
+        }
+        int anchoEstado = MeasureText(estadoTexto, 16);
+        DrawText(estadoTexto, xLista + anchoTarjeta - anchoEstado - 14, y + 15, 16, colorEstado);
+    }
+
+    int yMensaje = yLista + (int)filas.size() * 52 + 12;
+    if (!mensaje.empty()) {
+        int anchoMsg = MeasureText(mensaje.c_str(), 16);
+        DrawText(mensaje.c_str(), (anchoVentana - anchoMsg) / 2, yMensaje, 16, Color{ 200, 200, 160, 255 });
+    }
+
+    const char* prompt = "[1-8] Aprender    [ESC] Volver a la ciudad";
+    int anchoPrompt = MeasureText(prompt, 18);
+    DrawText(prompt, (anchoVentana - anchoPrompt) / 2, altoVentana - 48, 18, Color{ 255, 235, 180, 255 });
+}
+
 }  // namespace ui

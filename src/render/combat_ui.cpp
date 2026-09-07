@@ -321,13 +321,19 @@ void DibujarCombate(game::CombatEncounter& encuentro, int anchoVentana, int alto
         int enemigosVivos = 0;
         for (auto* e : enemigos) if (e->EstaVivo()) enemigosVivos++;
 
-        char menu[220];
+        // [4] solo aparece si ya se aprendio en la Academia (ver
+        // game::Character::HabilidadNuevaAprendida/kNivelHabilidadNueva) --
+        // antes de eso, la tecla simplemente no hace nada (ver main.cpp).
+        std::string opcionCuatro = enTurno->HabilidadNuevaAprendida()
+            ? (std::string("    [4] ") + game::NombreHabilidadNueva(enTurno->Rol())) : "";
+
+        char menu[260];
         if (enemigosVivos > 1) {
-            std::snprintf(menu, sizeof(menu), "Turno de %s  -  [1] Atacar    [2] %s    [3] Usar item    [TAB] Cambiar objetivo",
-                          enTurno->Nombre().c_str(), game::NombreHabilidadDeRol(enTurno->Rol()));
+            std::snprintf(menu, sizeof(menu), "Turno de %s  -  [1] Atacar    [2] %s    [3] Usar item%s    [TAB] Cambiar objetivo",
+                          enTurno->Nombre().c_str(), game::NombreHabilidadDeRol(enTurno->Rol()), opcionCuatro.c_str());
         } else {
-            std::snprintf(menu, sizeof(menu), "Turno de %s  -  [1] Atacar    [2] %s    [3] Usar item",
-                          enTurno->Nombre().c_str(), game::NombreHabilidadDeRol(enTurno->Rol()));
+            std::snprintf(menu, sizeof(menu), "Turno de %s  -  [1] Atacar    [2] %s    [3] Usar item%s",
+                          enTurno->Nombre().c_str(), game::NombreHabilidadDeRol(enTurno->Rol()), opcionCuatro.c_str());
         }
         int anchoTexto = MeasureText(menu, 20);
         int xMenu = (anchoVentana - anchoTexto) / 2 - 16;

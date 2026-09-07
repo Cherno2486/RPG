@@ -49,7 +49,15 @@ constexpr const char* kEncabezado = "RPGMAZMORRAS_SAVE";
 // puede leer bien con el parser actual (se agrego una linea entera de mas,
 // no solo un campo) asi que se rechaza igual que cualquier otra version
 // vieja.
-constexpr int kVersion = 6;
+// v7: la Academia (ver TipoEdificio::Academia y game::kNivelMejoraHabilidad/
+// kNivelHabilidadNueva en character.h) -- cada personaje suma 2 flags mas
+// (mejora de habilidad aprendida, segunda habilidad aprendida) al final de
+// su linea, mismo criterio que ya sumo nivel/experiencia en v5: hace falta
+// guardarlas aparte de stats_ porque no afectan ningun stat directamente
+// (a diferencia del crecimiento de nivel), asi que no hay forma de
+// reconstruirlas solo con GanarExperiencia. Un archivo v6 o anterior se
+// rechaza igual que cualquier otra version vieja.
+constexpr int kVersion = 7;
 constexpr char kDelimitador = '|';
 
 // --- Escritura: cada registro es una linea con campos separados por '|'.
@@ -201,6 +209,10 @@ bool GuardarPartida(int slot, const Dungeon& mazmorra, const Party& party,
         // final de la linea, despues del equipo, para no reordenar nada
         // de lo que ya habia.
         out << kDelimitador << personaje.Nivel() << kDelimitador << personaje.Experiencia();
+        // Habilidades de la Academia (ver el comentario de kVersion sobre
+        // v7) — al final de todo, mismo criterio de "agregar, no reordenar".
+        out << kDelimitador << (personaje.MejoraHabilidadAprendida() ? 1 : 0)
+            << kDelimitador << (personaje.HabilidadNuevaAprendida() ? 1 : 0);
         out << "\n";
     }
 
@@ -340,11 +352,14 @@ ResultadoCarga CargarPartida(int slot) {
         ItemEquipado accesorio = LeerItemEquipado(l);
         int nivel = l.Int();
         int experiencia = l.Int();
+        bool mejoraHabilidad = l.Int() != 0;
+        bool habilidadNueva = l.Int() != 0;
         if (l.huboFaltante) return resultado;
 
         Character personaje(nombre, rol, stats, pos);
         personaje.CargarEquipoGuardado(std::move(arma), std::move(accesorio));
         personaje.CargarNivelGuardado(nivel, experiencia);
+        personaje.CargarHabilidadesGuardado(mejoraHabilidad, habilidadNueva);
         datos.miembros.push_back(std::move(personaje));
     }
 

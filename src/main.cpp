@@ -106,6 +106,10 @@ game::Party CrearPartyDeEjemplo(game::Vec2 posicionInicial) {
 // via game::Character::GanarExperiencia (con el total de experiencia
 // acumulada de cada personaje) en vez de copiar stats_ directo, para no
 // duplicar la tabla de crecimiento por rol que ya vive en character.cpp.
+// Las habilidades de la Academia (ver game::kNivelMejoraHabilidad/
+// kNivelHabilidadNueva) son el mismo tipo de progreso permanente que el
+// nivel -- se copian aparte porque, a diferencia del nivel, no hay forma de
+// "reaplicarlas" solo con la experiencia total (no tocan ningun stat).
 game::Party CrearPartyConProgreso(game::Vec2 posicionInicial, const game::Party& progresoPrevio) {
     game::Party nuevo = CrearPartyDeEjemplo(posicionInicial);
     auto& miembrosNuevos = nuevo.Miembros();
@@ -113,6 +117,8 @@ game::Party CrearPartyConProgreso(game::Vec2 posicionInicial, const game::Party&
     for (size_t i = 0; i < miembrosNuevos.size() && i < miembrosPrevios.size(); ++i) {
         int xpTotal = miembrosPrevios[i].ExperienciaAcumuladaTotal();
         if (xpTotal > 0) miembrosNuevos[i].GanarExperiencia(xpTotal);
+        miembrosNuevos[i].CargarHabilidadesGuardado(
+            miembrosPrevios[i].MejoraHabilidadAprendida(), miembrosPrevios[i].HabilidadNuevaAprendida());
     }
     return nuevo;
 }
@@ -473,6 +479,12 @@ CiudadGenerada ConstruirCiudad() {
     std::vector<game::Edificio> edificios{
         game::Edificio{ game::TipoEdificio::EntradaMazmorras, game::Vec2{ centroPlaza.x, centroPlaza.y - 3.0f * game::kTileSize } },
         game::Edificio{ game::TipoEdificio::Herreria, game::Vec2{ centroComercio.x - 3.0f * game::kTileSize, centroComercio.y - 1.0f * game::kTileSize } },
+        // Academia (nueva, ver TipoEdificio::Academia): centrada entre
+        // Herreria y Tienda, misma fila -- pedido directo del usuario tras
+        // terminar la Ciudad ("aprender habilidades", parte del pedido
+        // original que habia quedado pendiente, ver "La Ciudad" en
+        // docs/design.md).
+        game::Edificio{ game::TipoEdificio::Academia, game::Vec2{ centroComercio.x, centroComercio.y - 1.0f * game::kTileSize } },
         game::Edificio{ game::TipoEdificio::Tienda, game::Vec2{ centroComercio.x + 3.0f * game::kTileSize, centroComercio.y - 1.0f * game::kTileSize } },
     };
 
@@ -613,7 +625,7 @@ const char* FraseDeAldeano(game::TipoDeambulante tipo) {
 // 'estadoAlCancelarSlot' (mas abajo) guarda a cual de esos tres volver con
 // ESC/"Volver".
 enum class EstadoJuego {
-    MenuInicio, SobreMi, Ciudad, Herreria, Tienda, MapaTema, MapaDificultad, Exploracion, Pausa, Combate, SeleccionSlot
+    MenuInicio, SobreMi, Ciudad, Herreria, Tienda, Academia, MapaTema, MapaDificultad, Exploracion, Pausa, Combate, SeleccionSlot
 };
 
 // Distancia (en pixeles) a la que hay que estar del interactuable mas
@@ -909,9 +921,17 @@ int main() {
             }
 
             if (IsKeyPressed(KEY_ESCAPE)) {
-                opcionPausaSeleccionada = 0;
-                estadoPrevioAPausa = EstadoJuego::MapaTema;
-                estado = EstadoJuego::Pausa;
+                // Vuelve directo a la Ciudad -- mismo criterio de "ESC ==
+                // volver a la ciudad" que ya usan Herreria/Tienda/Academia,
+                // sin pasar por la pausa. Antes abria la pausa y obligaba a
+                // navegar hasta "Volver a la ciudad" para lograr lo mismo;
+                // pedido directo del usuario ("no tengo forma de volver
+                // atras... si me olvide de comprar algo"). Todavia no se
+                // genero ninguna mazmorra en este paso, asi que no hace
+                // falta tocar mazmorraActivaIndice (sigue en -1). Para
+                // Guardar/Menu principal/Salir, la pausa sigue accesible
+                // apretando ESC de nuevo una vez de vuelta en la Ciudad.
+                EntrarALaCiudad();
             } else if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
                 // Fija el tema elegido y pasa al paso 2 (elegir dificultad
                 // dentro de ese tema, ver EstadoJuego::MapaDificultad) — no
@@ -1410,6 +1430,10 @@ int main() {
                         mensajeFlotante.clear();
                         timerMensaje = 0.0f;
                         estado = EstadoJuego::Tienda;
+                    } else if (edificioCercano->tipo == game::TipoEdificio::Academia) {
+                        mensajeFlotante.clear();
+                        timerMensaje = 0.0f;
+                        estado = EstadoJuego::Academia;
                     } else {  // EntradaMazmorras
                         // Mismo fondo "de entrada" que el juego mostraba
                         // antes de que existiera la Ciudad (ver
@@ -1504,6 +1528,77 @@ int main() {
             renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres, static_cast<int>(temaMazmorraCargada),
                                             edificiosCiudad, deambulantesCiudad, fuentesCiudad);
             ui::DibujarComercio(anchoVentana, altoVentana, esHerreria, ofertasUi, party.Oro(), mensajeFlotante);
+            EndDrawing();
+        } else if (estado == EstadoJuego::Academia) {
+            // Tercer edificio de la Ciudad (ver ConstruirCiudad): aprender
+            // las habilidades de game::kNivelMejoraHabilidad/
+            // kNivelHabilidadNueva -- 2 filas por personaje (mejora, nueva),
+            // orden fijo [1]-[8] = (personaje 0 mejora, personaje 0 nueva,
+            // personaje 1 mejora, ...), mismo criterio numerico simple que
+            // ya usan Herreria/Tienda con su catalogo.
+            if (timerMensaje > 0.0f) {
+                timerMensaje -= dt;
+                if (timerMensaje <= 0.0f) {
+                    timerMensaje = 0.0f;
+                    mensajeFlotante.clear();
+                }
+            }
+
+            auto& miembrosAcademia = party.Miembros();
+
+            if (IsKeyPressed(KEY_ESCAPE)) {
+                mensajeFlotante.clear();
+                timerMensaje = 0.0f;
+                estado = EstadoJuego::Ciudad;
+            } else {
+                int indice = NumeroPresionado();
+                if (indice >= 0 && (size_t)indice < miembrosAcademia.size() * 2) {
+                    size_t indicePersonaje = (size_t)indice / 2;
+                    bool esNueva = (indice % 2) == 1;
+                    game::Character& personaje = miembrosAcademia[indicePersonaje];
+                    if (esNueva && personaje.HabilidadNuevaDisponible()) {
+                        personaje.AprenderHabilidadNueva();
+                        mensajeFlotante = personaje.Nombre() + " aprendio " + game::NombreHabilidadNueva(personaje.Rol()) + ".";
+                        timerMensaje = kDuracionMensaje;
+                    } else if (!esNueva && personaje.MejoraHabilidadDisponible()) {
+                        personaje.AprenderMejoraHabilidad();
+                        mensajeFlotante = personaje.Nombre() + " mejoro " + std::string(game::NombreHabilidadDeRol(personaje.Rol())) + ".";
+                        timerMensaje = kDuracionMensaje;
+                    }
+                    // Si la fila no esta disponible (ya aprendida, o nivel
+                    // insuficiente) no hace nada -- mismo criterio que
+                    // Comercio con oro insuficiente, pero sin mensaje de
+                    // rechazo (el estado ya se ve claro en la lista misma).
+                }
+            }
+
+            std::vector<ui::FilaAcademia> filasAcademia;
+            filasAcademia.reserve(miembrosAcademia.size() * 2);
+            for (auto& personaje : miembrosAcademia) {
+                std::string nombrePersonaje = personaje.Nombre() + " (" + game::RoleName(personaje.Rol()) + ") - Nv."
+                    + std::to_string(personaje.Nivel());
+
+                ui::FilaAcademia filaMejora;
+                filaMejora.nombrePersonaje = nombrePersonaje;
+                filaMejora.nombreHabilidad = std::string("Mejorar ") + game::NombreHabilidadDeRol(personaje.Rol());
+                filaMejora.nivelRequerido = game::kNivelMejoraHabilidad;
+                filaMejora.aprendida = personaje.MejoraHabilidadAprendida();
+                filaMejora.disponible = personaje.MejoraHabilidadDisponible();
+                filasAcademia.push_back(filaMejora);
+
+                ui::FilaAcademia filaNueva;
+                filaNueva.nombrePersonaje = nombrePersonaje;
+                filaNueva.nombreHabilidad = std::string("Aprender ") + game::NombreHabilidadNueva(personaje.Rol());
+                filaNueva.nivelRequerido = game::kNivelHabilidadNueva;
+                filaNueva.aprendida = personaje.HabilidadNuevaAprendida();
+                filaNueva.disponible = personaje.HabilidadNuevaDisponible();
+                filasAcademia.push_back(filaNueva);
+            }
+
+            BeginDrawing();
+            renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres, static_cast<int>(temaMazmorraCargada),
+                                            edificiosCiudad, deambulantesCiudad, fuentesCiudad);
+            ui::DibujarAcademia(anchoVentana, altoVentana, filasAcademia, mensajeFlotante);
             EndDrawing();
         } else if (estado == EstadoJuego::Pausa) {
             // Mismo timer que ya usa mensajeFlotante en Exploracion
@@ -1754,6 +1849,13 @@ int main() {
                     encuentro->AccionHabilidadDeRol();
                 } else if (IsKeyPressed(KEY_THREE)) {
                     menuItemCombateAbierto = true;
+                } else if (IsKeyPressed(KEY_FOUR)) {
+                    // Segunda habilidad de rol (ver game::NombreHabilidadNueva
+                    // y la Academia en la Ciudad) -- AccionHabilidadNueva ya
+                    // no hace nada sola si el personaje en turno todavia no
+                    // la aprendio, asi que no hace falta chequear aca (mismo
+                    // criterio defensivo que ya usan las otras Accion*).
+                    encuentro->AccionHabilidadNueva();
                 } else if (IsKeyPressed(KEY_TAB)) {
                     // Con mas de un enemigo vivo, cambia a quien le apuntan
                     // las acciones del aliado en turno (ver combat_ui.cpp).
