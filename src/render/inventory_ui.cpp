@@ -10,10 +10,14 @@ namespace {
 // personaje del mapa a un tamaño chico, en vez de un circulo de color.
 constexpr float kEscalaRetrato = 1.0f;
 
-// Alto total de cada ficha: HP/recurso arriba, y las dos lineas de equipo
-// (Arma/Accesorio) abajo — asi se ve de un vistazo que tiene puesto cada
-// uno, sin tener que adivinar ni ir personaje por personaje.
-constexpr int kAltoFicha = 78;
+// Alto total de cada ficha: HP/recurso arriba, las dos lineas de equipo
+// (Arma/Accesorio) abajo, y una linea mas de nivel/experiencia al fondo —
+// asi se ve de un vistazo que tiene puesto cada uno y que tan cerca esta de
+// subir de nivel, sin tener que adivinar ni ir personaje por personaje. Esta
+// ficha es la que tiene mas espacio de las tres (ver ui.cpp/combat_ui.cpp,
+// que solo muestran "Nv.X" junto al rol por falta de lugar), asi que es la
+// unica que llega a mostrar tambien el progreso de XP.
+constexpr int kAltoFicha = 92;
 
 void DibujarFichaObjetivo(const game::Character& personaje, bool esObjetivo, int x, int y, int ancho,
                            const render::SpriteSet& sprites) {
@@ -27,8 +31,9 @@ void DibujarFichaObjetivo(const game::Character& personaje, bool esObjetivo, int
         DrawLine(x + 8, y + 8, x + 28, y + 28, Color{ 220, 60, 60, 255 });
     }
 
-    char nombre[48];
-    std::snprintf(nombre, sizeof(nombre), "%s%s", personaje.Nombre().c_str(), esObjetivo ? " <" : "");
+    char nombre[56];
+    std::snprintf(nombre, sizeof(nombre), "%s  Nv.%d%s", personaje.Nombre().c_str(),
+                  personaje.Nivel(), esObjetivo ? " <" : "");
     DrawText(nombre, x + 36, y + 6, 14, RAYWHITE);
 
     const auto& stats = personaje.GetStats();
@@ -58,6 +63,23 @@ void DibujarFichaObjetivo(const game::Character& personaje, bool esObjetivo, int
     char lineaAccesorio[64];
     std::snprintf(lineaAccesorio, sizeof(lineaAccesorio), "Accesorio: %s", accesorio.ocupado ? accesorio.item.nombre.c_str() : "-");
     DrawText(lineaAccesorio, x + 10, y + 62, 11, colorEquipo);
+
+    // Progreso de experiencia hacia el proximo nivel (ver
+    // Character::GanarExperiencia/ExperienciaParaNivel) — "MAX" en vez de
+    // una barra vacia una vez alcanzado kNivelMaximo, para que no parezca
+    // que dejo de acumular XP por un bug.
+    int nivel = personaje.Nivel();
+    int xpProximoNivel = game::ExperienciaParaNivel(nivel);
+    char lineaXp[32];
+    if (xpProximoNivel > 0) {
+        std::snprintf(lineaXp, sizeof(lineaXp), "XP %d/%d", personaje.Experiencia(), xpProximoNivel);
+        float ratioXp = (float)personaje.Experiencia() / (float)xpProximoNivel;
+        DrawRectangle(x + 10, y + 78, ancho - 20, 5, Color{ 40, 40, 55, 255 });
+        DrawRectangle(x + 10, y + 78, (int)((ancho - 20) * ratioXp), 5, Color{ 130, 150, 230, 255 });
+    } else {
+        std::snprintf(lineaXp, sizeof(lineaXp), "XP: nivel maximo");
+    }
+    DrawText(lineaXp, x + 10, y + 84, 10, Color{ 170, 170, 190, 255 });
 }
 
 } // namespace

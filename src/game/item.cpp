@@ -139,37 +139,41 @@ ResultadoUsoItem UsarItem(const Item& item, Character& objetivo) {
 
 ResultadoLoot TirarLootDeEnemigo(TipoEnemigo tipo) {
     ResultadoLoot r;
-    switch (tipo) {
-        case TipoEnemigo::EsqueletoErrante:
-            // 60% de soltar algo: casi siempre una pocion de curacion, a
-            // veces un consumible de combate.
-            if (Roll(10) <= 6) {
-                r.hay = true;
-                r.item = (Roll(5) == 1) ? ConsumibleDeCombateAleatorio() : PocionCuracionMenor();
-            }
-            break;
-        case TipoEnemigo::RataGigante:
-            // Es el mas debil de los tres: menos chance y solo un elixir chico.
-            if (Roll(10) <= 4) { r.hay = true; r.item = ElixirDeEnergia(); }
-            break;
-        case TipoEnemigo::BanditoAturdidor:
-            // El mas duro de los comunes: mas chance de soltar algo, y a
-            // veces una mejora permanente o un consumible de combate en vez
-            // de una pocion — recompensa el riesgo.
-            if (Roll(10) <= 7) {
-                r.hay = true;
-                int tirada = Roll(4);
-                if (tirada == 1) r.item = MejoraAleatoria();
-                else if (tirada == 2) r.item = ConsumibleDeCombateAleatorio();
-                else r.item = PocionCuracionMenor();
-            }
-            break;
-        case TipoEnemigo::CapitanBandido:
-            // El jefe: siempre suelta algo, y siempre una mejora permanente
-            // (nunca un consumible) — es el premio grande de la run.
+
+    // El jefe de cualquier tema (rol local 2, ver enemy.h): siempre suelta
+    // algo, y siempre una mejora permanente (nunca un consumible) — es el
+    // premio grande de la run, igual en los 3 temas.
+    if (EsJefe(tipo)) {
+        r.hay = true;
+        r.item = MejoraAleatoria();
+        return r;
+    }
+
+    // El enemigo "comun agresivo" de cada tema (rol local 0: Lobo Salvaje,
+    // Preso Amotinado, Guardia Real) es el mas duro de los comunes — mas
+    // chance de soltar algo, y a veces una mejora permanente o un
+    // consumible de combate en vez de una pocion, recompensando el riesgo
+    // de dejarse alcanzar (mismo criterio que antes tenia el Bandido
+    // Aturdidor, el unico agresivo de la version previa).
+    if (RolLocalDeEnemigo(tipo) == 0) {
+        if (Roll(10) <= 7) {
             r.hay = true;
-            r.item = MejoraAleatoria();
-            break;
+            int tirada = Roll(4);
+            if (tirada == 1) r.item = MejoraAleatoria();
+            else if (tirada == 2) r.item = ConsumibleDeCombateAleatorio();
+            else r.item = PocionCuracionMenor();
+        }
+        return r;
+    }
+
+    // El enemigo "comun especial" de cada tema (rol local 1: Araña
+    // Gigante, Guardia Corrupto, Mago de la Corte) es mas pasivo: 60% de
+    // soltar algo, casi siempre una pocion de curacion, a veces un
+    // consumible de combate — mismo criterio que antes tenia el Esqueleto
+    // Errante.
+    if (Roll(10) <= 6) {
+        r.hay = true;
+        r.item = (Roll(5) == 1) ? ConsumibleDeCombateAleatorio() : PocionCuracionMenor();
     }
     return r;
 }

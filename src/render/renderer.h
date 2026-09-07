@@ -7,6 +7,7 @@
 #include "../game/party.h"
 #include "../game/enemy.h"
 #include "../game/item.h"
+#include "../game/edificio.h"
 #include "sprites.h"
 
 namespace render {
@@ -25,27 +26,40 @@ public:
 
     // 'enemigos' puede tener cualquier cantidad (incluso ninguno vivo) — se
     // dibujan todos los que no esten Vencido(). 'cofres' se dibujan cerrados
-    // o abiertos segun Cofre::abierto. 'panelExpandido' controla si el panel
-    // de party se ve completo o compacto (TAB). 'promptInteraccion', si no
+    // o abiertos segun Cofre::abierto. 'tema' elige el juego de texturas de
+    // piso/pared y el tinte de la decoracion suelta (ver SpriteSet::TilePiso/
+    // TilePared/DecoracionPiso y render::TinteDecoracionPorTema en
+    // sprites.h) — 0=Bosque, 1=Carcel, 2=Castillo, mismo orden fijo que
+    // game::Tema en main.cpp (este archivo no incluye ese header, asi que
+    // solo importa el orden). 'panelExpandido' controla si el panel de
+    // party se ve completo o compacto (TAB). 'promptInteraccion', si no
     // esta vacio, se muestra como cartel abajo (p.ej. "[E] Atacar" o "[E]
     // Abrir cofre" — lo decide main.cpp, que ya sabe cual es el interactuable
     // mas cercano). 'mensajeFlotante', si no esta vacio, se muestra arriba
     // del prompt (p.ej. el resultado de abrir un cofre) por un tiempo corto.
+    // 'edificios' es opcional (vacio por defecto): solo lo usa la Ciudad
+    // (ver EstadoJuego::Ciudad en main.cpp) para dibujar sus construcciones
+    // interactuables dentro del espacio de camara -- las mazmorras normales
+    // no pasan nada aca.
     void DibujarFrame(const game::Dungeon& mazmorra, const game::Party& party,
-                       const std::vector<game::Enemy>& enemigos, const std::vector<game::Cofre>& cofres,
-                       bool panelExpandido, const std::string& promptInteraccion, const std::string& mensajeFlotante);
+                       const std::vector<game::Enemy>& enemigos, const std::vector<game::Cofre>& cofres, int tema,
+                       bool panelExpandido, const std::string& promptInteraccion, const std::string& mensajeFlotante,
+                       const std::vector<game::Edificio>& edificios = {});
 
     // Dibuja solo la mazmorra + party + enemigos + cofres (sin panel de UI ni
     // carteles), y sin BeginDrawing/EndDrawing propios. La usa main.cpp para
     // pintar la mazmorra "de fondo" cuando se esta en la pantalla de combate
-    // (que ya trae su propio overlay encima).
+    // (que ya trae su propio overlay encima), o en las pantallas de menu/mapa.
     //
     // Centra la camara en el lider del party y dibuja el mundo (grilla,
     // paredes, enemigos, cofres, party) dentro de ese espacio de camara — la
     // mazmorra generada por salas es mas grande que la ventana, asi que sin
-    // esto no se veria nada al alejarse de la sala inicial.
+    // esto no se veria nada al alejarse de la sala inicial. 'tema': ver el
+    // comentario de DibujarFrame arriba. 'edificios': ver el comentario de
+    // DibujarFrame arriba (mismo default vacio).
     void DibujarEscenarioSinUI(const game::Dungeon& mazmorra, const game::Party& party,
-                                const std::vector<game::Enemy>& enemigos, const std::vector<game::Cofre>& cofres);
+                                const std::vector<game::Enemy>& enemigos, const std::vector<game::Cofre>& cofres,
+                                int tema, const std::vector<game::Edificio>& edificios = {});
 
 private:
     int anchoVentana_;

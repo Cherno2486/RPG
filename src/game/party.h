@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <vector>
 #include <deque>
 #include "character.h"
@@ -33,10 +34,24 @@ public:
     Inventory& Inventario() { return inventario_; }
     const Inventory& Inventario() const { return inventario_; }
 
+    // Oro compartido por todo el party -- moneda para comprar en la Herreria
+    // y la Tienda de la Ciudad (ver EstadoJuego::Ciudad/Herreria/Tienda en
+    // main.cpp). Progreso DE LA CORRIDA, no permanente: se resetea a 0 con
+    // "Nueva partida" y con un Game Over, igual que el inventario y el
+    // equipo (a diferencia del nivel/experiencia de cada personaje, que si
+    // persiste) -- mismo criterio de "las apuestas de la corrida se
+    // pierden" que ya aplicaba antes de que existiera el oro. GanarOro no
+    // permite que oro_ quede negativo (sature en 0) por las dudas, aunque en
+    // la practica solo se resta desde compras ya validadas contra el oro
+    // disponible (ver la logica de compra en main.cpp).
+    int Oro() const { return oro_; }
+    void GanarOro(int cantidad) { oro_ = std::max(0, oro_ + cantidad); }
+
 private:
     std::vector<Character> miembros_;
     std::deque<Vec2> historialLider_;
     Inventory inventario_;
+    int oro_ = 0;
     static constexpr float kEspaciado = 34.0f;
     static constexpr int kMaxHistorial = 600;
 };

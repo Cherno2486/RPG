@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include "../game/save.h"  // game::kNumSlots
 
 namespace ui {
@@ -38,12 +39,18 @@ void DibujarSobreMi(int anchoVentana, int altoVentana);
 // tenia la tecla F5, "MenuPrincipal" vuelve a EstadoJuego::MenuInicio sin
 // cerrar el juego (a diferencia de la primera version de este menu, ahora
 // SI se puede volver del gameplay al menu de inicio).
-// VolverAlMapa (nueva) abandona la mazmorra en curso sin marcarla como
-// superada y vuelve a EstadoJuego::Mapa, manteniendo el party tal cual esta
-// (con su HP/inventario/equipo actual — "sigue con el desgaste" entre
-// mazmorras, ver DibujarMapa) — pensada para el jugador que quiere probar
-// otra dificultad sin terminar la actual. Si la pausa se abrio desde el
-// propio Mapa (no hay mazmorra en curso), es equivalente a "Continuar".
+// VolverAlMapa abandona la mazmorra en curso sin marcarla como superada y
+// vuelve a la Ciudad (EstadoJuego::Ciudad — antes volvia directo a
+// EstadoJuego::MapaTema; desde que la Ciudad es el hub central, MapaTema
+// solo se llega caminando hasta la Entrada a las mazmorras dentro de ella,
+// ver ConstruirCiudad en main.cpp), manteniendo el party tal cual esta (con
+// su HP/inventario/equipo/oro actual — "sigue con el desgaste" entre
+// mazmorras, ver DibujarMapaTema/DibujarMapaDificultad mas abajo) —
+// pensada para el jugador que quiere probar otro tema o dificultad sin
+// terminar la actual, o simplemente ir a gastar el oro juntado antes de
+// seguir. El nombre del enum se mantiene (evita renombrar el case en
+// main.cpp) aunque el texto que se dibuja ahora diga "Volver a la ciudad"
+// (ver kNombresOpcionesPausa en menu_ui.cpp).
 enum class OpcionPausa { Continuar, Guardar, VolverAlMapa, MenuPrincipal, Salir };
 constexpr int kNumOpcionesPausa = 5;
 
@@ -75,18 +82,65 @@ constexpr int kNumOpcionesSlot = game::kNumSlots + 1;  // los slots + "Volver"
 void DibujarSeleccionSlot(int anchoVentana, int altoVentana, int opcionSeleccionada, bool modoGuardar,
                            const bool ocupado[game::kNumSlots], const std::string& mensaje);
 
-// Mapa de mazmorras: 3 mazmorras seleccionables (Facil/Media/Dificil, en ese
-// orden fijo — ver game::Dificultad en main.cpp, este archivo no depende de
-// game/ para mantener render/ desacoplado de la logica de generacion),
-// elegibles en cualquier orden (no un camino obligado) — ver
-// EstadoJuego::Mapa en main.cpp. 'opcionSeleccionada' (0..
-// kNumMazmorrasMapa-1) lo maneja quien llama, igual que en las otras
-// pantallas de este archivo. 'superada[i]' marca con un check la mazmorra i
-// si ya se gano esta run — se resetea a todo false al empezar una run nueva
-// o al perder del todo (Game Over reinicia la run completa, ver
+// Mapa de mazmorras: dos pasos. Primero se elige un TEMA (Bosque/Carcel/
+// Castillo, en ese orden fijo — ver game::Tema en main.cpp, este archivo no
+// depende de game/ para mantener render/ desacoplado de la logica de
+// generacion) y despues, DENTRO de ese tema, una dificultad (Facil/Media/
+// Dificil, mismo orden fijo que game::Dificultad) — 9 combinaciones en
+// total, todas elegibles en cualquier orden (no un camino obligado) y
+// rejugables sin limite. Ver EstadoJuego::MapaTema/MapaDificultad en
+// main.cpp.
+constexpr int kNumTemasMapa = 3;
+constexpr int kNumMazmorrasMapa = 3;  // dificultades por tema
+
+// Paso 1: elegir tema. 'opcionSeleccionada' (0..kNumTemasMapa-1) lo maneja
+// quien llama, igual que en las otras pantallas de este archivo.
+// 'progresoPorTema[i]' es cuantas de las kNumMazmorrasMapa dificultades de
+// ese tema ya estan superadas esta run (0..kNumMazmorrasMapa) — se muestra
+// como "x/3 superadas" en la tarjeta, o nada si todavia es 0. ENTER pasa al
+// paso 2 (ver DibujarMapaDificultad); ESC abre la pausa.
+void DibujarMapaTema(int anchoVentana, int altoVentana, int opcionSeleccionada,
+                      const int progresoPorTema[kNumTemasMapa]);
+
+// Paso 2: elegir dificultad DENTRO del tema ya elegido en el paso 1
+// ('temaElegido', 0..kNumTemasMapa-1, solo para el titulo de la pantalla).
+// 'opcionSeleccionada' (0..kNumMazmorrasMapa-1) lo maneja quien llama.
+// 'superada[i]' son los flags de ESTE tema nomas (el llamador ya extrajo el
+// sub-rango correspondiente del array de kNumCombinacionesMapa
+// combinaciones, ver game/save.h) — se resetea a todo false al empezar una
+// run nueva o al perder del todo (Game Over reinicia la run completa, ver
 // EstadoJuego::Combate/FaseCombate::Perdido en main.cpp), pero NO al volver
-// al mapa sin terminar una mazmorra (VolverAlMapa en la pausa).
-constexpr int kNumMazmorrasMapa = 3;
-void DibujarMapa(int anchoVentana, int altoVentana, int opcionSeleccionada, const bool superada[kNumMazmorrasMapa]);
+// al mapa sin terminar una mazmorra (VolverAlMapa en la pausa). ENTER genera
+// la mazmorra y entra a explorar; ESC vuelve al paso 1 (no a la pausa).
+void DibujarMapaDificultad(int anchoVentana, int altoVentana, int temaElegido, int opcionSeleccionada,
+                            const bool superada[kNumMazmorrasMapa]);
+
+// --- Comercio (Herreria/Tienda de la Ciudad, ver EstadoJuego::Herreria/
+// Tienda y ConstruirCiudad en main.cpp) ---
+// Un item comprable, ya resuelto a texto por quien llama -- main.cpp arma
+// esta lista a partir de su propio catalogo de precios (ver
+// OfertaComercio/kOfertasHerreria/kOfertasTienda ahi, un tipo DISTINTO de
+// este con el mismo nombre pero en namespace game, no confundir), leyendo
+// nombre/descripcion del game::Item real (ItemFabrica().nombre/descripcion)
+// para no duplicar ese texto a mano aca. Este archivo no incluye game/item.h
+// a proposito, mismo desacople que el resto de render/menu_ui.h.
+struct OfertaComercio {
+    std::string nombre;
+    std::string descripcion;
+    int precio = 0;
+};
+
+// Pantalla de comercio: titulo segun 'esHerreria' (Herreria si true, Tienda
+// si false), oro disponible arriba a la derecha, y lista numerada [1]-[9]
+// de 'ofertas' con su precio (atenuado si el oro actual no alcanza para
+// esa oferta). 'mensaje' (puede venir vacio) muestra el resultado de la
+// ultima compra intentada en esta visita a la pantalla (p.ej. "Compraste:
+// Pocion de Curacion Menor." o "No te alcanza el oro para Daga Veloz.") —
+// main.cpp decide que tecla numerica dispara la compra, resuelve el precio
+// contra party.Oro() y arma 'mensaje'; esta funcion solo dibuja. Sin
+// BeginDrawing/EndDrawing propios, mismo criterio que el resto de este
+// archivo. ESC vuelve a EstadoJuego::Ciudad (ver main.cpp).
+void DibujarComercio(int anchoVentana, int altoVentana, bool esHerreria, const std::vector<OfertaComercio>& ofertas,
+                      int oro, const std::string& mensaje);
 
 }  // namespace ui

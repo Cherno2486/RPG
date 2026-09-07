@@ -40,6 +40,7 @@ add_executable(rpg_mazmorras
     src/render/ui.cpp
     src/render/combat_ui.cpp
     src/render/inventory_ui.cpp
+    src/render/character_sheet_ui.cpp
     src/render/audio.cpp
     src/render/menu_ui.cpp
 )

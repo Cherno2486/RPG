@@ -1712,6 +1712,7 @@ CMakeFiles/rpg_mazmorras.dir/src/render/combat_ui.cpp.obj: C:/Users/ama5185/Desk
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/character.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/combat.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/combat_state.h \
+  C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/dungeon.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/effects.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/enemy.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/inventory.h \
@@ -1861,6 +1862,7 @@ CMakeFiles/rpg_mazmorras.dir/src/render/inventory_ui.cpp.obj: C:/Users/ama5185/D
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/external/raylib-src/src/raylib.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/character.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/combat_state.h \
+  C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/dungeon.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/effects.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/enemy.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/inventory.h \
@@ -2058,6 +2060,7 @@ CMakeFiles/rpg_mazmorras.dir/src/render/menu_ui.cpp.obj: C:/Users/ama5185/Deskto
   C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/cstddef \
   C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/cstdio \
   C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/cstdlib \
+  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/cstring \
   C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/cwchar \
   C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/debug/assertions.h \
   C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/debug/debug.h \
@@ -2105,12 +2108,14 @@ CMakeFiles/rpg_mazmorras.dir/src/render/menu_ui.cpp.obj: C:/Users/ama5185/Deskto
   C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/malloc.h \
   C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/sec_api/stdio_s.h \
   C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/sec_api/stdlib_s.h \
+  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/sec_api/string_s.h \
   C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/sec_api/wchar_s.h \
   C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/sec_api/wconio_s.h \
   C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/stdarg.h \
   C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/stddef.h \
   C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/stdio.h \
   C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/stdlib.h \
+  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/string.h \
   C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/swprintf.inl \
   C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/vadefs.h \
   C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/wchar.h \
@@ -2316,6 +2321,7 @@ CMakeFiles/rpg_mazmorras.dir/src/render/sprites.cpp.obj: C:/Users/ama5185/Deskto
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/external/raylib-src/src/raylib.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/character.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/combat_state.h \
+  C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/dungeon.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/effects.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/enemy.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/item_types.h \
@@ -2438,6 +2444,7 @@ CMakeFiles/rpg_mazmorras.dir/src/render/ui.cpp.obj: C:/Users/ama5185/Desktop/Mar
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/external/raylib-src/src/raylib.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/character.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/combat_state.h \
+  C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/dungeon.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/effects.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/enemy.h \
   C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/inventory.h \
@@ -3113,6 +3120,12 @@ C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/render/input.cpp:
 C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/render/inventory_ui.cpp:
 
 C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/render/menu_ui.cpp:
+
+C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/cstring:
+
+C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/sec_api/string_s.h:
+
+C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/string.h:
 
 C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/enable_special_members.h:
 

@@ -43,22 +43,56 @@ siguientes veces es mucho más rápido.
   nada); si hay al menos uno, lleva a la pantalla de elegir cuál de los 3
   cargar — ver "Guardado de partida" abajo.
 - **ENTER o ESPACIO**: confirmar la opción resaltada. "Nueva partida"
-  resetea el party y el mapa de mazmorras desde cero y lleva al **mapa**
-  (ver abajo), no directo a una mazmorra.
+  resetea el party, el oro y el mapa de mazmorras desde cero y lleva a
+  **la Ciudad** (ver abajo), el hub central desde donde se camina hasta la
+  entrada del mapa de mazmorras — no directo a una mazmorra.
 - **"Sobre mi"** lleva a una pantalla placeholder (todavía sin contenido) —
   **ESC o ENTER** vuelve al menú desde ahí.
 
-**Mapa de mazmorras:**
-- **Flechas izquierda/derecha o A/D**: mover la selección entre las 3
-  mazmorras — **Fácil**, **Media**, **Difícil** (dificultad creciente: más
-  enemigos, enemigos más fuertes y mejor botín cuanto más difícil),
-  elegibles en cualquier orden y rejugables sin límite (cada vez que se
-  entra se genera un layout nuevo). Una mazmorra ya ganada muestra
-  "(Superada)" pero se puede volver a jugar igual.
-- **ENTER o ESPACIO**: entra a la mazmorra resaltada. El party conserva su
-  HP, inventario y equipo tal cual estaban — no hay curación completa al
-  cambiar de mazmorra.
-- **ESC**: abre el menú de pausa (ver abajo).
+**La Ciudad (hub central):**
+- **WASD / flechas**: mover al líder por la plaza (mismo movimiento libre y
+  formación de fila que en la exploración de una mazmorra, sin enemigos ni
+  trampas acá). Un badge de **"Oro: N"** en el HUD muestra el oro actual del
+  party — se gana en combates y cofres dentro de las mazmorras (más en
+  Dificultades más altas), nunca dentro de la Ciudad.
+- **E**: sobre el edificio más cercano — el cartel de abajo indica cuál con
+  "[E] Ir a la Herrería" / "[E] Ir a la Tienda" / "[E] Ir a la Entrada a las
+  mazmorras". La Herrería y la Tienda abren la pantalla de comercio (ver
+  abajo); la Entrada lleva al mapa de mazmorras de siempre (elegir tema y
+  dificultad — ver "Mapa de mazmorras" abajo), que funciona exactamente
+  igual que antes desde ahí para abajo.
+- **I**, **TAB**, **F5**, **ESC**: mismas funciones que durante la
+  exploración (inventario, ficha de personajes, guardar, pausa).
+
+**Comercio (Herrería/Tienda, tras [E] en la Ciudad):**
+- **1-9**: comprar el item de esa fila al precio mostrado, si el oro
+  alcanza — se resta el precio y el item se agrega al inventario compartido
+  de siempre (se apila con items iguales). Si no alcanza el oro, se muestra
+  un aviso y no se cobra nada; los items que no se pueden pagar todavía se
+  ven atenuados en rojo.
+- La **Herrería** vende Mejoras permanentes (equipo); la **Tienda** vende
+  Consumibles (de combate y de fuera de combate) — mismos items que ya
+  existían, ahora también comprables con oro además de encontrarse como
+  loot.
+- **ESC**: vuelve a la Ciudad.
+
+**Mapa de mazmorras (dos pasos — tema primero, dificultad después):**
+- **Paso 1, elegir tema**: **Flechas izquierda/derecha o A/D** mueven la
+  selección entre **Bosque**, **Cárcel** y **Castillo** — tres ambientaciones
+  independientes, cada una con sus propios enemigos comunes y su propio
+  jefe (mismo patrón de IA en los 3, solo cambia nombre/sprite). Una
+  tarjeta con progreso muestra "x/3 superadas" debajo. **ENTER o ESPACIO**
+  pasa al paso 2; **ESC** abre el menú de pausa.
+- **Paso 2, elegir dificultad**: dentro del tema ya elegido, **Flechas
+  izquierda/derecha o A/D** mueven la selección entre **Fácil**, **Media**
+  y **Difícil** (dificultad creciente: más enemigos, enemigos más fuertes y
+  mejor botín cuanto más difícil) — 9 combinaciones tema×dificultad en
+  total, todas elegibles en cualquier orden y rejugables sin límite (cada
+  vez que se entra se genera un layout nuevo). Una combinación ya ganada
+  muestra "(Superada)" pero se puede volver a jugar igual. **ENTER o
+  ESPACIO** entra a esa mazmorra — el party conserva su HP, inventario y
+  equipo tal cual estaban, no hay curación completa al cambiar de mazmorra.
+  **ESC** vuelve al paso 1 (no a la pausa).
 
 **Exploración:**
 - **WASD / flechas**: mover al líder del party (movimiento libre, no por
@@ -70,9 +104,10 @@ siguientes veces es mucho más rápido.
   combate de toda la sala, o abre el cofre y suma su contenido al
   inventario. El cartel de abajo indica cuál de los dos es ("[E] Atacar" /
   "[E] Abrir cofre") según lo que esté más cerca. No hace falta con los
-  enemigos **agresivos** (nombre en rojo con un "!" arriba — por ahora,
-  solo el Bandido Aturdidor): esos persiguen al líder solos y fuerzan el
-  combate al alcanzarlo.
+  enemigos **agresivos** (nombre en rojo con un "!" arriba — el enemigo
+  común "de persecución" de cada tema: Lobo Salvaje en Bosque, Preso
+  Amotinado en Cárcel, Guardia Real en Castillo): esos persiguen al líder
+  solos y fuerzan el combate al alcanzarlo.
 - **Ojo con las trampas de piso**: fuego (naranja) y ácido (charco verde),
   repartidas disperso por la mazmorra — pisarlas hace daño mientras te
   quedes parado encima (con un pequeño respiro entre golpe y golpe), tanto
@@ -82,13 +117,16 @@ siguientes veces es mucho más rápido.
   válida de despacharlo sin pelear.
 - **I**: abre/cierra el inventario (congela la exploración mientras está
   abierto).
-- **TAB**: alterna el panel de party entre compacto (chiquito, no tapa el
-  mapa) y expandido (con nombre/rol/HP detallado de cada uno).
+- **TAB**: abre/cierra la ficha de personajes a pantalla completa (congela
+  la exploración igual que el inventario) — nivel, XP, HP, recurso,
+  Ataque/Defensa/Velocidad y equipo de cada uno. El panel chico de arriba a
+  la izquierda (retratos + barra de HP) siempre queda visible mientras
+  explorás, ya no se alterna con TAB.
 - **F5**: abre la pantalla de elegir en cuál de los 3 slots guardar (la
   partida en curso: mazmorra, party, inventario, enemigos y cofres) — ver
   "Guardado de partida" abajo.
-- **ESC**: con el inventario cerrado, abre el menú de pausa (ver abajo). Con
-  el inventario abierto, lo cierra primero.
+- **ESC**: cierra primero lo que esté abierto encima (inventario, después la
+  ficha de personajes) y recién con los dos cerrados abre el menú de pausa.
 
 **Inventario (con [I] abierto):**
 - **TAB**: cicla a cuál miembro del party se le va a aplicar el próximo
@@ -100,20 +138,21 @@ siguientes veces es mucho más rápido.
   con [3] durante un combate.
 - **I** o **ESC**: cierra el inventario y vuelve a la exploración.
 
-**Pausa (ESC durante la exploración o parado en el mapa):**
+**Pausa (ESC durante la exploración, parado en el mapa o en la Ciudad):**
 - **Flechas arriba/abajo o W/S**: mover la selección entre "Continuar",
-  "Guardar", "Volver al mapa", "Menú principal" y "Salir".
+  "Guardar", "Volver a la ciudad", "Menú principal" y "Salir".
 - **ENTER o ESPACIO**: confirmar la opción resaltada. "Guardar" abre la
-  misma pantalla de selección de slot que F5; "Volver al mapa" abandona la
-  mazmorra en curso sin marcarla como superada (el party conserva su HP,
-  inventario y equipo — "sigue con el desgaste") y vuelve al mapa; si la
-  pausa se abrió desde el propio mapa, esta opción no hace nada distinto de
-  "Continuar"; "Menú principal" vuelve a la pantalla de título sin cerrar
-  el juego y sin perder el progreso en curso (para retomarlo hay que haber
-  guardado antes y elegir "Cargar" — "Nueva partida" en cambio resetea todo
-  y descarta lo que había).
+  misma pantalla de selección de slot que F5; "Volver a la ciudad" abandona
+  la mazmorra en curso sin marcarla como superada (el party conserva su HP,
+  inventario, equipo y oro — "sigue con el desgaste") y vuelve a la Ciudad;
+  si la pausa se abrió desde el mapa o desde la propia Ciudad, esta opción
+  no hace nada distinto de "Continuar"; "Menú principal" vuelve a la
+  pantalla de título sin cerrar el juego y sin perder el progreso en curso
+  (para retomarlo hay que haber guardado antes y elegir "Cargar" — "Nueva
+  partida" en cambio resetea todo y descarta lo que había).
 - **ESC**: vuelve directo a jugar (equivale a confirmar "Continuar") — a la
-  exploración o al mapa, según desde dónde se haya abierto la pausa.
+  exploración, al mapa o a la Ciudad, según desde dónde se haya abierto la
+  pausa.
 
 **Selección de slot (F5, o "Guardar"/"Cargar" según desde dónde se llegue):**
 - **Flechas arriba/abajo o W/S**: mover la selección entre los 3 slots y
@@ -141,13 +180,16 @@ siguientes veces es mucho más rápido.
   enemigos le apuntan las acciones del aliado en turno — se marca con "▶"
   y un borde dorado en su ficha.
 - Cualquier tecla, al ganar: vuelve a la exploración — salvo que el
-  enemigo derrotado fuera el **Capitán Bandido** (el jefe), en cuyo caso la
-  mazmorra queda marcada "(Superada)" en el mapa y se vuelve ahí en vez de
-  a la exploración (la mazmorra sigue siendo rejugable después).
+  enemigo derrotado fuera el **jefe del tema** (Alfa del Bosque, Alcaide o
+  Capitán de la Guardia, según en qué mazmorra estabas), en cuyo caso esa
+  combinación tema/dificultad queda marcada "(Superada)" en el mapa y se
+  vuelve a **la Ciudad** en vez de a la exploración (la mazmorra sigue
+  siendo rejugable después).
 - Cualquier tecla, al perder (pantalla de **Game Over**): reinicia la run
-  entera — el party se recrea desde cero (stats de partida, sin items ni
-  equipo) y las 3 mazmorras pierden su "(Superada)" — y vuelve al **mapa**
-  a empezar de nuevo, no a la mazmorra donde se cayó.
+  entera — el party se recrea desde cero (stats de partida, sin items,
+  equipo ni oro) y las 9 combinaciones tema/dificultad pierden su
+  "(Superada)" — y vuelve a **la Ciudad** a empezar de nuevo, no a la
+  mazmorra donde se cayó.
 
 ## Sistema de combate (estilo BG3: dados + efectos)
 
@@ -184,40 +226,40 @@ Efectos de estado ya soportados por el sistema (`game/effects.h`):
 Aturdido (pierde el turno), Veneno (daño por turno), Escudo (absorbe
 daño), Debilitado (resta al ataque) y Marcado (aggro). Los cinco ya están
 conectados a contenido real: los cuatro primeros desde habilidades del
-party, y Aturdido desde el Golpe Aturdidor del Bandido Aturdidor. Marcado
-ahora tiene un efecto observable de verdad: un enemigo marcado prioriza
-atacar al Tanque en su turno en vez de al aliado con menos vida (antes,
-con un solo enemigo posible en pantalla, "a quién prioriza" nunca se
-notaba).
+party, y Aturdido/Veneno/Debilitado (según el tema) desde el golpe
+especial de un enemigo común. Marcado tiene un efecto observable de
+verdad: un enemigo marcado prioriza atacar al Tanque en su turno en vez
+de al aliado con menos vida.
 
 Cada sala **intermedia** con contenido de la mazmorra procedural (ver
 "Generación de mazmorra" más abajo) tiene un **grupo de 3 a 5 enemigos**,
-de tipos elegidos al azar entre los tres siguientes (pueden repetirse — si
-hay dos del mismo tipo en la sala, se distinguen con un sufijo, "Rata
-Gigante II"):
-- **Esqueleto Errante**: el original, parejo, solo ataque básico. Pasivo:
-  espera a que el jugador se acerque y confirme con **E**.
-- **Rata Gigante**: rápida y frágil (poca vida y defensa), ataque básico
-  nomás — un combate corto y fácil. También pasiva.
-- **Bandido Aturdidor**: el más resistente de los tres comunes (más HP y
-  defensa); a veces, en vez de un golpe normal, usa **Golpe Aturdidor**,
-  que si impacta aplica **Aturdido** (pierde el turno) — la primera fuente
-  real de ese efecto en el juego. Su ataque quedó igualado al del
-  Esqueleto tras un ajuste de balance (ver más abajo) — grupos de 3 eran
-  desproporcionadamente más duros que con cualquier otro enemigo. Es el
-  único tipo **agresivo**: persigue al líder si se acerca y fuerza el
-  combate al alcanzarlo, sin esperar a **E** (se distingue por su nombre en
-  rojo con un "!" arriba).
+de tipos elegidos al azar entre los DOS comunes del tema activo (Bosque,
+Cárcel o Castillo — ver "Mapa de mazmorras" arriba; pueden repetirse — si
+hay dos del mismo tipo en la sala, se distinguen con un sufijo, "Lobo
+Salvaje II"). Cada tema tiene un común **agresivo** (persigue al líder si
+se acerca y fuerza el combate al alcanzarlo, sin esperar a **E** — se
+distingue por su nombre en rojo con un "!" arriba) y un común **especial**
+(pasivo, espera a **E** como el resto; a veces, en vez de un golpe normal,
+aplica el efecto de estado propio de su tema):
 
-La **última sala** con contenido, en cambio, tiene un único **Capitán
-Bandido**: el jefe de la mazmorra. Más HP, ataque y defensa que cualquier
-enemigo común, un círculo bien más grande y oscuro con anillo dorado para
-distinguirlo a simple vista, e IA propia que alterna ataque básico, Golpe
-Aturdidor y **Doble Tajo** (dos golpes en el mismo turno) — por debajo del
-40% de HP entra en furia y usa Doble Tajo siempre. Siempre suelta una
+| Tema | Agresivo | Especial (efecto) |
+|---|---|---|
+| Bosque | Lobo Salvaje | Araña Gigante (Veneno) |
+| Cárcel | Preso Amotinado | Guardia Corrupto (Aturdido) |
+| Castillo | Guardia Real | Mago de la Corte (Debilitado) |
+
+La **última sala** con contenido, en cambio, tiene un único **jefe** del
+tema activo — Alfa del Bosque, Alcaide o Capitán de la Guardia, según en
+qué mazmorra estés. Los tres comparten exactamente la misma IA (solo
+cambia nombre y sprite): más HP, ataque y defensa que cualquier enemigo
+común, un círculo bien más grande y oscuro con anillo dorado para
+distinguirlo a simple vista, y alterna ataque básico, Golpe Aturdidor y un
+"Doble Golpe" con nombre propio por tema (Doble Zarpazo / Doble Golpe de
+Porra / Doble Estocada — dos golpes en el mismo turno) — por debajo del
+40% de HP entra en furia y usa el Doble Golpe siempre. Siempre suelta una
 mejora permanente al caer, y derrotarlo muestra una pantalla de cierre
 distinta ("¡MAZMORRA DESPEJADA!") en vez del cartel genérico de victoria —
-ver "Jefe de mazmorra" en `docs/design.md` para el detalle completo.
+ver "Mazmorras temáticas" en `docs/design.md` para el detalle completo.
 
 Al acercarse y apretar E sobre cualquiera de los enemigos de una sala, se
 engancha un solo combate contra **todo el grupo de esa sala** (no uno por
@@ -268,11 +310,10 @@ Fuentes de items:
   con un enemigo — el cartel de abajo indica cuál de las dos acciones
   corresponde según qué esté más cerca.
 - **Botín de combate**: al ganar un encuentro, se tira una vez por cada
-  enemigo derrotado (`TirarLootDeEnemigo`), con tablas de drop distintas
-  por tipo — Esqueleto Errante y Bandido Aturdidor sueltan más seguido que
-  la Rata Gigante, y ambos a veces sueltan un consumible de combate o (solo
-  el Bandido) una mejora permanente en vez de una poción — recompensa extra
-  por ser los más duros de pelear.
+  enemigo derrotado (`TirarLootDeEnemigo`), con tablas de drop por ROL en
+  vez de por tipo puntual — el común agresivo de cada tema suelta más
+  seguido (70%) que el especial (60%), y el jefe siempre suelta una mejora
+  permanente — recompensa extra por ser el más duro de pelear.
 
 La pantalla de inventario (**I**, `render/inventory_ui.cpp`) muestra una
 ficha por miembro del party — con su Arma y Accesorio equipados, "-" si no
@@ -287,7 +328,11 @@ revivir/curar a alguien caído sin salir del inventario para reordenar el
 party. Abrir el inventario congela el movimiento y las interacciones de
 exploración hasta cerrarlo. El equipo también se puede ver sin abrir el
 inventario: el panel de party expandido (**TAB** en exploración) muestra
-el Arma/Accesorio de cada uno debajo de su barra de HP.
+el Arma/Accesorio de cada uno debajo de su barra de HP. La ficha de cada
+personaje en el inventario, al tener más espacio que el panel de party y
+la ficha de combate, es la única que además muestra una barra de
+experiencia hacia el próximo nivel (ver "Sistema de niveles" en
+`docs/design.md`).
 
 ## Sonido
 
@@ -474,8 +519,73 @@ Ver "Sonido" en `docs/design.md` para el detalle técnico (`render/audio.h`).
     partidas guardadas antes de esta actualización ya no se pueden cargar.
     Ver "Controles" arriba y "Mapa de mazmorras: selección de dificultad y
     reinicio de la run" en `docs/design.md`.
-30. Pendiente: contenido para "Sobre mi", seguir sumando contenido de
-    juego (más enemigos comunes, mazmorras más largas, o retomar la
+30. ✅ Mazmorras temáticas: la única mazmorra (con 3 dificultades) pasó a ser
+    3 temas independientes — **Bosque**, **Cárcel** y **Castillo** —, cada
+    uno con sus propias 3 dificultades de siempre (9 combinaciones en
+    total), elegidas en dos pasos (tema primero, dificultad después).
+    Cada tema suma 2 enemigos comunes propios (uno agresivo que persigue,
+    uno especial que a veces aplica un efecto de estado distinto por tema —
+    Veneno/Aturdido/Debilitado) y su propio jefe con nombre, sprite y
+    "Doble Golpe" propios sobre la misma IA de siempre (furia por debajo
+    del 40% de HP incluida). Paletas de piso/pared y tinte de decoración
+    distintos por tema. Subió la versión del archivo de guardado (v3 → v4):
+    partidas guardadas antes de esta actualización ya no se pueden cargar.
+    Pedido directo del usuario. Ver "Controles" arriba y "Mazmorras
+    temáticas: Bosque, Cárcel y Castillo" en `docs/design.md`.
+31. ✅ Sistema de niveles/experiencia: cada personaje sube de nivel (1 a 10)
+    de forma independiente, ganando XP por combate según el rol de los
+    enemigos derrotados (solo quien sigue con vida al ganar el combate),
+    con crecimiento de stats automático por rol — sin elección del
+    jugador, y sin tocar nunca la velocidad. Es progreso **permanente**:
+    sobrevive tanto a un Game Over como a "Nueva partida" desde el menú
+    (a diferencia del equipo, el inventario y el HP en curso, que sí se
+    resetean), pero **independiente por slot de guardado**, sin ningún
+    archivo nuevo — el nivel/XP de cada personaje viaja con lo que ya se
+    guarda de él. Subió la versión del archivo de guardado (v4 → v5):
+    partidas guardadas antes de esta actualización ya no se pueden
+    cargar. Validado con un simulador Monte Carlo dedicado. Pedido
+    directo del usuario. Ver "Sistema de niveles: progreso permanente por
+    personaje" en `docs/design.md`.
+32. ✅ Ficha de personajes a pantalla completa: TAB dejó de alternar el
+    panel de arriba a la izquierda entre compacto/expandido (que ahora
+    queda fijo en compacto) y pasó a abrir/cerrar una pantalla dedicada
+    tipo inventario con la ficha completa de cada uno — nivel, XP, HP,
+    recurso, y Ataque/Defensa/Velocidad como número (hasta ahora
+    invisibles en toda la UI), más el equipo puesto. Pedido directo del
+    usuario. Ver "Ficha de personajes (TAB) y regeneración de recurso" en
+    `docs/design.md`.
+33. ✅ Regeneración de recurso al ganar un combate: la Resistencia/
+    Concentración, que antes solo se recuperaba con items o al revivir
+    tras un Game Over, ahora recupera un 30% de su máximo por cada
+    combate ganado (por personaje vivo) — ya no queda seca para el resto
+    de la run apenas se gasta una vez. Pedido directo del usuario. Ver
+    "Ficha de personajes (TAB) y regeneración de recurso" en
+    `docs/design.md`.
+34. ✅ Mazmorras más largas, escalando con la Dificultad: la cadena de
+    salas dejó de tener un largo fijo (5, igual para las 3 dificultades)
+    — ahora escala según la Dificultad elegida, igual que ya escala la
+    cantidad de enemigos por sala: **Fácil 5 salas** (la duración
+    original), **Media 7**, **Difícil 9** — un escalón parejo de 2 salas
+    de combate por nivel. Cofres y trampas no necesitaron ajuste (son
+    una chance por sala, ya escalan solas) y el guardado tampoco se vio
+    afectado. Pedido directo del usuario tras "más contenido de juego";
+    el primer intento (Fácil 6) se corrigió después porque Fácil y
+    Media casi no se notaban distintas en duración. Ver "Mazmorras más
+    largas: cantidad de salas por Dificultad" en `docs/design.md`.
+35. ✅ La Ciudad: hub central, oro y comercio: nuevo hub explorable (mini-
+    mapa, no un menú) al que ahora lleva "Nueva partida" en vez de ir
+    directo al mapa de mazmorras, con Herrería y Tienda como edificios
+    `[E]`-interactuables y una moneda nueva (oro) ganada en combates y
+    cofres, escalada por Dificultad igual que el loot. La victoria contra
+    un jefe, el Game Over y "Volver a la ciudad" desde la pausa devuelven
+    todos a la Ciudad; obligó a subir la versión del guardado (v5 → v6).
+    Pedido directo del usuario ("una ciudad, donde prepararse antes de ir
+    a las mazmorras... con herrería, para comprar pociones, aprender
+    habilidades, etc."). Ver "La Ciudad: hub central, oro y comercio" en
+    `docs/design.md`.
+36. Pendiente: aprender habilidades en la Ciudad (parte del pedido
+    original, deferida esta vuelta), contenido para "Sobre mi", seguir
+    sumando contenido de juego (más enemigos comunes, o retomar la
     historia de ambientación shelveada) antes del build de Android.
 
 Ver `docs/design.md` para el detalle completo de arquitectura y roadmap.
@@ -483,13 +593,17 @@ Ver `docs/design.md` para el detalle completo de arquitectura y roadmap.
 ## Generación de mazmorra
 
 Cada partida arma la mazmorra de cero (`game::Dungeon`, en
-`src/game/dungeon.cpp`): una cadena de 5 salas, cada una elegida al azar
+`src/game/dungeon.cpp`): una cadena de salas, cada una elegida al azar
 entre 6 "templates" de tamaño y forma (chica, grande, alargada, mediana,
 más una en L y una con pilares), donde cada sala se ubica pegada a la
 anterior extendiéndose al Este o al Sur (al azar), conectada por un
 pasillo de 3 tiles de ancho. La sala 0 es siempre el punto de partida del
-party (sin enemigos); las otras 4 tienen un grupo de 3 a 5 enemigos de
-tipo aleatorio cada una, repartidos en una grilla de hasta 3 por fila.
+party (sin enemigos); el resto tienen un grupo de 2 a 7 enemigos de tipo
+aleatorio cada una (repartidos en una grilla de hasta 3 por fila), salvo
+la última que tiene al jefe. La cantidad total de salas ya no es fija:
+escala con la Dificultad elegida — **Fácil 5**, **Media 7**, **Difícil
+9** — ver "Mazmorras más largas: cantidad de salas por Dificultad" en
+`docs/design.md`.
 
 Las dos formas no rectangulares recortan tiles del rectángulo base (la L
 pierde una esquina inferior derecha, la sala con pilares tiene 4 bloques
@@ -526,17 +640,22 @@ retomar exactamente donde quedaste: la mazmorra ya generada (salas +
 paredes + trampas, formas incluidas), los 4 personajes del party (stats,
 posición, Arma/Accesorio equipados), el inventario compartido, los
 enemigos (con cuáles ya están derrotados), los cofres (con cuáles ya se
-abrieron) y el progreso en el mapa de mazmorras (qué mazmorras ya se
+abrieron), el progreso en el mapa de mazmorras (qué mazmorras ya se
 ganaron esta run, y si la partida quedó guardada parada en el mapa o a
-mitad de una mazmorra). No se puede guardar en medio de un combate.
+mitad de una mazmorra) y el nivel/experiencia de cada personaje. No se
+puede guardar en medio de un combate.
 
-El formato de archivo subió de versión dos veces: v1 → v2 al agregar las
-trampas de piso, y v2 → v3 al agregar el mapa de mazmorras (de paso se
+El formato de archivo subió de versión cuatro veces: v1 → v2 al agregar
+las trampas de piso, v2 → v3 al agregar el mapa de mazmorras (de paso se
 corrigió ahí un bug real: los consumibles de combate — Bomba de Veneno,
 Frasco de Escudo, Antídoto — no se guardaban bien desde que se agregaron, y
-un save/load los corrompía en silencio). Una partida guardada con una
-versión anterior de este prototipo ya no se puede cargar (se rechaza igual
-que un archivo corrupto, sin crashear).
+un save/load los corrompía en silencio), v3 → v4 al agregar las
+mazmorras temáticas (el progreso pasó de 3 a 9 flags, y los enemigos
+guardados de una v3 tampoco se podrían interpretar bien porque los tipos
+cambiaron de significado), y v4 → v5 al agregar el sistema de niveles (2
+campos nuevos por personaje: nivel y experiencia). Una partida guardada
+con una versión anterior de este prototipo ya no se puede cargar (se
+rechaza igual que un archivo corrupto, sin crashear).
 
 El menú de inicio dibuja "Cargar" habilitada apenas **algún** slot tiene
 partida guardada (atenuada y sin efecto si los 3 están vacíos) — al

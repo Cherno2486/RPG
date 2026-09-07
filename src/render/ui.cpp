@@ -41,8 +41,8 @@ void DibujarPanelExpandido(const game::Party& party, const render::SpriteSet& sp
         DrawText(linea1, panelX + 40, filaY, 16, RAYWHITE);
 
         char linea2[64];
-        std::snprintf(linea2, sizeof(linea2), "%s  HP %d/%d",
-                       game::RoleName(personaje.Rol()), stats.hp, stats.hpMax);
+        std::snprintf(linea2, sizeof(linea2), "%s  Nv.%d  HP %d/%d",
+                       game::RoleName(personaje.Rol()), personaje.Nivel(), stats.hp, stats.hpMax);
         DrawText(linea2, panelX + 40, filaY + 18, 14, LIGHTGRAY);
 
         float ratio = stats.hpMax > 0 ? (float)stats.hp / (float)stats.hpMax : 0.0f;
@@ -65,6 +65,11 @@ void DibujarPanelExpandido(const game::Party& party, const render::SpriteSet& sp
     }
 
     DrawText("[TAB] ocultar", panelX + 8, panelY + altoPanel + 6, 12, Color{ 180, 180, 190, 255 });
+
+    char oroTexto[24];
+    std::snprintf(oroTexto, sizeof(oroTexto), "Oro: %d", party.Oro());
+    DrawText(oroTexto, panelX + anchoPanel - MeasureText(oroTexto, 14) - 8, panelY + altoPanel + 6, 14,
+             Color{ 230, 200, 90, 255 });
 }
 
 void DibujarPanelCompacto(const game::Party& party, const render::SpriteSet& sprites) {
@@ -93,6 +98,18 @@ void DibujarPanelCompacto(const game::Party& party, const render::SpriteSet& spr
     }
 
     DrawText("[TAB]", x + 8, y + 58, 12, Color{ 180, 180, 190, 255 });
+
+    // Oro (ver game::Party::Oro/GanarOro): siempre visible junto al panel,
+    // no solo en la Ciudad -- asi se puede ver como va acumulandose sin
+    // tener que volver a la Herreria/Tienda para chusmearlo (ver "Sistema
+    // de oro" en docs/design.md).
+    char oroTexto[24];
+    std::snprintf(oroTexto, sizeof(oroTexto), "Oro: %d", party.Oro());
+    int anchoOroTexto = MeasureText(oroTexto, 14);
+    int anchoOroCartel = anchoOroTexto + 16;
+    DrawRectangle(x, y + 62, anchoOroCartel, 22, Color{ 20, 20, 25, 180 });
+    DrawRectangleLines(x, y + 62, anchoOroCartel, 22, Color{ 80, 80, 90, 200 });
+    DrawText(oroTexto, x + 8, y + 67, 14, Color{ 230, 200, 90, 255 });
 }
 
 } // namespace

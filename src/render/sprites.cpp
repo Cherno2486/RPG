@@ -4,9 +4,6 @@ namespace render {
 
 namespace {
 
-Color Bone()     { return Color{ 225, 220, 205, 255 }; }
-Color BoneShade() { return Color{ 190, 185, 170, 255 }; }
-
 // --- Personajes (party) ---
 // Cada uno reusa el color de rol que ya definia ColorDeRol (ver
 // renderer.cpp de versiones anteriores) para que la identidad de color por
@@ -135,155 +132,317 @@ Image CrearControl() {
 }
 
 // --- Enemigos ---
-// Mismo criterio de color que ColorDeEnemigo (ver renderer.cpp de versiones
-// anteriores) preservado por tipo.
+// 9 en total: 2 comunes + 1 jefe por cada uno de los 3 temas (Bosque,
+// Carcel, Castillo — ver game::TipoEnemigo en enemy.h, el orden de ahi es
+// el que indexa enemigos_[] en SpriteSet).
 
-Image CrearEsqueleto() {
+// -- Bosque --
+
+Image CrearLoboSalvaje() {
+    // Cuadrupedo (mismo plan de cuerpo que ya usaba la vieja Rata Gigante
+    // del prototipo: cabeza adelante-abajo, cuerpo redondo, cola curva
+    // atras) pero mas estilizado y oscuro, para leerse como depredador del
+    // bosque en vez de una alimaña. Es el "comun agresivo" de este tema
+    // (persigue al jugador, ver game::EsAgresivo).
     Image img = GenImageColor(kCanvasPersonaje, kCanvasPersonajeAlto, BLANK);
 
-    Color hueso = Bone();
-    Color huesoOsc = BoneShade();
-    Color cuenca = { 30, 25, 25, 255 };
-    Color brillo = { 220, 60, 50, 255 };
+    Color pelaje = { 92, 92, 102, 255 };
+    Color pelajeOsc = { 58, 58, 68, 255 };
+    Color panza = { 150, 145, 138, 255 };
+    Color ojo = { 235, 210, 60, 255 };
+    Color colmillo = { 240, 240, 235, 255 };
+    Color cola = { 75, 75, 85, 255 };
 
-    ImageDrawCircle(&img, 10, 7, 5, hueso);
-    ImageDrawCircle(&img, 8, 7, 2, cuenca);
-    ImageDrawCircle(&img, 12, 7, 2, cuenca);
-    ImageDrawCircle(&img, 8, 7, 1, brillo);
-    ImageDrawCircle(&img, 12, 7, 1, brillo);
-    ImageDrawRectangle(&img, 8, 10, 4, 2, huesoOsc);  // mandibula
+    int cy = 17;
 
-    // Caja toracica: columna central + costillas horizontales
-    ImageDrawRectangle(&img, 9, 13, 2, 9, hueso);
-    for (int y = 14; y <= 19; y += 2) {
-        ImageDrawLine(&img, 6, y, 14, y, huesoOsc);
-    }
-    ImageDrawRectangle(&img, 6, 13, 2, 8, hueso);
-    ImageDrawRectangle(&img, 12, 13, 2, 8, hueso);
+    ImageDrawTriangle(&img, Vector2{ 0, (float)(cy - 8) }, Vector2{ 4, (float)(cy - 11) }, Vector2{ 5, (float)(cy - 3) }, pelajeOsc);
+    ImageDrawTriangle(&img, Vector2{ 5, (float)(cy - 8) }, Vector2{ 9, (float)(cy - 10) }, Vector2{ 7, (float)(cy - 3) }, pelajeOsc);
 
-    // Brazos finos colgando
-    ImageDrawRectangle(&img, 3, 14, 2, 7, hueso);
-    ImageDrawRectangle(&img, 15, 14, 2, 7, hueso);
+    ImageDrawCircle(&img, 10, cy, 7, pelaje);
+    ImageDrawCircle(&img, 10, cy + 3, 4, panza);
+    ImageDrawCircle(&img, 4, cy - 3, 4, pelaje);
+    ImageDrawCircleLines(&img, 4, cy - 3, 4, pelajeOsc);
+    ImageDrawCircle(&img, 2, cy - 4, 1, ojo);
+    ImageDrawRectangle(&img, 0, cy - 2, 2, 2, colmillo);
 
-    // Piernas finas
-    ImageDrawRectangle(&img, 7, 21, 2, 5, hueso);
-    ImageDrawRectangle(&img, 11, 21, 2, 5, hueso);
-
-    return img;
-}
-
-Image CrearRata() {
-    // Cuadrupedo, mas bajo y ancho que los humanoides. Version retocada
-    // respecto del primer prototipo (proto2.png): las orejas ahora tienen
-    // un color interior propio (rosado) que contrasta con el pelaje en vez
-    // de un tono casi identico, y un contorno separa la cabeza del cuerpo —
-    // a la escala chica de juego (1.8x) el primer intento se leia como una
-    // "bolita marrON" sin rasgos; con este contraste extra se distinguen
-    // las orejas y la cabeza incluso de lejos. La cola tambien quedo un
-    // poco mas larga y clara para que no se pierda contra el piso oscuro.
-    Image img = GenImageColor(kCanvasPersonaje, kCanvasPersonajeAlto, BLANK);
-
-    Color pelaje = { 150, 110, 55, 255 };
-    Color pelajeOsc = { 105, 74, 36, 255 };
-    Color panza = { 205, 172, 120, 255 };
-    Color diente = { 240, 235, 220, 255 };
-    Color ojo = { 20, 15, 15, 255 };
-    Color orejaInterior = { 210, 150, 140, 255 };  // rosado, contrasta con el pelaje
-    Color cola = { 185, 140, 110, 255 };
-
-    int cy = 17;  // centro vertical del cuerpo, mas abajo que los humanoides
-
-    // Orejas primero (quedan detras de la cabeza, asoman arriba)
-    ImageDrawTriangle(&img, Vector2{ 0, (float)(cy - 7) }, Vector2{ 4, (float)(cy - 10) }, Vector2{ 5, (float)(cy - 3) }, pelajeOsc);
-    ImageDrawTriangle(&img, Vector2{ 1, (float)(cy - 6) }, Vector2{ 4, (float)(cy - 8) }, Vector2{ 4, (float)(cy - 3) }, orejaInterior);
-    ImageDrawTriangle(&img, Vector2{ 5, (float)(cy - 7) }, Vector2{ 9, (float)(cy - 9) }, Vector2{ 7, (float)(cy - 3) }, pelajeOsc);
-    ImageDrawTriangle(&img, Vector2{ 6, (float)(cy - 6) }, Vector2{ 8, (float)(cy - 7) }, Vector2{ 7, (float)(cy - 3) }, orejaInterior);
-
-    ImageDrawCircle(&img, 10, cy, 7, pelaje);              // cuerpo
-    ImageDrawCircle(&img, 10, cy + 3, 4, panza);           // panza clara abajo
-    ImageDrawCircle(&img, 4, cy - 3, 4, pelaje);           // cabeza adelante
-    ImageDrawCircleLines(&img, 4, cy - 3, 4, pelajeOsc);   // separa la cabeza del cuerpo
-    ImageDrawCircle(&img, 2, cy - 3, 1, ojo);
-    ImageDrawRectangle(&img, 0, cy - 2, 2, 2, diente);     // diente asomando
-
-    // Patas cortas
     ImageDrawRectangle(&img, 5, cy + 6, 2, 4, pelajeOsc);
     ImageDrawRectangle(&img, 13, cy + 6, 2, 4, pelajeOsc);
 
-    // Cola curva atras, un poco mas larga que la version original
-    ImageDrawLineEx(&img, Vector2{ 17, (float)cy }, Vector2{ 20, (float)(cy - 7) }, 2, cola);
+    ImageDrawLineEx(&img, Vector2{ 17, (float)cy }, Vector2{ 20, (float)(cy - 8) }, 2, cola);
 
     return img;
 }
 
-Image CrearBandido() {
+Image CrearAranaGigante() {
+    // "Comun especial" del Bosque: a veces aplica Veneno (ver
+    // game::AtaqueEspecialDe). 8 patas finas en angulo desde un cuerpo de
+    // dos lobulos (cabeza chica + abdomen grande), tonos violeta oscuro
+    // para distinguirse claramente del lobo.
     Image img = GenImageColor(kCanvasPersonaje, kCanvasPersonajeAlto, BLANK);
 
-    Color piel = { 200, 160, 130, 255 };
-    Color capucha = { 130, 55, 150, 255 };  // mismo violeta que ColorDeEnemigo(BanditoAturdidor)
-    Color capuchaOsc = { 90, 38, 105, 255 };
-    Color tela = { 70, 65, 75, 255 };
-    Color garrote = { 90, 65, 40, 255 };
-    Color metal = { 150, 150, 160, 255 };
+    Color cuerpo = { 45, 35, 55, 255 };
+    Color cuerpoOsc = { 28, 22, 38, 255 };
+    Color pata = { 35, 28, 45, 255 };
+    Color ojo = { 210, 40, 40, 255 };
+    Color marca = { 150, 40, 130, 255 };
 
-    ImageDrawCircle(&img, 10, 8, 5, piel);
-    ImageDrawRectangle(&img, 4, 3, 12, 6, capucha);
-    ImageDrawRectangle(&img, 4, 8, 12, 2, capuchaOsc);
-    ImageDrawRectangle(&img, 7, 9, 2, 2, Color{ 20, 20, 25, 255 });   // ojos entrecerrados
-    ImageDrawRectangle(&img, 11, 9, 2, 2, Color{ 20, 20, 25, 255 });
+    int cx = 10, cy = 16;
 
-    // Torso mas corpulento
-    ImageDrawRectangle(&img, 3, 13, 14, 9, tela);
-    ImageDrawRectangle(&img, 3, 13, 14, 2, capuchaOsc);
+    for (int i = 0; i < 4; ++i) {
+        float dy = -6.0f + i * 4.0f;
+        ImageDrawLineEx(&img, Vector2{ (float)cx - 5, cy + dy * 0.3f }, Vector2{ 0, cy + dy }, 2, pata);
+        ImageDrawLineEx(&img, Vector2{ (float)cx + 5, cy + dy * 0.3f }, Vector2{ 19, cy + dy }, 2, pata);
+    }
 
-    // Garrote con remaches, en diagonal
-    ImageDrawLineEx(&img, Vector2{ 17, 22 }, Vector2{ 15, 9 }, 3, garrote);
-    ImageDrawCircle(&img, 15, 9, 2, metal);
-
-    ImageDrawRectangle(&img, 5, 22, 4, 4, Color{ 40, 38, 45, 255 });
-    ImageDrawRectangle(&img, 11, 22, 4, 4, Color{ 40, 38, 45, 255 });
+    ImageDrawCircle(&img, cx, cy + 3, 6, cuerpo);
+    ImageDrawCircle(&img, cx, cy + 5, 2, marca);
+    ImageDrawCircle(&img, cx, cy - 4, 4, cuerpo);
+    ImageDrawCircleLines(&img, cx, cy - 4, 4, cuerpoOsc);
+    ImageDrawCircle(&img, cx - 2, cy - 5, 1, ojo);
+    ImageDrawCircle(&img, cx + 2, cy - 5, 1, ojo);
 
     return img;
 }
 
-Image CrearCapitan() {
-    // Version "jefe" del Bandido: mismo lienzo, mas ornamentado (corona en
-    // vez de capucha lisa, capa, espada en vez de garrote) para que se note
-    // a simple vista que es distinto apenas se lo ve — coherente con el
-    // anillo dorado que ya lo distinguia en la exploracion.
+Image CrearAlfaDelBosque() {
+    // Jefe del Bosque: version "alfa" del lobo, mas grande y oscura, con
+    // melena y colmillos mas marcados — mismo criterio que ya usaba el
+    // Capitan Bandido (version ornamentada del comun) pero manteniendo el
+    // plan cuadrupedo en vez de humanoide.
+    Image img = GenImageColor(kCanvasPersonaje, kCanvasPersonajeAlto, BLANK);
+
+    Color pelaje = { 40, 38, 45, 255 };
+    Color pelajeOsc = { 25, 24, 30, 255 };
+    Color melena = { 65, 58, 52, 255 };
+    Color panza = { 120, 110, 100, 255 };
+    Color ojo = { 230, 60, 40, 255 };
+    Color colmillo = { 245, 245, 240, 255 };
+    Color cola = { 35, 34, 40, 255 };
+
+    int cy = 18;
+
+    ImageDrawTriangle(&img, Vector2{ -1, (float)(cy - 10) }, Vector2{ 5, (float)(cy - 14) }, Vector2{ 6, (float)(cy - 4) }, melena);
+    ImageDrawTriangle(&img, Vector2{ 5, (float)(cy - 11) }, Vector2{ 10, (float)(cy - 13) }, Vector2{ 8, (float)(cy - 4) }, melena);
+
+    ImageDrawCircle(&img, 11, cy, 8, pelaje);
+    ImageDrawCircle(&img, 11, cy + 4, 5, panza);
+    ImageDrawCircle(&img, 4, cy - 4, 5, pelaje);
+    ImageDrawCircleLines(&img, 4, cy - 4, 5, pelajeOsc);
+    ImageDrawCircle(&img, 2, cy - 5, 1, ojo);
+    ImageDrawRectangle(&img, 0, cy - 2, 3, 2, colmillo);
+
+    ImageDrawRectangle(&img, 5, cy + 8, 3, 5, pelajeOsc);
+    ImageDrawRectangle(&img, 14, cy + 8, 3, 5, pelajeOsc);
+
+    ImageDrawLineEx(&img, Vector2{ 19, (float)cy }, Vector2{ 20, (float)(cy - 9) }, 2, cola);
+
+    return img;
+}
+
+// -- Carcel --
+
+Image CrearPresoAmotinado() {
+    // "Comun agresivo" de la Carcel: uniforme de preso claro con rayas,
+    // pelo desprolijo, un grillete roto en la muñeca (senal del motin) y un
+    // shiv improvisado en la mano.
+    Image img = GenImageColor(kCanvasPersonaje, kCanvasPersonajeAlto, BLANK);
+
+    Color piel = { 190, 150, 120, 255 };
+    Color pelo = { 40, 35, 30, 255 };
+    Color tela = { 200, 195, 180, 255 };
+    Color telaOsc = { 150, 145, 130, 255 };
+    Color venda = { 180, 75, 60, 255 };
+    Color shiv = { 170, 170, 180, 255 };
+    Color cadena = { 90, 90, 95, 255 };
+    Color bota = { 60, 55, 50, 255 };
+
+    ImageDrawCircle(&img, 10, 8, 5, piel);
+    ImageDrawRectangle(&img, 5, 3, 10, 4, pelo);
+    ImageDrawRectangle(&img, 7, 9, 2, 1, venda);
+
+    ImageDrawRectangle(&img, 4, 13, 12, 9, tela);
+    ImageDrawRectangle(&img, 4, 13, 12, 2, telaOsc);
+    ImageDrawRectangle(&img, 4, 17, 12, 2, telaOsc);
+
+    ImageDrawRectangle(&img, 2, 18, 3, 2, cadena);
+
+    ImageDrawLineEx(&img, Vector2{ 17, 21 }, Vector2{ 19, 15 }, 2, shiv);
+
+    ImageDrawRectangle(&img, 6, 22, 3, 4, bota);
+    ImageDrawRectangle(&img, 11, 22, 3, 4, bota);
+
+    return img;
+}
+
+Image CrearGuardiaCorrupto() {
+    // "Comun especial" de la Carcel: a veces aplica Aturdido (ver
+    // game::AtaqueEspecialDe). Uniforme azul-grisaceo con gorra de visera,
+    // porra, y una moneda robada prendida como si fuera una insignia (guiño
+    // a que este guardia mira para otro lado a cambio de sobornos).
     Image img = GenImageColor(kCanvasPersonaje, kCanvasPersonajeAlto, BLANK);
 
     Color piel = { 200, 160, 130, 255 };
-    Color capa = { 60, 15, 20, 255 };  // rojo sangre oscuro, no el violeta de la tropa comun
-    Color capaOsc = { 40, 10, 14, 255 };
-    Color tela = { 45, 40, 48, 255 };
-    Color oro = { 215, 180, 90, 255 };
-    Color espada = { 205, 205, 215, 255 };
-    Color empunadura = { 90, 65, 40, 255 };
+    Color gorra = { 55, 60, 75, 255 };
+    Color gorraOsc = { 38, 42, 55, 255 };
+    Color uniforme = { 70, 75, 90, 255 };
+    Color uniformeOsc = { 50, 54, 66, 255 };
+    Color porra = { 90, 65, 40, 255 };
+    Color moneda = { 215, 180, 90, 255 };
 
     ImageDrawCircle(&img, 10, 8, 5, piel);
-    ImageDrawRectangle(&img, 3, 2, 14, 6, capa);
-    ImageDrawRectangle(&img, 3, 7, 14, 2, capaOsc);
-    // Corona: tres picos dorados sobre la capucha
-    ImageDrawTriangle(&img, Vector2{ 5, 3 }, Vector2{ 7, 3 }, Vector2{ 6, 0 }, oro);
-    ImageDrawTriangle(&img, Vector2{ 9, 3 }, Vector2{ 11, 3 }, Vector2{ 10, 0 }, oro);
-    ImageDrawTriangle(&img, Vector2{ 13, 3 }, Vector2{ 15, 3 }, Vector2{ 14, 0 }, oro);
+    ImageDrawRectangle(&img, 4, 3, 12, 4, gorra);
+    ImageDrawRectangle(&img, 4, 6, 12, 2, gorraOsc);
+    ImageDrawRectangle(&img, 7, 9, 2, 1, Color{ 25, 25, 30, 255 });
+    ImageDrawRectangle(&img, 11, 9, 2, 1, Color{ 25, 25, 30, 255 });
+
+    ImageDrawRectangle(&img, 4, 13, 12, 9, uniforme);
+    ImageDrawRectangle(&img, 4, 13, 12, 2, uniformeOsc);
+    ImageDrawCircle(&img, 10, 18, 2, moneda);
+
+    ImageDrawLineEx(&img, Vector2{ 17, 22 }, Vector2{ 16, 12 }, 3, porra);
+
+    ImageDrawRectangle(&img, 6, 22, 3, 4, Color{ 35, 32, 38, 255 });
+    ImageDrawRectangle(&img, 11, 22, 3, 4, Color{ 35, 32, 38, 255 });
+
+    return img;
+}
+
+Image CrearAlcaide() {
+    // Jefe de la Carcel: abrigo largo oscuro con charreteras rojas, aro de
+    // llaves colgando del cinto y una maza pesada en vez del garrote/porra
+    // de la tropa comun — se nota a simple vista que es el que manda.
+    Image img = GenImageColor(kCanvasPersonaje, kCanvasPersonajeAlto, BLANK);
+
+    Color piel = { 195, 155, 125, 255 };
+    Color abrigo = { 45, 40, 48, 255 };
+    Color abrigoOsc = { 30, 27, 33, 255 };
+    Color charreteras = { 150, 40, 40, 255 };
+    Color llaves = { 215, 180, 90, 255 };
+    Color maza = { 95, 93, 97, 255 };
+    Color mazaOsc = { 60, 58, 62, 255 };
+
+    ImageDrawCircle(&img, 10, 8, 5, piel);
+    ImageDrawRectangle(&img, 4, 2, 12, 5, Color{ 35, 32, 38, 255 });
+    ImageDrawRectangle(&img, 4, 6, 12, 2, Color{ 20, 18, 22, 255 });
     ImageDrawRectangle(&img, 7, 9, 2, 2, Color{ 20, 20, 25, 255 });
     ImageDrawRectangle(&img, 11, 9, 2, 2, Color{ 20, 20, 25, 255 });
 
-    // Torso corpulento con capa y ribete dorado
-    ImageDrawRectangle(&img, 3, 13, 14, 9, tela);
-    ImageDrawRectangle(&img, 3, 13, 14, 2, capaOsc);
-    ImageDrawRectangle(&img, 3, 13, 2, 9, capa);
-    ImageDrawRectangle(&img, 15, 13, 2, 9, capa);
-    ImageDrawRectangle(&img, 9, 13, 2, 9, oro);  // franja dorada al medio
+    ImageDrawRectangle(&img, 3, 13, 14, 9, abrigo);
+    ImageDrawRectangle(&img, 3, 13, 14, 2, abrigoOsc);
+    ImageDrawRectangle(&img, 3, 13, 3, 4, charreteras);
+    ImageDrawRectangle(&img, 14, 13, 3, 4, charreteras);
 
-    // Espada larga en vez de garrote
-    ImageDrawLineEx(&img, Vector2{ 18, 23 }, Vector2{ 18, 3 }, 2, espada);
-    ImageDrawRectangle(&img, 15, 15, 6, 2, empunadura);
+    ImageDrawCircleLines(&img, 6, 20, 2, llaves);
+    ImageDrawCircleLines(&img, 9, 21, 2, llaves);
+
+    ImageDrawLineEx(&img, Vector2{ 18, 24 }, Vector2{ 18, 10 }, 2, mazaOsc);
+    ImageDrawRectangle(&img, 15, 5, 7, 6, maza);
+    ImageDrawRectangleLines(&img, Rectangle{ 15, 5, 7, 6 }, 1, mazaOsc);
+
+    ImageDrawRectangle(&img, 5, 22, 4, 4, Color{ 30, 28, 32, 255 });
+    ImageDrawRectangle(&img, 11, 22, 4, 4, Color{ 30, 28, 32, 255 });
+
+    return img;
+}
+
+// -- Castillo --
+
+Image CrearGuardiaReal() {
+    // "Comun agresivo" del Castillo: armadura plateada con sobreveste azul
+    // y ribete dorado, cresta de plumero en el casco, y una lanza larga en
+    // vez de un arma cuerpo a cuerpo corta.
+    Image img = GenImageColor(kCanvasPersonaje, kCanvasPersonajeAlto, BLANK);
+
+    Color piel = { 225, 185, 150, 255 };
+    Color plata = { 200, 205, 215, 255 };
+    Color plataOsc = { 150, 155, 168, 255 };
+    Color azul = { 60, 90, 170, 255 };
+    Color oro = { 215, 180, 90, 255 };
+    Color lanza = { 210, 210, 220, 255 };
+
+    ImageDrawCircle(&img, 10, 8, 5, piel);
+    ImageDrawRectangle(&img, 4, 2, 12, 6, plata);
+    ImageDrawRectangle(&img, 4, 7, 12, 2, plataOsc);
+    ImageDrawTriangle(&img, Vector2{ 8, 2 }, Vector2{ 12, 2 }, Vector2{ 10, -3 }, oro);
+    ImageDrawRectangle(&img, 7, 9, 2, 2, Color{ 20, 20, 25, 255 });
+    ImageDrawRectangle(&img, 11, 9, 2, 2, Color{ 20, 20, 25, 255 });
+
+    ImageDrawRectangle(&img, 4, 13, 12, 8, plata);
+    ImageDrawRectangle(&img, 5, 14, 10, 6, azul);
+    ImageDrawRectangle(&img, 9, 14, 2, 6, oro);
+
+    ImageDrawLineEx(&img, Vector2{ 18, 24 }, Vector2{ 18, 2 }, 2, lanza);
+    ImageDrawTriangle(&img, Vector2{ 16, 2 }, Vector2{ 20, 2 }, Vector2{ 18, -4 }, plataOsc);
+
+    ImageDrawRectangle(&img, 6, 21, 3, 5, plataOsc);
+    ImageDrawRectangle(&img, 11, 21, 3, 5, plataOsc);
+
+    return img;
+}
+
+Image CrearMagoDeLaCorte() {
+    // "Comun especial" del Castillo: a veces aplica Debilitado (ver
+    // game::AtaqueEspecialDe). Tunica violeta cortesana con franja dorada,
+    // sombrero puntiagudo de ala ancha, baston con un orbe celeste.
+    Image img = GenImageColor(kCanvasPersonaje, kCanvasPersonajeAlto, BLANK);
+
+    Color piel = { 220, 180, 145, 255 };
+    Color capucha = { 95, 55, 140, 255 };
+    Color capuchaOsc = { 65, 38, 100, 255 };
+    Color tunica = { 70, 40, 105, 255 };
+    Color tunicaOsc = { 48, 28, 75, 255 };
+    Color oro = { 215, 180, 90, 255 };
+    Color orbe = { 120, 200, 220, 255 };
+    Color baston = { 110, 80, 55, 255 };
+
+    ImageDrawCircle(&img, 10, 8, 5, piel);
+    ImageDrawTriangle(&img, Vector2{ 3, 8 }, Vector2{ 17, 8 }, Vector2{ 10, -6 }, capucha);
+    ImageDrawRectangle(&img, 5, 7, 10, 2, capuchaOsc);
+    ImageDrawRectangle(&img, 8, 9, 4, 2, piel);
+
+    ImageDrawRectangle(&img, 5, 13, 10, 5, tunica);
+    ImageDrawRectangle(&img, 3, 18, 14, 5, tunica);
+    ImageDrawRectangle(&img, 1, 22, 18, 3, tunicaOsc);
+    ImageDrawRectangle(&img, 9, 13, 2, 12, oro);
+
+    ImageDrawLineEx(&img, Vector2{ 17, 23 }, Vector2{ 17, 5 }, 2, baston);
+    ImageDrawCircle(&img, 17, 4, 3, orbe);
+
+    return img;
+}
+
+Image CrearCapitanDeLaGuardia() {
+    // Jefe del Castillo: armadura mas grande y ornamentada, cresta/capa
+    // roja real, franja dorada al medio y una espada larga — mismo
+    // criterio que ya distinguia al Capitan Bandido de la tropa comun.
+    Image img = GenImageColor(kCanvasPersonaje, kCanvasPersonajeAlto, BLANK);
+
+    Color piel = { 220, 180, 145, 255 };
+    Color plata = { 210, 215, 225, 255 };
+    Color plataOsc = { 155, 160, 175, 255 };
+    Color capa = { 150, 25, 35, 255 };
+    Color capaOsc = { 105, 16, 24, 255 };
+    Color oro = { 225, 190, 100, 255 };
+    Color espada = { 215, 215, 225, 255 };
+    Color empunadura = { 110, 80, 55, 255 };
+
+    ImageDrawCircle(&img, 11, 8, 5, piel);
+    ImageDrawRectangle(&img, 4, 2, 14, 6, plata);
+    ImageDrawRectangle(&img, 4, 7, 14, 2, plataOsc);
+    ImageDrawTriangle(&img, Vector2{ 7, 2 }, Vector2{ 15, 2 }, Vector2{ 11, -6 }, capa);
+    ImageDrawRectangle(&img, 8, 9, 2, 2, Color{ 20, 20, 25, 255 });
+    ImageDrawRectangle(&img, 12, 9, 2, 2, Color{ 20, 20, 25, 255 });
+
+    ImageDrawRectangle(&img, 3, 13, 16, 9, plata);
+    ImageDrawRectangle(&img, 3, 13, 16, 2, plataOsc);
+    ImageDrawTriangle(&img, Vector2{ 2, 26 }, Vector2{ 19, 26 }, Vector2{ 11, 13 }, capaOsc);
+    ImageDrawRectangle(&img, 10, 13, 2, 9, oro);
+
+    ImageDrawLineEx(&img, Vector2{ 19, 24 }, Vector2{ 19, 3 }, 2, espada);
+    ImageDrawRectangle(&img, 16, 15, 6, 2, empunadura);
 
     ImageDrawRectangle(&img, 5, 22, 4, 4, Color{ 35, 32, 38, 255 });
-    ImageDrawRectangle(&img, 11, 22, 4, 4, Color{ 35, 32, 38, 255 });
+    ImageDrawRectangle(&img, 12, 22, 4, 4, Color{ 35, 32, 38, 255 });
 
     return img;
 }
@@ -324,7 +483,8 @@ Image CrearCofre(bool abierto) {
 // por tile con un hash determinístico (ver "Sprites pixel-art generados por
 // código" en docs/design.md), asi que no hace falta que cada una sea muy
 // elaborada: la variedad sale de la mezcla + la dispersion, no de cada
-// pieza individual.
+// pieza individual. Las mismas 4 formas sirven para los 3 temas del mapa —
+// solo cambia el tinte con el que se dibujan (ver TinteDecoracionPorTema).
 
 Image CrearGrietaSuelo() {
     Image img = GenImageColor(kCanvasTile, kCanvasTile, BLANK);
@@ -422,6 +582,9 @@ Image CrearTrampaAcido() {
 // El parpadeo no se hornea en la textura — renderer.cpp varia la escala del
 // dibujado cuadro a cuadro con GetTime(), asi que una sola imagen estatica
 // alcanza (ver "Sprites pixel-art generados por código" en docs/design.md).
+// Se reusa igual en los 3 temas (una mazmorra de bosque o de castillo sigue
+// siendo un interior con antorchas, no cambia el gameplay ni pide una
+// variante propia).
 constexpr int kCanvasAntorchaAncho = 12;
 constexpr int kCanvasAntorchaAlto = 20;
 
@@ -442,31 +605,34 @@ Image CrearAntorcha() {
     return img;
 }
 
-// --- Tiles de mapa ---
+// --- Tiles de mapa: un piso y una pared por tema ---
+// Mismo enfoque de siempre (manchas sutiles en el piso, dos hiladas de
+// ladrillo con aparejo en la pared) con la paleta y un detalle chico de
+// decoracion propios de cada tema — el pedido explicito del usuario fue
+// "reemplazo de paleta y decoracion" con la MISMA tecnica de generacion, no
+// formas de tile nuevas.
 
-Image CrearTilePiso() {
-    Image img = GenImageColor(kCanvasTile, kCanvasTile, Color{ 40, 38, 45, 255 });
-    Color claro = { 46, 44, 52, 255 };
-    Color oscuro = { 34, 32, 38, 255 };
+Image CrearTilePisoBosque() {
+    Image img = GenImageColor(kCanvasTile, kCanvasTile, Color{ 42, 48, 34, 255 });
+    Color claro = { 58, 66, 42, 255 };
+    Color oscuro = { 30, 36, 24, 255 };
+    Color raiz = { 70, 55, 35, 255 };
 
-    // Solo un par de manchas sutiles (sin lineas rectas que crucen el tile
-    // entero) — con lineas, el patron se notaba demasiado al repetirse por
-    // toda una sala grande; asi lee mas a "piedra desgastada" que a grilla.
     ImageDrawRectangle(&img, 1, 2, 4, 3, claro);
     ImageDrawRectangle(&img, 10, 9, 5, 4, oscuro);
     ImageDrawRectangle(&img, 3, 11, 3, 2, oscuro);
     ImageDrawRectangle(&img, 12, 2, 2, 2, claro);
+    ImageDrawLineEx(&img, Vector2{ 0, 14 }, Vector2{ 6, 12 }, 1, raiz);  // raiz fina cruzando el piso
 
     return img;
 }
 
-Image CrearTilePared() {
-    Image img = GenImageColor(kCanvasTile, kCanvasTile, Color{ 76, 58, 50, 255 });
-    Color ladrilloClaro = { 100, 78, 66, 255 };
-    Color mortero = { 55, 42, 36, 255 };
+Image CrearTileParedBosque() {
+    Image img = GenImageColor(kCanvasTile, kCanvasTile, Color{ 55, 62, 46, 255 });
+    Color piedraClara = { 72, 80, 58, 255 };
+    Color mortero = { 34, 40, 28, 255 };
+    Color musgo = { 60, 95, 50, 200 };
 
-    // Dos hiladas de ladrillos (8px cada una), la de abajo corrida la mitad
-    // (aparejo tipico) para que se note el patron al repetir el tile.
     ImageDrawRectangle(&img, 0, 0, 16, 1, mortero);
     ImageDrawRectangle(&img, 0, 7, 16, 2, mortero);
     ImageDrawRectangle(&img, 0, 15, 16, 1, mortero);
@@ -474,11 +640,93 @@ Image CrearTilePared() {
     ImageDrawRectangle(&img, 3, 8, 1, 8, mortero);
     ImageDrawRectangle(&img, 11, 8, 1, 8, mortero);
 
-    ImageDrawRectangle(&img, 1, 1, 6, 6, ladrilloClaro);
-    ImageDrawRectangle(&img, 8, 1, 7, 6, ladrilloClaro);
-    ImageDrawRectangle(&img, 4, 9, 7, 6, ladrilloClaro);
-    ImageDrawRectangle(&img, 12, 9, 4, 6, ladrilloClaro);
-    ImageDrawRectangle(&img, 0, 9, 3, 6, ladrilloClaro);
+    ImageDrawRectangle(&img, 1, 1, 6, 6, piedraClara);
+    ImageDrawRectangle(&img, 8, 1, 7, 6, piedraClara);
+    ImageDrawRectangle(&img, 4, 9, 7, 6, piedraClara);
+    ImageDrawRectangle(&img, 12, 9, 4, 6, piedraClara);
+    ImageDrawRectangle(&img, 0, 9, 3, 6, piedraClara);
+
+    ImageDrawCircle(&img, 3, 3, 2, musgo);   // parches de musgo colgando
+    ImageDrawCircle(&img, 13, 12, 2, musgo);
+
+    return img;
+}
+
+Image CrearTilePisoCarcel() {
+    Image img = GenImageColor(kCanvasTile, kCanvasTile, Color{ 48, 48, 52, 255 });
+    Color claro = { 60, 60, 65, 255 };
+    Color oscuro = { 36, 36, 40, 255 };
+
+    ImageDrawRectangle(&img, 1, 2, 4, 3, claro);
+    ImageDrawRectangle(&img, 10, 9, 5, 4, oscuro);
+    ImageDrawRectangle(&img, 3, 11, 3, 2, oscuro);
+    ImageDrawRectangle(&img, 12, 2, 2, 2, claro);
+    ImageDrawRectangleLines(&img, Rectangle{ 6, 6, 4, 4 }, 1, oscuro);  // rejilla de desague
+    ImageDrawLine(&img, 6, 8, 10, 8, oscuro);
+
+    return img;
+}
+
+Image CrearTileParedCarcel() {
+    Image img = GenImageColor(kCanvasTile, kCanvasTile, Color{ 58, 58, 62, 255 });
+    Color piedraClara = { 76, 76, 82, 255 };
+    Color mortero = { 32, 32, 36, 255 };
+    Color hierro = { 25, 25, 28, 255 };
+
+    ImageDrawRectangle(&img, 0, 0, 16, 1, mortero);
+    ImageDrawRectangle(&img, 0, 7, 16, 2, mortero);
+    ImageDrawRectangle(&img, 0, 15, 16, 1, mortero);
+    ImageDrawRectangle(&img, 7, 0, 1, 8, mortero);
+    ImageDrawRectangle(&img, 3, 8, 1, 8, mortero);
+    ImageDrawRectangle(&img, 11, 8, 1, 8, mortero);
+
+    ImageDrawRectangle(&img, 1, 1, 6, 6, piedraClara);
+    ImageDrawRectangle(&img, 8, 1, 7, 6, piedraClara);
+    ImageDrawRectangle(&img, 4, 9, 7, 6, piedraClara);
+    ImageDrawRectangle(&img, 12, 9, 4, 6, piedraClara);
+    ImageDrawRectangle(&img, 0, 9, 3, 6, piedraClara);
+
+    ImageDrawRectangle(&img, 5, 2, 1, 5, hierro);   // barrotes finos
+    ImageDrawRectangle(&img, 9, 2, 1, 5, hierro);
+
+    return img;
+}
+
+Image CrearTilePisoCastillo() {
+    Image img = GenImageColor(kCanvasTile, kCanvasTile, Color{ 58, 54, 50, 255 });
+    Color claro = { 72, 68, 62, 255 };
+    Color oscuro = { 44, 40, 36, 255 };
+    Color alfombra = { 120, 35, 40, 200 };
+
+    ImageDrawRectangle(&img, 1, 2, 4, 3, claro);
+    ImageDrawRectangle(&img, 10, 9, 5, 4, oscuro);
+    ImageDrawRectangle(&img, 3, 11, 3, 2, oscuro);
+    ImageDrawRectangle(&img, 12, 2, 2, 2, claro);
+    ImageDrawRectangle(&img, 6, 0, 4, 16, alfombra);   // franja de alfombra
+
+    return img;
+}
+
+Image CrearTileParedCastillo() {
+    Image img = GenImageColor(kCanvasTile, kCanvasTile, Color{ 80, 70, 58, 255 });
+    Color piedraClara = { 104, 92, 76, 255 };
+    Color mortero = { 55, 46, 36, 255 };
+    Color oro = { 190, 155, 80, 200 };
+
+    ImageDrawRectangle(&img, 0, 0, 16, 1, mortero);
+    ImageDrawRectangle(&img, 0, 7, 16, 2, mortero);
+    ImageDrawRectangle(&img, 0, 15, 16, 1, mortero);
+    ImageDrawRectangle(&img, 7, 0, 1, 8, mortero);
+    ImageDrawRectangle(&img, 3, 8, 1, 8, mortero);
+    ImageDrawRectangle(&img, 11, 8, 1, 8, mortero);
+
+    ImageDrawRectangle(&img, 1, 1, 6, 6, piedraClara);
+    ImageDrawRectangle(&img, 8, 1, 7, 6, piedraClara);
+    ImageDrawRectangle(&img, 4, 9, 7, 6, piedraClara);
+    ImageDrawRectangle(&img, 12, 9, 4, 6, piedraClara);
+    ImageDrawRectangle(&img, 0, 9, 3, 6, piedraClara);
+
+    ImageDrawRectangle(&img, 0, 7, 16, 1, oro);   // filete dorado entre hiladas
 
     return img;
 }
@@ -492,16 +740,29 @@ Texture2D CargarPixelPerfecto(Image img) {
 
 }  // namespace
 
+Color TinteDecoracionPorTema(int tema) {
+    switch (((tema % kNumTemas) + kNumTemas) % kNumTemas) {
+        case 0:  return Color{ 200, 230, 190, 255 };  // Bosque: verdoso
+        case 1:  return Color{ 200, 200, 210, 255 };  // Carcel: gris frio
+        default: return Color{ 230, 210, 170, 255 };  // Castillo: calido/dorado
+    }
+}
+
 SpriteSet::SpriteSet() {
     personajes_[static_cast<int>(game::Role::Tanque)] = CargarPixelPerfecto(CrearTanque());
     personajes_[static_cast<int>(game::Role::Danio)] = CargarPixelPerfecto(CrearDanio());
     personajes_[static_cast<int>(game::Role::Soporte)] = CargarPixelPerfecto(CrearSoporte());
     personajes_[static_cast<int>(game::Role::Control)] = CargarPixelPerfecto(CrearControl());
 
-    enemigos_[static_cast<int>(game::TipoEnemigo::EsqueletoErrante)] = CargarPixelPerfecto(CrearEsqueleto());
-    enemigos_[static_cast<int>(game::TipoEnemigo::RataGigante)] = CargarPixelPerfecto(CrearRata());
-    enemigos_[static_cast<int>(game::TipoEnemigo::BanditoAturdidor)] = CargarPixelPerfecto(CrearBandido());
-    enemigos_[static_cast<int>(game::TipoEnemigo::CapitanBandido)] = CargarPixelPerfecto(CrearCapitan());
+    enemigos_[static_cast<int>(game::TipoEnemigo::LoboSalvaje)] = CargarPixelPerfecto(CrearLoboSalvaje());
+    enemigos_[static_cast<int>(game::TipoEnemigo::AranaGigante)] = CargarPixelPerfecto(CrearAranaGigante());
+    enemigos_[static_cast<int>(game::TipoEnemigo::AlfaDelBosque)] = CargarPixelPerfecto(CrearAlfaDelBosque());
+    enemigos_[static_cast<int>(game::TipoEnemigo::PresoAmotinado)] = CargarPixelPerfecto(CrearPresoAmotinado());
+    enemigos_[static_cast<int>(game::TipoEnemigo::GuardiaCorrupto)] = CargarPixelPerfecto(CrearGuardiaCorrupto());
+    enemigos_[static_cast<int>(game::TipoEnemigo::Alcaide)] = CargarPixelPerfecto(CrearAlcaide());
+    enemigos_[static_cast<int>(game::TipoEnemigo::GuardiaReal)] = CargarPixelPerfecto(CrearGuardiaReal());
+    enemigos_[static_cast<int>(game::TipoEnemigo::MagoDeLaCorte)] = CargarPixelPerfecto(CrearMagoDeLaCorte());
+    enemigos_[static_cast<int>(game::TipoEnemigo::CapitanDeLaGuardia)] = CargarPixelPerfecto(CrearCapitanDeLaGuardia());
 
     cofreCerrado_ = CargarPixelPerfecto(CrearCofre(false));
     cofreAbierto_ = CargarPixelPerfecto(CrearCofre(true));
@@ -515,10 +776,14 @@ SpriteSet::SpriteSet() {
     trampas_[static_cast<int>(game::TipoTrampa::Fuego)] = CargarPixelPerfecto(CrearTrampaFuego());
     trampas_[static_cast<int>(game::TipoTrampa::Acido)] = CargarPixelPerfecto(CrearTrampaAcido());
 
-    tilePiso_ = CargarPixelPerfecto(CrearTilePiso());
-    tilePared_ = CargarPixelPerfecto(CrearTilePared());
-    SetTextureWrap(tilePiso_, TEXTURE_WRAP_REPEAT);
-    SetTextureWrap(tilePared_, TEXTURE_WRAP_REPEAT);
+    tilePiso_[0] = CargarPixelPerfecto(CrearTilePisoBosque());
+    tilePiso_[1] = CargarPixelPerfecto(CrearTilePisoCarcel());
+    tilePiso_[2] = CargarPixelPerfecto(CrearTilePisoCastillo());
+    tilePared_[0] = CargarPixelPerfecto(CrearTileParedBosque());
+    tilePared_[1] = CargarPixelPerfecto(CrearTileParedCarcel());
+    tilePared_[2] = CargarPixelPerfecto(CrearTileParedCastillo());
+    for (auto& tex : tilePiso_) SetTextureWrap(tex, TEXTURE_WRAP_REPEAT);
+    for (auto& tex : tilePared_) SetTextureWrap(tex, TEXTURE_WRAP_REPEAT);
 }
 
 SpriteSet::~SpriteSet() {
@@ -526,8 +791,8 @@ SpriteSet::~SpriteSet() {
     for (auto& tex : enemigos_) UnloadTexture(tex);
     UnloadTexture(cofreCerrado_);
     UnloadTexture(cofreAbierto_);
-    UnloadTexture(tilePiso_);
-    UnloadTexture(tilePared_);
+    for (auto& tex : tilePiso_) UnloadTexture(tex);
+    for (auto& tex : tilePared_) UnloadTexture(tex);
     for (auto& tex : decoracionesPiso_) UnloadTexture(tex);
     UnloadTexture(antorcha_);
     for (auto& tex : trampas_) UnloadTexture(tex);

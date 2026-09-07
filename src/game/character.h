@@ -31,6 +31,28 @@ const char* NombreRecurso(Role rol);
 // el comportamiento (ahora mismo, solo Character::RecibirDano).
 bool UsaConcentracion(Role rol);
 
+// Sistema de niveles: progreso PERMANENTE del jugador, no de una run en
+// curso — sobrevive tanto a un Game Over como a elegir "Nueva partida" a
+// proposito (a diferencia del equipo, el inventario y el progreso en el
+// mapa de mazmorras, que si se resetean del todo en ambos casos; ver
+// "Sistema de niveles" en docs/design.md y CrearPartyConProgreso en
+// main.cpp). Cada uno de los 4 personajes tiene su propio nivel/XP
+// independiente (no uno solo compartido por todo el party).
+//
+// Nivel maximo alcanzable — por encima de este tope, GanarExperiencia no
+// hace nada mas (la experiencia de sobra no se acumula sin efecto).
+constexpr int kNivelMaximo = 10;
+
+// Experiencia necesaria para pasar de 'nivelActual' a 'nivelActual+1' (ver
+// Character::GanarExperiencia). Devuelve 0 si 'nivelActual' ya esta en
+// kNivelMaximo o mas — no hay siguiente nivel al que subir. Curva simple,
+// creciente de a 12 por nivel (20/32/44/.../116, sumando 612 en total para
+// llegar de nivel 1 a 10) — pensada para que subir de nivel se sienta
+// varias veces por mazmorra sin volverse instantaneo, y llegar al tope
+// tome unas cuantas mazmorras completas, no una sola. Ver "Sistema de
+// niveles" en docs/design.md para el detalle de balance.
+int ExperienciaParaNivel(int nivelActual);
+
 struct Stats {
     int hpMax = 10;
     int hp = 10;
@@ -110,6 +132,51 @@ public:
     // veces.
     void CargarEquipoGuardado(ItemEquipado arma, ItemEquipado accesorio);
 
+    // --- Nivel y experiencia (ver el comentario junto a kNivelMaximo mas
+    // arriba) ---
+    int Nivel() const { return nivel_; }
+    // Experiencia acumulada DENTRO del nivel actual (no total desde el
+    // nivel 1) — p.ej. en nivel 3 con 12/44 de progreso, esto devuelve 12.
+    // Se resetea (con el sobrante trasladado) cada vez que se sube de
+    // nivel, ver GanarExperiencia. Para el total acumulado desde el nivel
+    // 1, ver ExperienciaAcumuladaTotal.
+    int Experiencia() const { return xp_; }
+
+    // Otorga 'cantidad' de experiencia y sube de nivel las veces que
+    // corresponda (una sola llamada puede subir mas de un nivel si la
+    // cantidad alcanza), aplicando en cada subida el crecimiento de stats
+    // propio del rol de este personaje (ver character.cpp) — HP y el
+    // recurso actuales suben junto con sus maximos, mismo criterio que
+    // MejorarVidaMaxima al equipar una mejora. No hace nada si 'cantidad'
+    // no es positiva o si ya esta en kNivelMaximo.
+    void GanarExperiencia(int cantidad);
+
+    // Experiencia TOTAL acumulada desde el nivel 1 (a diferencia de
+    // Experiencia(), que es solo el progreso del nivel actual) — suma los
+    // umbrales de todos los niveles ya superados mas el progreso en
+    // curso. La usa main.cpp para "reconstruir" un personaje nuevo (stats
+    // de nivel 1, ver CrearPartyDeEjemplo) hasta este mismo nivel via
+    // GanarExperiencia(ExperienciaAcumuladaTotal()) — asi el nivel
+    // sobrevive a un reset de equipo/inventario sin duplicar la logica de
+    // crecimiento (ver CrearPartyConProgreso en main.cpp).
+    int ExperienciaAcumuladaTotal() const;
+
+    // Fija nivel/experiencia directo, SIN aplicar ningun crecimiento de
+    // stats — lo usa el sistema de guardado (game/save.h): stats_ ya se
+    // restaura con cualquier crecimiento de nivel incluido, asi que
+    // volver a aplicarlo via GanarExperiencia lo sumaria de nuevo. Mismo
+    // patron que CargarEquipoGuardado.
+    void CargarNivelGuardado(int nivel, int experiencia);
+
+    // Recupera una porcion del recurso (Resistencia/Concentracion) MAXIMO al
+    // ganar un combate (ver kPorcentajeRegenRecursoPorVictoria en
+    // character.cpp y "Regeneracion de recurso" en docs/design.md) —
+    // clampeado, nunca pasa el maximo. Sin esto, el recurso solo se
+    // recuperaba con items o al revivir tras un Game Over, asi que quedaba
+    // seco para el resto de la run apenas se gastaba. No hace nada si el
+    // rol no usa recurso (recursoMax == 0, no debería pasar en la practica).
+    void RegenerarRecursoPorVictoria();
+
     // Cooldown de dano de trampa de piso (ver game::Trampa en dungeon.h) --
     // mismo mecanismo que Enemy::CooldownTrampa, ver ese comentario. Solo lo
     // usa el lider del party durante la exploracion (es el unico personaje
@@ -128,6 +195,9 @@ private:
     EstadoCombate combate_;
     ItemEquipado arma_;
     ItemEquipado accesorio_;
+    int nivel_ = 1;
+    int xp_ = 0;
+    void AplicarCrecimientoDeNivel();
     float cooldownTrampa_ = 0.0f;
     static constexpr float kRadioColision = 14.0f;
 };

@@ -19,12 +19,37 @@ constexpr const char* kEncabezado = "RPGMAZMORRAS_SAVE";
 // mazmorraActivaIndice, ver DatosPartida en save.h) al final del archivo, y
 // se agregaron los dos campos nuevos de Item (estado/apuntaAEnemigo, ver
 // item_types.h — sumados para los consumibles de combate: Bomba de Veneno,
-// Frasco de Escudo, Antidoto) a EscribirItem/LeerItem. Un archivo de una
-// version anterior no tiene ninguno de los dos, asi que no se puede leer
-// con el parser actual sin desalinear todo lo que viene despues -- se
-// rechaza como cualquier otra version vieja/desconocida (ver CargarPartida),
-// el jugador simplemente arranca una partida nueva en vez de crashear.
-constexpr int kVersion = 3;
+// Frasco de Escudo, Antidoto) a EscribirItem/LeerItem.
+// v4: mapa de mazmorras tematicas (Bosque/Carcel/Castillo x Facil/Media/
+// Dificil, ver game::Tema en main.cpp) -- 'mazmorraSuperada' paso de 3 a
+// kNumCombinacionesMapa (9) flags, y los valores enteros de game::TipoEnemigo
+// cambiaron por completo (se reemplazaron los 4 tipos viejos por 9 nuevos,
+// ver enemy.h) asi que los enemigos guardados de una v3 tampoco se podrian
+// interpretar bien. Un archivo de una version anterior no se puede leer con
+// el parser actual sin desalinear todo lo que viene despues -- se rechaza
+// como cualquier otra version vieja/desconocida (ver CargarPartida), el
+// jugador simplemente arranca una partida nueva en vez de crashear.
+// v5: sistema de niveles (ver game::Character::Nivel()/Experiencia() y
+// "Sistema de niveles" en docs/design.md) -- cada personaje del party
+// suma 2 campos (nivel, experiencia dentro del nivel actual) al final de
+// su linea. Hace falta guardarlos aparte de stats_ (que ya reflejan
+// cualquier crecimiento de nivel aplicado) porque Character::
+// GanarExperiencia necesita saber en que nivel esta AHORA para calcular
+// bien el proximo umbral -- sin este campo, cargar una partida dejaria a
+// todos en nivel 1 de nuevo y la proxima subida de nivel aplicaria el
+// crecimiento equivocado (el de nivel 1->2) sobre stats que ya tenian
+// varios niveles de crecimiento encima.
+// v6: la Ciudad (ver EstadoJuego::Ciudad en main.cpp y "La Ciudad" en
+// docs/design.md) -- se agrego una linea nueva con el oro del party (ver
+// game::Party::Oro) justo despues del bloque de miembros, y el viejo campo
+// booleano 'enMapa' del bloque de mapa de mazmorras paso a ser un entero de
+// 3 valores 'pantalla' (kPantallaCiudad/kPantallaMapa/kPantallaExploracion,
+// ver save.h) para poder distinguir la Ciudad de la pantalla de mapa (antes
+// las dos hubieran caido en el mismo "enMapa=true"). Un archivo v5 no se
+// puede leer bien con el parser actual (se agrego una linea entera de mas,
+// no solo un campo) asi que se rechaza igual que cualquier otra version
+// vieja.
+constexpr int kVersion = 6;
 constexpr char kDelimitador = '|';
 
 // --- Escritura: cada registro es una linea con campos separados por '|'.
@@ -130,7 +155,7 @@ bool HayPartidaGuardada(int slot) {
 
 bool GuardarPartida(int slot, const Dungeon& mazmorra, const Party& party,
                      const std::vector<Enemy>& enemigos, const std::vector<Cofre>& cofres,
-                     const bool mazmorraSuperada[kNumMazmorrasMapa], bool enMapa, int mazmorraActivaIndice) {
+                     const bool mazmorraSuperada[kNumCombinacionesMapa], int pantalla, int mazmorraActivaIndice) {
     std::ofstream out(RutaGuardado(slot), std::ios::trunc);
     if (!out.is_open()) return false;
 
@@ -172,8 +197,17 @@ bool GuardarPartida(int slot, const Dungeon& mazmorra, const Party& party,
         EscribirItemEquipado(out, personaje.Arma());
         out << kDelimitador;
         EscribirItemEquipado(out, personaje.Accesorio());
+        // Nivel/experiencia (ver el comentario de kVersion sobre v5) — al
+        // final de la linea, despues del equipo, para no reordenar nada
+        // de lo que ya habia.
+        out << kDelimitador << personaje.Nivel() << kDelimitador << personaje.Experiencia();
         out << "\n";
     }
+
+    // --- Oro del party (ver el comentario de kVersion sobre v6) — una
+    // linea propia, no por-personaje (el oro es compartido por todo el
+    // party, ver game::Party::Oro).
+    out << party.Oro() << "\n";
 
     // --- Inventario compartido: una linea por pila (item + cantidad).
     const auto& pilas = party.Inventario().Pilas();
@@ -211,10 +245,10 @@ bool GuardarPartida(int slot, const Dungeon& mazmorra, const Party& party,
     }
 
     // --- Mapa de mazmorras (ver DatosPartida en save.h) ---
-    for (int i = 0; i < kNumMazmorrasMapa; ++i) {
-        out << (mazmorraSuperada[i] ? 1 : 0) << (i + 1 < kNumMazmorrasMapa ? kDelimitador : '\n');
+    for (int i = 0; i < kNumCombinacionesMapa; ++i) {
+        out << (mazmorraSuperada[i] ? 1 : 0) << (i + 1 < kNumCombinacionesMapa ? kDelimitador : '\n');
     }
-    out << (enMapa ? 1 : 0) << kDelimitador << mazmorraActivaIndice << "\n";
+    out << pantalla << kDelimitador << mazmorraActivaIndice << "\n";
 
     return static_cast<bool>(out);
 }
@@ -304,12 +338,19 @@ ResultadoCarga CargarPartida(int slot) {
         pos.y = l.Float();
         ItemEquipado arma = LeerItemEquipado(l);
         ItemEquipado accesorio = LeerItemEquipado(l);
+        int nivel = l.Int();
+        int experiencia = l.Int();
         if (l.huboFaltante) return resultado;
 
         Character personaje(nombre, rol, stats, pos);
         personaje.CargarEquipoGuardado(std::move(arma), std::move(accesorio));
+        personaje.CargarNivelGuardado(nivel, experiencia);
         datos.miembros.push_back(std::move(personaje));
     }
+
+    // --- Oro del party (ver el comentario de kVersion sobre v6) ---
+    if (!LeerLinea(in, linea)) return resultado;
+    try { datos.oro = std::stoi(linea); } catch (...) { return resultado; }
 
     // --- Inventario ---
     if (!LeerLinea(in, linea)) return resultado;
@@ -376,13 +417,13 @@ ResultadoCarga CargarPartida(int slot) {
     if (!LeerLinea(in, linea)) return resultado;
     {
         LectorCampos l(linea);
-        for (int i = 0; i < kNumMazmorrasMapa; ++i) datos.mazmorraSuperada[i] = l.Bool();
+        for (int i = 0; i < kNumCombinacionesMapa; ++i) datos.mazmorraSuperada[i] = l.Bool();
         if (l.huboFaltante) return resultado;
     }
     if (!LeerLinea(in, linea)) return resultado;
     {
         LectorCampos l(linea);
-        datos.enMapa = l.Bool();
+        datos.pantalla = l.Int();
         datos.mazmorraActivaIndice = l.Int();
         if (l.huboFaltante) return resultado;
     }

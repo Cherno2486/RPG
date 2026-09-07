@@ -11,16 +11,28 @@ constexpr const char* kNombresOpciones[kNumOpcionesMenuInicio] = {
 };
 
 constexpr const char* kNombresOpcionesPausa[kNumOpcionesPausa] = {
-    "Continuar", "Guardar", "Volver al mapa", "Menu principal", "Salir"
+    "Continuar", "Guardar", "Volver a la ciudad", "Menu principal", "Salir"
 };
 
-// Nombre y descripcion corta de cada mazmorra del mapa, en el mismo orden
-// fijo que game::Dificultad en main.cpp (Facil=0, Media=1, Dificil=2) — este
-// archivo no incluye ningun header de game/ a proposito (ver el comentario
-// de DibujarMapa en menu_ui.h), asi que la correspondencia de indices es lo
-// unico que los mantiene sincronizados.
+// Nombre y descripcion corta de cada tema del mapa (paso 1), en el mismo
+// orden fijo que game::Tema en main.cpp (Bosque=0, Carcel=1, Castillo=2) —
+// este archivo no incluye ningun header de game/ a proposito (ver el
+// comentario de DibujarMapaTema en menu_ui.h), asi que la correspondencia
+// de indices es lo unico que los mantiene sincronizados.
+constexpr const char* kNombresTemasMapa[kNumTemasMapa] = {
+    "Bosque", "Carcel", "Castillo"
+};
+constexpr const char* kDescripcionesTemasMapa[kNumTemasMapa] = {
+    "Lobos salvajes y arañas gigantes entre los árboles.",
+    "Presos amotinados y guardias corruptos tras las rejas.",
+    "Guardias reales y magos de la corte custodian el trono.",
+};
+
+// Nombre y descripcion corta de cada dificultad del mapa (paso 2, dentro de
+// un tema ya elegido), en el mismo orden fijo que game::Dificultad en
+// main.cpp (Facil=0, Media=1, Dificil=2).
 constexpr const char* kNombresMazmorrasMapa[kNumMazmorrasMapa] = {
-    "Mazmorra Facil", "Mazmorra Media", "Mazmorra Dificil"
+    "Facil", "Media", "Dificil"
 };
 constexpr const char* kDescripcionesMazmorrasMapa[kNumMazmorrasMapa] = {
     "Menos enemigos, enemigos mas debiles. Botin normal.",
@@ -258,27 +270,36 @@ void DibujarTextoEnvuelto(const char* texto, int x, int y, int anchoMaximo, int 
     if (!linea.empty()) ImprimirLinea(linea);
 }
 
-void DibujarMapa(int anchoVentana, int altoVentana, int opcionSeleccionada, const bool superada[kNumMazmorrasMapa]) {
+namespace {
+
+// Dibuja 'cantidad' tarjetas iguales centradas como grupo, con titulo y
+// prompt propios — factoriza el layout que antes tenia la unica pantalla de
+// mapa (DibujarMapa) y que ahora reusan sus dos pasos (DibujarMapaTema y
+// DibujarMapaDificultad): mismo tamano fijo de tarjeta, mismo criterio de
+// borde/fondo segun seleccion, mismo texto envuelto para la descripcion, y
+// una etiqueta inferior opcional por tarjeta ("(Superada)" en el paso 2,
+// "x/3 superadas" en el paso 1 — cada llamador arma el texto que le
+// corresponde, esta funcion solo lo dibuja si no viene vacio).
+void DibujarTarjetasDeSeleccion(int anchoVentana, int altoVentana, const char* subtitulo,
+                                 int cantidad, const char* const* nombres, const char* const* descripciones,
+                                 const std::string etiquetas[], int opcionSeleccionada, const char* prompt) {
     DrawRectangle(0, 0, anchoVentana, altoVentana, Color{ 8, 8, 14, 225 });
 
     DibujarTitulo(anchoVentana, altoVentana);
 
-    const char* subtitulo = "Elegi una mazmorra";
     int anchoSub = MeasureText(subtitulo, 22);
     DrawText(subtitulo, (anchoVentana - anchoSub) / 2, altoVentana / 2 - 130, 22, Color{ 230, 190, 80, 255 });
 
-    // 3 tarjetas una al lado de la otra, centradas como grupo — mismo
-    // criterio de tamano fijo (solo cambia color/borde con la seleccion) que
-    // el resto de las pantallas de este archivo, para que nada salte de
-    // lugar al mover el cursor.
+    // Tamano fijo de tarjeta (solo cambia color/borde con la seleccion) para
+    // que nada salte de lugar al mover el cursor.
     int anchoTarjeta = 260;
     int altoTarjeta = 170;
     int espacio = 30;
-    int anchoTotal = kNumMazmorrasMapa * anchoTarjeta + (kNumMazmorrasMapa - 1) * espacio;
+    int anchoTotal = cantidad * anchoTarjeta + (cantidad - 1) * espacio;
     int xInicio = (anchoVentana - anchoTotal) / 2;
     int yTarjeta = altoVentana / 2 - 80;
 
-    for (int i = 0; i < kNumMazmorrasMapa; ++i) {
+    for (int i = 0; i < cantidad; ++i) {
         bool esSeleccionada = (i == opcionSeleccionada);
         int x = xInicio + i * (anchoTarjeta + espacio);
 
@@ -288,27 +309,107 @@ void DibujarMapa(int anchoVentana, int altoVentana, int opcionSeleccionada, cons
         DrawRectangleLines(x, yTarjeta, anchoTarjeta, altoTarjeta, borde);
 
         Color colorNombre = esSeleccionada ? Color{ 255, 235, 180, 255 } : Color{ 200, 200, 210, 255 };
-        int anchoNombre = MeasureText(kNombresMazmorrasMapa[i], 20);
-        DrawText(kNombresMazmorrasMapa[i], x + (anchoTarjeta - anchoNombre) / 2, yTarjeta + 18, 20, colorNombre);
+        int anchoNombre = MeasureText(nombres[i], 20);
+        DrawText(nombres[i], x + (anchoTarjeta - anchoNombre) / 2, yTarjeta + 18, 20, colorNombre);
 
-        DibujarTextoEnvuelto(kDescripcionesMazmorrasMapa[i], x + 14, yTarjeta + 60,
+        DibujarTextoEnvuelto(descripciones[i], x + 14, yTarjeta + 60,
                              anchoTarjeta - 28, 13, Color{ 190, 190, 195, 255 });
 
-        if (superada[i]) {
-            // Texto plano en vez de un simbolo tipo check: la fuente por
-            // defecto de raylib no cubre glyphs fuera de ASCII (mismo motivo
-            // por el que el resto del juego usa "?"/"CAIDO"/"DERROTADO" como
-            // texto en vez de iconos).
-            const char* etiqueta = "(Superada)";
-            int anchoEtiqueta = MeasureText(etiqueta, 16);
-            DrawText(etiqueta, x + (anchoTarjeta - anchoEtiqueta) / 2, yTarjeta + altoTarjeta - 32, 16,
+        if (!etiquetas[i].empty()) {
+            int anchoEtiqueta = MeasureText(etiquetas[i].c_str(), 16);
+            DrawText(etiquetas[i].c_str(), x + (anchoTarjeta - anchoEtiqueta) / 2, yTarjeta + altoTarjeta - 32, 16,
                      Color{ 120, 210, 130, 255 });
         }
     }
 
-    const char* prompt = "[flechas o A/D] moverse    [ENTER] entrar    [ESC] pausa";
     int anchoPrompt = MeasureText(prompt, 16);
     DrawText(prompt, (anchoVentana - anchoPrompt) / 2, altoVentana - 60, 16, Color{ 130, 130, 140, 255 });
+}
+
+}  // namespace
+
+void DibujarMapaTema(int anchoVentana, int altoVentana, int opcionSeleccionada,
+                      const int progresoPorTema[kNumTemasMapa]) {
+    std::string etiquetas[kNumTemasMapa];
+    for (int i = 0; i < kNumTemasMapa; ++i) {
+        if (progresoPorTema[i] > 0) {
+            etiquetas[i] = std::to_string(progresoPorTema[i]) + "/" + std::to_string(kNumMazmorrasMapa) + " superadas";
+        }
+    }
+    DibujarTarjetasDeSeleccion(anchoVentana, altoVentana, "Elegi un tema", kNumTemasMapa,
+                               kNombresTemasMapa, kDescripcionesTemasMapa, etiquetas, opcionSeleccionada,
+                               "[flechas o A/D] moverse    [ENTER] elegir    [ESC] pausa");
+}
+
+void DibujarMapaDificultad(int anchoVentana, int altoVentana, int temaElegido, int opcionSeleccionada,
+                            const bool superada[kNumMazmorrasMapa]) {
+    // Texto plano en vez de un simbolo tipo check: la fuente por defecto de
+    // raylib no cubre glyphs fuera de ASCII (mismo motivo por el que el
+    // resto del juego usa "?"/"CAIDO"/"DERROTADO" como texto en vez de
+    // iconos).
+    std::string etiquetas[kNumMazmorrasMapa];
+    for (int i = 0; i < kNumMazmorrasMapa; ++i) {
+        if (superada[i]) etiquetas[i] = "(Superada)";
+    }
+    int tema = ((temaElegido % kNumTemasMapa) + kNumTemasMapa) % kNumTemasMapa;
+    std::string subtitulo = std::string(kNombresTemasMapa[tema]) + " - elegi la dificultad";
+    DibujarTarjetasDeSeleccion(anchoVentana, altoVentana, subtitulo.c_str(), kNumMazmorrasMapa,
+                               kNombresMazmorrasMapa, kDescripcionesMazmorrasMapa, etiquetas, opcionSeleccionada,
+                               "[flechas o A/D] moverse    [ENTER] entrar    [ESC] volver");
+}
+
+void DibujarComercio(int anchoVentana, int altoVentana, bool esHerreria, const std::vector<OfertaComercio>& ofertas,
+                      int oro, const std::string& mensaje) {
+    DrawRectangle(0, 0, anchoVentana, altoVentana, Color{ 10, 8, 15, 235 });
+
+    const char* titulo = esHerreria ? "Herreria" : "Tienda";
+    DrawText(titulo, 40, 32, 28, RAYWHITE);
+
+    char lineaOro[32];
+    std::snprintf(lineaOro, sizeof(lineaOro), "Oro: %d", oro);
+    int anchoOro = MeasureText(lineaOro, 22);
+    DrawText(lineaOro, anchoVentana - anchoOro - 40, 38, 22, Color{ 230, 200, 90, 255 });
+
+    // Lista numerada [1]-[9], mismo estilo de tarjeta que DibujarInventario
+    // (fondo + borde + etiqueta dorada), pero con el precio a la derecha en
+    // vez de una cantidad -- atenuado (nombre y precio en rojo) si el oro
+    // actual no alcanza, para que se note de un vistazo que no se puede
+    // comprar todavia sin tener que probar la tecla.
+    int xLista = 40;
+    int yLista = 96;
+    int anchoTarjeta = anchoVentana - 80;
+    for (size_t i = 0; i < ofertas.size() && i < 9; ++i) {
+        const auto& oferta = ofertas[i];
+        bool alcanza = oro >= oferta.precio;
+        int y = yLista + (int)i * 52;
+
+        DrawRectangle(xLista, y, anchoTarjeta, 46, Color{ 22, 22, 28, 220 });
+        DrawRectangleLines(xLista, y, anchoTarjeta, 46, Color{ 80, 80, 90, 255 });
+
+        char etiqueta[16];
+        std::snprintf(etiqueta, sizeof(etiqueta), "[%zu]", i + 1);
+        DrawText(etiqueta, xLista + 10, y + 14, 18, Color{ 230, 200, 90, 255 });
+
+        Color colorNombre = alcanza ? RAYWHITE : Color{ 140, 100, 100, 255 };
+        DrawText(oferta.nombre.c_str(), xLista + 56, y + 6, 16, colorNombre);
+        DrawText(oferta.descripcion.c_str(), xLista + 56, y + 26, 12, LIGHTGRAY);
+
+        char precioTexto[24];
+        std::snprintf(precioTexto, sizeof(precioTexto), "%d oro", oferta.precio);
+        int anchoPrecio = MeasureText(precioTexto, 16);
+        Color colorPrecio = alcanza ? Color{ 230, 200, 90, 255 } : Color{ 190, 90, 90, 255 };
+        DrawText(precioTexto, xLista + anchoTarjeta - anchoPrecio - 14, y + 15, 16, colorPrecio);
+    }
+
+    int yMensaje = yLista + (int)ofertas.size() * 52 + 12;
+    if (!mensaje.empty()) {
+        int anchoMsg = MeasureText(mensaje.c_str(), 16);
+        DrawText(mensaje.c_str(), (anchoVentana - anchoMsg) / 2, yMensaje, 16, Color{ 200, 200, 160, 255 });
+    }
+
+    const char* prompt = "[1-9] Comprar    [ESC] Volver a la ciudad";
+    int anchoPrompt = MeasureText(prompt, 18);
+    DrawText(prompt, (anchoVentana - anchoPrompt) / 2, altoVentana - 48, 18, Color{ 255, 235, 180, 255 });
 }
 
 }  // namespace ui

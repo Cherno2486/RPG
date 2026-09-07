@@ -2,6 +2,7 @@
 #include "raylib.h"
 #include <algorithm>
 #include <cstdio>
+#include <string>
 #include <vector>
 
 namespace ui {
@@ -52,7 +53,9 @@ void DibujarFichaAliado(const game::Character& personaje, bool esSuTurno, int x,
     char nombre[48];
     std::snprintf(nombre, sizeof(nombre), "%s%s", personaje.Nombre().c_str(), esSuTurno ? " <-- turno" : "");
     DrawText(nombre, x + 36, y + 8, 15, RAYWHITE);
-    DrawText(game::RoleName(personaje.Rol()), x + 36, y + 26, 12, LIGHTGRAY);
+    char rolYNivel[32];
+    std::snprintf(rolYNivel, sizeof(rolYNivel), "%s  Nv.%d", game::RoleName(personaje.Rol()), personaje.Nivel());
+    DrawText(rolYNivel, x + 36, y + 26, 12, LIGHTGRAY);
 
     if (!personaje.EstaVivo()) {
         DrawText("CAIDO", x + ancho - 70, y + 8, 14, Color{ 200, 60, 60, 255 });
@@ -336,17 +339,20 @@ void DibujarCombate(game::CombatEncounter& encuentro, int anchoVentana, int alto
         int anchoTexto = MeasureText(texto, 20);
         DrawText(texto, (anchoVentana - anchoTexto) / 2, yLog - 38, 20, Color{ 220, 150, 150, 255 });
     } else if (encuentro.Fase() == game::FaseCombate::Ganado) {
-        // El Capitan Bandido es el jefe de la mazmorra (unico enemigo de su
-        // sala) — derrotarlo merece un cierre distinto al de un combate mas.
+        // El jefe de cada tema (Alfa del Bosque, Alcaide, Capitan de la
+        // Guardia — ver game::EsJefe) es unico en su sala; derrotarlo
+        // merece un cierre distinto al de un combate mas. El nombre del
+        // subtitulo sale del propio enemigo derrotado, no de un texto fijo,
+        // para que sirva igual sin importar cual de los 3 jefes haya sido.
         bool esVictoriaFinal = encuentro.Enemigos().size() == 1
-            && encuentro.Enemigos()[0]->Tipo() == game::TipoEnemigo::CapitanBandido;
+            && game::EsJefe(encuentro.Enemigos()[0]->Tipo());
         if (esVictoriaFinal) {
             const char* titulo = "¡MAZMORRA DESPEJADA!";
             int anchoTitulo = MeasureText(titulo, 40);
             DrawText(titulo, (anchoVentana - anchoTitulo) / 2, altoVentana / 2 - 130, 40, Color{ 230, 190, 80, 255 });
-            const char* subtitulo = "El Capitan Bandido ha caido.";
-            int anchoSub = MeasureText(subtitulo, 20);
-            DrawText(subtitulo, (anchoVentana - anchoSub) / 2, altoVentana / 2 - 78, 20, Color{ 220, 220, 220, 255 });
+            std::string subtitulo = encuentro.Enemigos()[0]->Nombre() + " ha caido.";
+            int anchoSub = MeasureText(subtitulo.c_str(), 20);
+            DrawText(subtitulo.c_str(), (anchoVentana - anchoSub) / 2, altoVentana / 2 - 78, 20, Color{ 220, 220, 220, 255 });
             const char* prompt = "presiona cualquier tecla para continuar";
             int anchoPrompt = MeasureText(prompt, 18);
             DrawText(prompt, (anchoVentana - anchoPrompt) / 2, altoVentana / 2 - 46, 18, Color{ 200, 200, 200, 255 });

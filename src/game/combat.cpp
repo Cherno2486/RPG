@@ -570,14 +570,21 @@ void CombatEncounter::Actualizar(float deltaSeconds) {
     std::vector<EventoVisual> eventos;
 
     // Resuelve un golpe de 'atacante' contra 'obj', lo agrega al log y a
-    // 'eventos'; con 'aturde' en true, si impacta aplica Aturdido (Golpe
-    // Aturdidor, tanto el del Bandido comun como el del Capitan).
-    auto golpear = [&](Character& obj, int dados, int caras, const char* nombreAccion, bool aturde) {
+    // 'eventos'; con 'aplicaEfecto' en true, si impacta aplica 'efecto'
+    // (duracion/magnitud segun corresponda) -- generaliza el "Golpe
+    // Aturdidor" que antes solo existia para el Bandido Aturdidor y el
+    // Capitan, para que cualquier enemigo (el "comun especial" o el jefe de
+    // cualquier tema, ver game::AtaqueEspecialDe/NombreDobleGolpeDeJefe en
+    // enemy.h) pueda aplicar el efecto que le corresponda con el mismo
+    // camino de codigo.
+    auto golpear = [&](Character& obj, int dados, int caras, const char* nombreAccion,
+                        bool aplicaEfecto = false, TipoEfecto efecto = TipoEfecto::Aturdido,
+                        int duracionEfecto = 0, int magnitudEfecto = 0) {
         Combatiente cObjetivo{obj.Nombre(), &obj.GetStatsMut(), &obj.Combate(), true, obj.Rol()};
         ResultadoAccion r = ResolverAtaque(cEnemigo, cObjetivo, dados, caras, false, nombreAccion);
-        if (aturde && r.impacto) {
-            cObjetivo.estado->AgregarEfecto(EfectoActivo{TipoEfecto::Aturdido, 1, 0});
-            r.texto += " " + cObjetivo.nombre + " queda aturdido.";
+        if (aplicaEfecto && r.impacto) {
+            cObjetivo.estado->AgregarEfecto(EfectoActivo{efecto, duracionEfecto, magnitudEfecto});
+            r.texto += " " + cObjetivo.nombre + " queda " + NombreEfecto(efecto) + ".";
         }
         log_.push_back(r.texto);
         int indiceObj = (int)(&obj - party_.Miembros().data());
@@ -587,38 +594,45 @@ void CombatEncounter::Actualizar(float deltaSeconds) {
             r.impacto ? r.dano : 0, r.critico});
     };
 
-    if (atacante.Tipo() == TipoEnemigo::CapitanBandido) {
-        // Jefe de mazmorra: alterna entre ataque basico, Golpe Aturdidor
-        // (igual que el Bandido comun) y "Doble Tajo" (dos golpes basicos
-        // en el mismo turno, re-eligiendo objetivo para el segundo por si
-        // el primero se llevo puesto a quien tenia en la mira). Por debajo
-        // del 40% de HP entra en furia: deja de aturdir y usa Doble Tajo
-        // siempre, todo o nada en el tramo final de la pelea.
+    if (EsJefe(atacante.Tipo())) {
+        // Jefe de mazmorra (uno por tema, mismo patron de IA para los 3 --
+        // ver el comentario del enum en enemy.h): alterna entre ataque
+        // basico, Golpe Aturdidor y un "Doble Golpe" con nombre propio de
+        // tema (dos golpes basicos en el mismo turno, re-eligiendo objetivo
+        // para el segundo por si el primero se llevo puesto a quien tenia
+        // en la mira). Por debajo del 40% de HP entra en furia: deja de
+        // aturdir y usa el Doble Golpe siempre, todo o nada en el tramo
+        // final de la pelea.
         const Stats& stats = atacante.GetStats();
         bool enfurecido = stats.hpMax > 0 && stats.hp <= stats.hpMax * 0.4f;
         int tirada = Roll(10);
+        const char* nombreDoble = NombreDobleGolpeDeJefe(atacante.Tipo());
         if (enfurecido || tirada <= 4) {
-            golpear(*objetivo, 1, 6, "Doble Tajo", false);
+            golpear(*objetivo, 1, 6, nombreDoble);
             if (ChequearFinDeCombate()) { RegistrarEventos(eventos); return; }
             Character* segundoObjetivo = elegirObjetivo();
             if (segundoObjetivo != nullptr) {
-                golpear(*segundoObjetivo, 1, 6, "Doble Tajo", false);
+                golpear(*segundoObjetivo, 1, 6, nombreDoble);
                 if (ChequearFinDeCombate()) { RegistrarEventos(eventos); return; }
             }
         } else if (tirada <= 7) {
-            golpear(*objetivo, 1, 4, "Golpe Aturdidor", true);
+            golpear(*objetivo, 1, 4, "Golpe Aturdidor", true, TipoEfecto::Aturdido, 1, 0);
             if (ChequearFinDeCombate()) { RegistrarEventos(eventos); return; }
         } else {
-            golpear(*objetivo, 1, 6, "un ataque", false);
+            golpear(*objetivo, 1, 6, "un ataque");
             if (ChequearFinDeCombate()) { RegistrarEventos(eventos); return; }
         }
-    } else if (atacante.Tipo() == TipoEnemigo::BanditoAturdidor && Roll(2) == 1) {
-        // El Bandido Aturdidor a veces, en vez de un ataque basico, usa un
-        // golpe mas debil pero que aturde (le hace perder el turno al objetivo).
-        golpear(*objetivo, 1, 4, "Golpe Aturdidor", true);
+    } else if (RolLocalDeEnemigo(atacante.Tipo()) == 1 && Roll(2) == 1) {
+        // El enemigo "comun especial" de cada tema (Araña Gigante, Guardia
+        // Corrupto, Mago de la Corte) a veces, en vez de un ataque basico,
+        // usa un golpe mas debil pero que aplica el efecto de estado propio
+        // de su tema (ver game::AtaqueEspecialDe) -- generaliza lo que
+        // antes solo hacia el Bandido Aturdidor con Aturdido.
+        AtaqueEspecialEnemigo especial = AtaqueEspecialDe(atacante.Tipo());
+        golpear(*objetivo, 1, 4, especial.nombre, true, especial.efecto, especial.duracionTurnos, especial.magnitud);
         if (ChequearFinDeCombate()) { RegistrarEventos(eventos); return; }
     } else {
-        golpear(*objetivo, 1, 6, "un ataque", false);
+        golpear(*objetivo, 1, 6, "un ataque");
         if (ChequearFinDeCombate()) { RegistrarEventos(eventos); return; }
     }
 

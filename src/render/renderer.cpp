@@ -62,6 +62,56 @@ void DibujarCofre(const game::Cofre& cofre, const SpriteSet& sprites) {
     const Texture2D& tex = cofre.abierto ? sprites.CofreAbierto() : sprites.CofreCerrado();
     DibujarSpriteCentrado(tex, Vector2{ cofre.posicion.x, cofre.posicion.y }, kEscalaCofre);
 }
+
+// Edificios de la Ciudad (ver EstadoJuego::Ciudad en main.cpp): no tienen
+// arte pixel-art propio (a proposito, para no sumar otro juego de texturas
+// solo para 3 construcciones estaticas) -- se dibujan con primitivas de
+// raylib, cuerpo de piedra + techo de color segun el tipo, mas el nombre
+// arriba (mismo recurso que el nombre de un enemigo) para que se lea que
+// son interactuables.
+Color ColorDeTechoEdificio(game::TipoEdificio tipo) {
+    switch (tipo) {
+        case game::TipoEdificio::Herreria: return Color{ 168, 92, 48, 255 };   // tejas oxidadas
+        case game::TipoEdificio::Tienda:   return Color{ 70, 128, 168, 255 };  // toldo azulado
+        default:                           return Color{ 132, 64, 158, 255 }; // EntradaMazmorras: portal violeta
+    }
+}
+
+void DibujarEdificio(const game::Edificio& edificio) {
+    constexpr float kAncho = game::kTileSize * 1.7f;
+    constexpr float kAltoCuerpo = game::kTileSize * 1.1f;
+    constexpr float kAltoTecho = game::kTileSize * 0.7f;
+    constexpr float kAleroTecho = 8.0f;
+
+    // 'posicion' es la base ("pies") del edificio, igual convencion que
+    // DibujarSpritePlantado -- asi el punto de interaccion (main.cpp mide
+    // distancia contra esta misma posicion) queda a la altura de la puerta,
+    // no del techo.
+    float x0 = edificio.posicion.x - kAncho * 0.5f;
+    float x1 = edificio.posicion.x + kAncho * 0.5f;
+    float yBase = edificio.posicion.y;
+    float yTechoBase = yBase - kAltoCuerpo;
+    float yCumbre = yTechoBase - kAltoTecho;
+
+    Color colorCuerpo = Color{ 96, 88, 76, 255 };
+    DrawRectangle((int)x0, (int)yTechoBase, (int)kAncho, (int)kAltoCuerpo, colorCuerpo);
+    DrawRectangleLines((int)x0, (int)yTechoBase, (int)kAncho, (int)kAltoCuerpo, Color{ 40, 36, 30, 255 });
+
+    // Puerta simple, centrada, para que se lea como entrada.
+    float anchoPuerta = kAncho * 0.28f;
+    float altoPuerta = kAltoCuerpo * 0.6f;
+    DrawRectangle((int)(edificio.posicion.x - anchoPuerta * 0.5f), (int)(yBase - altoPuerta),
+                  (int)anchoPuerta, (int)altoPuerta, Color{ 30, 26, 22, 255 });
+
+    Vector2 puntaTecho{ edificio.posicion.x, yCumbre };
+    Vector2 baseIzq{ x0 - kAleroTecho, yTechoBase };
+    Vector2 baseDer{ x1 + kAleroTecho, yTechoBase };
+    DrawTriangle(baseIzq, puntaTecho, baseDer, ColorDeTechoEdificio(edificio.tipo));
+
+    const char* nombre = game::NombreDeEdificio(edificio.tipo);
+    int anchoTexto = MeasureText(nombre, 14);
+    DrawText(nombre, (int)(edificio.posicion.x - anchoTexto / 2.0f), (int)(yCumbre - 20), 14, RAYWHITE);
+}
 } // namespace
 
 Renderer::Renderer(int anchoVentana, int altoVentana, const char* titulo)
@@ -99,7 +149,8 @@ Renderer::~Renderer() {
 }
 
 void Renderer::DibujarEscenarioSinUI(const game::Dungeon& mazmorra, const game::Party& party,
-                                      const std::vector<game::Enemy>& enemigos, const std::vector<game::Cofre>& cofres) {
+                                      const std::vector<game::Enemy>& enemigos, const std::vector<game::Cofre>& cofres,
+                                      int tema, const std::vector<game::Edificio>& edificios) {
     ClearBackground(ColorDePiso());
 
     // La camara sigue al lider: la mazmorra generada por salas es mas
@@ -109,15 +160,18 @@ void Renderer::DibujarEscenarioSinUI(const game::Dungeon& mazmorra, const game::
 
     BeginMode2D(camara_);
 
+    Color tinteDecoracion = TinteDecoracionPorTema(tema);
+
     // Piso tileado, solo dentro de cada sala (los pasillos siguen mostrando
     // el color de fondo liso de ClearBackground, que coincide con el color
-    // base del tile — ver ColorDePiso()/CrearTilePiso()).
+    // base del tile — ver ColorDePiso()/CrearTilePiso()). El juego de
+    // texturas depende de 'tema' (ver SpriteSet::TilePiso/TilePared).
     for (const auto& sala : mazmorra.Habitaciones()) {
         float x0 = sala.x * game::kTileSize;
         float y0 = sala.y * game::kTileSize;
         float x1 = (sala.x + sala.ancho) * game::kTileSize;
         float y1 = (sala.y + sala.alto) * game::kTileSize;
-        DibujarTileado(sprites_->TilePiso(), Rectangle{ x0, y0, x1 - x0, y1 - y0 }, kEscalaTile);
+        DibujarTileado(sprites_->TilePiso(tema), Rectangle{ x0, y0, x1 - x0, y1 - y0 }, kEscalaTile);
 
         // Decoracion suelta de piso (grieta/musgo/escombros/charco),
         // disperso por tile via HashTile — se dibuja ANTES que las paredes
@@ -132,7 +186,7 @@ void Renderer::DibujarEscenarioSinUI(const game::Dungeon& mazmorra, const game::
                 if ((int)(h % 100) >= kChanceDecoracionPisoDe100) continue;
                 int variante = (int)((h / 100) % SpriteSet::kNumDecoracionesPiso);
                 Vector2 centro{ (tx + 0.5f) * game::kTileSize, (ty + 0.5f) * game::kTileSize };
-                DibujarSpriteCentrado(sprites_->DecoracionPiso(variante), centro, kEscalaTile);
+                DibujarSpriteCentrado(sprites_->DecoracionPiso(variante), centro, kEscalaTile, tinteDecoracion);
             }
         }
     }
@@ -140,7 +194,7 @@ void Renderer::DibujarEscenarioSinUI(const game::Dungeon& mazmorra, const game::
     // Paredes, con textura de ladrillos tileada en vez de un rectangulo
     // liso.
     for (const auto& pared : mazmorra.Paredes()) {
-        DibujarTileado(sprites_->TilePared(), Rectangle{ pared.x, pared.y, pared.width, pared.height }, kEscalaTile);
+        DibujarTileado(sprites_->TilePared(tema), Rectangle{ pared.x, pared.y, pared.width, pared.height }, kEscalaTile);
     }
 
     // Antorchas: solo en tiles de pared "de frente" (el tile de abajo, hacia
@@ -200,12 +254,18 @@ void Renderer::DibujarEscenarioSinUI(const game::Dungeon& mazmorra, const game::
         DibujarCofre(cofre, *sprites_);
     }
 
+    // Edificios (solo la Ciudad los pasa; el resto de las pantallas usa el
+    // default vacio) -- ver DibujarEdificio arriba.
+    for (const auto& edificio : edificios) {
+        DibujarEdificio(edificio);
+    }
+
     // Enemigos vivos en la mazmorra: su sprite pixel-art segun tipo, con su
     // nombre arriba para saber que es interactuable.
     for (const auto& enemigo : enemigos) {
         if (enemigo.Vencido()) continue;
         Vector2 posEnemigo = { enemigo.Posicion().x, enemigo.Posicion().y };
-        bool esJefe = enemigo.Tipo() == game::TipoEnemigo::CapitanBandido;
+        bool esJefe = game::EsJefe(enemigo.Tipo());
         float escala = esJefe ? kEscalaJefe : kEscalaPersonaje;
         float alturaSprite = kCanvasPersonajeAlto * escala;
 
@@ -244,11 +304,12 @@ void Renderer::DibujarEscenarioSinUI(const game::Dungeon& mazmorra, const game::
 }
 
 void Renderer::DibujarFrame(const game::Dungeon& mazmorra, const game::Party& party,
-                             const std::vector<game::Enemy>& enemigos, const std::vector<game::Cofre>& cofres,
-                             bool panelExpandido, const std::string& promptInteraccion, const std::string& mensajeFlotante) {
+                             const std::vector<game::Enemy>& enemigos, const std::vector<game::Cofre>& cofres, int tema,
+                             bool panelExpandido, const std::string& promptInteraccion, const std::string& mensajeFlotante,
+                             const std::vector<game::Edificio>& edificios) {
     BeginDrawing();
 
-    DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres);
+    DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres, tema, edificios);
 
     ui::DibujarPanelParty(party, panelExpandido, *sprites_);
 

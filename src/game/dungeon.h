@@ -31,6 +31,14 @@ struct Trampa {
     Rect area;  // un tile completo (kTileSize x kTileSize), misma convencion que Paredes()
 };
 
+// Cantidad de salas que arma Dungeon() cuando el llamador no pide un numero
+// especifico — 1 inicial + 3 de combate + la del jefe. GenerarMazmorra (ver
+// main.cpp) ya no usa este default para las mazmorras "reales" del juego:
+// le pasa un numero mayor segun la Dificultad (ver SalasPorDificultad), asi
+// que esto solo aplica a usos que no necesitan ese ajuste (p.ej. la mazmorra
+// de fondo antes de elegir "Nueva partida").
+constexpr int kNumSalasPorDefecto = 5;
+
 // Mazmorra procedural: una cadena de salas de distinto tamaño (elegidas al
 // azar de un set fijo de "room templates"), conectadas por pasillos rectos,
 // que se van extendiendo siempre hacia el Este o el Sur — así nunca hace
@@ -40,7 +48,13 @@ struct Trampa {
 // cadena, sin loops ni ramificaciones, todavía).
 class Dungeon {
 public:
-    Dungeon();
+    // 'numSalas' es el total de la cadena, incluyendo la inicial (indice 0,
+    // sin contenido) y la del jefe (siempre la ultima) — ver
+    // GenerarMazmorra/SalasPorDificultad en main.cpp, que ya pasa un numero
+    // mayor cuanto mas dificil la mazmorra. Debe ser al menos 2 (inicial +
+    // jefe); no hay validacion propia para valores menores, no se usan en la
+    // practica.
+    explicit Dungeon(int numSalas = kNumSalasPorDefecto);
 
     // Reconstruye una mazmorra a partir de datos YA CALCULADOS (salas +
     // paredes + trampas), en vez de generarlos de nuevo — la usa el sistema

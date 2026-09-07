@@ -48,15 +48,15 @@ constexpr RoomTemplate kTemplates[] = {
 };
 constexpr int kNumTemplates = 6;
 
-constexpr int kNumSalas = 5;       // 1 inicial + 4 con contenido
 constexpr int kAnchoPasillo = 3;   // en tiles
 
 // Trampas de piso (ver Trampa en dungeon.h): chance por sala CON CONTENIDO
 // (la 0, inicial, nunca tiene) de llevar una sola trampa -- "pocas,
 // salteadas" fue lo elegido explicitamente sobre "varias por sala", para que
 // se sienta como una sorpresa puntual a esquivar y no un piso lleno de
-// peligro. Con 4 salas elegibles al 40% cada una, el promedio es menos de 2
-// trampas por mazmorra (a veces ninguna, rara vez mas de dos).
+// peligro. Al 40% por sala elegible, el promedio total escala con la
+// cantidad de salas de la mazmorra (ver 'numSalas' en Dungeon::Dungeon) --
+// unas 2 en una mazmorra de 5 salas, algunas mas en una mas larga.
 constexpr int kChanceTrampaPorSalaDe100 = 40;
 
 // Radio (en tiles) alrededor del centro geometrico de la sala que queda
@@ -146,7 +146,7 @@ void IntentarUbicarTrampa(std::vector<Trampa>& trampas, const std::set<std::pair
 
 } // namespace
 
-Dungeon::Dungeon() {
+Dungeon::Dungeon(int numSalas) {
     // Tiles de piso (sala + pasillos), en coordenadas de tile. Se arma
     // primero el set de piso completo, y recien al final se calculan las
     // paredes: cualquier tile del bounding box que no sea piso es pared.
@@ -158,7 +158,7 @@ Dungeon::Dungeon() {
     int cursorX = 0, cursorY = 0;      // esquina superior izquierda de la sala anterior
     int prevAncho = 0, prevAlto = 0;
 
-    for (int i = 0; i < kNumSalas; ++i) {
+    for (int i = 0; i < numSalas; ++i) {
         const RoomTemplate& t = kTemplates[Roll(kNumTemplates) - 1];
         int rx, ry;
 
@@ -201,7 +201,7 @@ Dungeon::Dungeon() {
     // Trampas de piso: una chance por sala CON CONTENIDO (nunca en la 0,
     // inicial, para que arrancar la run sea siempre seguro) de llevar una
     // sola trampa -- ver IntentarUbicarTrampa e "Trampas de piso" mas arriba.
-    for (int i = 1; i < kNumSalas; ++i) {
+    for (int i = 1; i < numSalas; ++i) {
         IntentarUbicarTrampa(trampas_, piso, habitaciones_[i]);
     }
 

@@ -11,17 +11,33 @@ namespace render {
 // sprites.cpp para el detalle de como se generan. Se exponen aca porque
 // renderer.cpp los necesita para calcular el tamano final en pantalla
 // (canvas * escala) y la relacion de tileado piso/pared con game::kTileSize.
-constexpr int kCanvasPersonaje = 20;      // ancho de personajes/enemigos humanoides (y la Rata)
+constexpr int kCanvasPersonaje = 20;      // ancho de personajes/enemigos humanoides (y los cuadrupedos)
 constexpr int kCanvasPersonajeAlto = 26;  // alto
 constexpr int kCanvasTile = 16;           // tiles de piso/pared/cofre, cuadrados
 
-// Todas las texturas pixel-art del juego: personajes del party, enemigos,
-// cofres y tiles de piso/pared. Generadas por codigo (sin archivos de
-// assets externos, mismo criterio que ya usa el audio sintetizado — ver
-// render/audio.cpp) componiendo formas con las funciones ImageDraw* de
-// raylib sobre un lienzo chico, y despues escalando con filtro POINT para
-// que se vea nitido y "en bloques" — la estetica tipica de pixel art en vez
-// de un blur al agrandar.
+// Cantidad de temas del mapa (Bosque/Carcel/Castillo, mismo orden fijo que
+// game::Tema en main.cpp) — este archivo no incluye el header de main.cpp
+// (no existe como header), asi que quien llama pasa el indice crudo
+// 0..kNumTemas-1 y es responsable de mantener el orden sincronizado (mismo
+// criterio que ya usaba game::Dificultad con render/menu_ui.h::DibujarMapa).
+constexpr int kNumTemas = 3;
+
+// Tinte de la decoracion suelta de piso segun el tema (ver
+// SpriteSet::DecoracionPiso mas abajo) — reusa las mismas 4 texturas para
+// los 3 temas (grieta/musgo/escombros/charco siguen siendo creibles en un
+// bosque, una carcel o un castillo) y solo les cambia el tono al dibujarlas
+// (parametro 'tinte' de DibujarSpriteCentrado), en vez de generar 12
+// texturas separadas para una diferencia que de todos modos seria sutil.
+Color TinteDecoracionPorTema(int tema);
+
+// Todas las texturas pixel-art del juego: personajes del party, enemigos
+// (9, ver game::TipoEnemigo — 2 comunes + 1 jefe por cada uno de los 3
+// temas), cofres, y tiles de piso/pared (3 juegos, uno por tema). Generadas
+// por codigo (sin archivos de assets externos, mismo criterio que ya usa el
+// audio sintetizado — ver render/audio.cpp) componiendo formas con las
+// funciones ImageDraw* de raylib sobre un lienzo chico, y despues
+// escalando con filtro POINT para que se vea nitido y "en bloques" — la
+// estetica tipica de pixel art en vez de un blur al agrandar.
 //
 // Se crea una sola vez, DESPUES de InitWindow() (las texturas necesitan un
 // contexto GL valido) — Renderer es quien la posee y la construye en su
@@ -42,14 +58,21 @@ public:
     const Texture2D& Enemigo(game::TipoEnemigo tipo) const { return enemigos_[static_cast<int>(tipo)]; }
     const Texture2D& CofreCerrado() const { return cofreCerrado_; }
     const Texture2D& CofreAbierto() const { return cofreAbierto_; }
-    const Texture2D& TilePiso() const { return tilePiso_; }
-    const Texture2D& TilePared() const { return tilePared_; }
+
+    // Piso/pared: un juego de texturas por tema (ver kNumTemas arriba).
+    // 'tema' se toma modulo kNumTemas (con el mismo ajuste para negativos
+    // que DecoracionPiso), asi que cualquier entero sirve sin chequear
+    // rango antes.
+    const Texture2D& TilePiso(int tema) const { return tilePiso_[IndiceTema(tema)]; }
+    const Texture2D& TilePared(int tema) const { return tilePared_[IndiceTema(tema)]; }
 
     // Decoraciones sueltas de piso (grieta, musgo, escombros/huesos, charco)
     // — se reparten disperso por las salas (ver renderer.cpp) para que el
     // piso no se vea repetitivo ni "vacio". 'indice' se toma modulo
     // kNumDecoracionesPiso, asi que cualquier hash entero sirve sin
-    // chequear rango antes.
+    // chequear rango antes. Mismas 4 formas para los 3 temas — la
+    // diferenciacion por tema es de tinte, no de forma (ver
+    // TinteDecoracionPorTema arriba).
     static constexpr int kNumDecoracionesPiso = 4;
     const Texture2D& DecoracionPiso(int indice) const {
         return decoracionesPiso_[((indice % kNumDecoracionesPiso) + kNumDecoracionesPiso) % kNumDecoracionesPiso];
@@ -64,12 +87,14 @@ public:
     const Texture2D& Trampa(game::TipoTrampa tipo) const { return trampas_[static_cast<int>(tipo)]; }
 
 private:
+    static int IndiceTema(int tema) { return ((tema % kNumTemas) + kNumTemas) % kNumTemas; }
+
     Texture2D personajes_[4];  // indexado por game::Role
-    Texture2D enemigos_[4];    // indexado por game::TipoEnemigo
+    Texture2D enemigos_[9];    // indexado por game::TipoEnemigo
     Texture2D cofreCerrado_;
     Texture2D cofreAbierto_;
-    Texture2D tilePiso_;
-    Texture2D tilePared_;
+    Texture2D tilePiso_[kNumTemas];
+    Texture2D tilePared_[kNumTemas];
     Texture2D decoracionesPiso_[kNumDecoracionesPiso];
     Texture2D antorcha_;
     Texture2D trampas_[2];  // indexado por game::TipoTrampa

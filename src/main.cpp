@@ -12,22 +12,49 @@
 #include "game/combat.h"
 #include "game/dice.h"
 #include "game/item.h"
+#include "game/edificio.h"
 #include "game/save.h"
 #include "render/renderer.h"
 #include "render/input.h"
 #include "render/combat_ui.h"
 #include "render/inventory_ui.h"
+#include "render/character_sheet_ui.h"
 #include "render/audio.h"
 #include "render/menu_ui.h"
 
 namespace {
 
-// Dificultad de una mazmorra del mapa (ver EstadoJuego::Mapa mas abajo). El
-// orden de este enum importa: coincide por CONVENCION (no por dependencia de
-// header — render/menu_ui.h no incluye main.cpp) con el orden fijo
-// Facil/Media/Dificil que dibuja ui::DibujarMapa, y con el indice 0..2 que
+// Dificultad de una mazmorra del mapa (ver EstadoJuego::MapaDificultad mas
+// abajo). El orden de este enum importa: coincide por CONVENCION (no por
+// dependencia de header — render/menu_ui.h no incluye main.cpp) con el
+// orden fijo Facil/Media/Dificil que dibuja ui::DibujarMapaDificultad, y es
+// el "resto" (indice % game::kNumDificultadesMapa) del indice combinado que
 // se guarda en mazmorraSuperada/mazmorraActivaIndice (ver game/save.h).
 enum class Dificultad { Facil, Media, Dificil };
+
+// Tema de una mazmorra del mapa (ver EstadoJuego::MapaTema/MapaDificultad
+// mas abajo). Igual que Dificultad, el orden de este enum importa: coincide
+// por CONVENCION (no por dependencia de header — render/menu_ui.h no
+// incluye main.cpp) con el orden fijo Bosque/Carcel/Castillo que dibuja
+// ui::DibujarMapaTema, y con el "tercio" (indice / kNumDificultadesMapa) del
+// indice combinado que se guarda en mazmorraSuperada/mazmorraActivaIndice
+// (ver game::kNumCombinacionesMapa en save.h). Tambien coincide con el
+// orden de game::TipoEnemigo en enemy.h (los primeros 3 valores son de
+// Bosque, los siguientes 3 de Carcel, los ultimos 3 de Castillo) — asi que
+// static_cast<int>(tema) es directamente el "tercio" de enemigos de ese
+// tema, ver CrearEnemigoDeTipo/TipoComunAleatorio/GenerarMazmorra.
+enum class Tema { Bosque, Carcel, Castillo };
+constexpr int kNumTemas = 3;
+
+// Indice combinado tema*game::kNumDificultadesMapa + dificultad, el mismo
+// que usa game::DatosPartida::mazmorraActivaIndice/mazmorraSuperada (ver
+// save.h) para identificar una de las 9 mazmorras del mapa con un unico
+// entero -1..8.
+int IndiceCombinado(Tema tema, Dificultad dificultad) {
+    return static_cast<int>(tema) * game::kNumDificultadesMapa + static_cast<int>(dificultad);
+}
+Tema TemaDeIndiceCombinado(int indice) { return static_cast<Tema>(indice / game::kNumDificultadesMapa); }
+Dificultad DificultadDeIndiceCombinado(int indice) { return static_cast<Dificultad>(indice % game::kNumDificultadesMapa); }
 
 // Multiplicadores de hp/ataque de un enemigo (incluido el jefe) segun la
 // dificultad elegida en el mapa — defensa y velocidad quedan sin escalar a
@@ -67,12 +94,40 @@ game::Party CrearPartyDeEjemplo(game::Vec2 posicionInicial) {
     return game::Party(std::move(miembros));
 }
 
-game::TipoEnemigo TipoAleatorio() {
-    switch (game::Roll(3)) {
-        case 1:  return game::TipoEnemigo::EsqueletoErrante;
-        case 2:  return game::TipoEnemigo::RataGigante;
-        default: return game::TipoEnemigo::BanditoAturdidor;
+// Arma un party de partida (mismos 4 personajes de siempre, stats base de
+// nivel 1) pero conservando el nivel/experiencia que ya tuviera cada uno
+// en 'progresoPrevio' (mismo orden que CrearPartyDeEjemplo: Bruna/Kael/
+// Sara/Milo, emparejados por posicion) -- el nivel es progreso PERMANENTE
+// del jugador (sobrevive tanto a un Game Over como a elegir "Nueva
+// partida" a proposito, ver "Sistema de niveles" en docs/design.md), a
+// diferencia del equipo, el inventario y el HP en curso, que si se
+// resetean del todo en los dos casos. Reaplica el crecimiento de nivel
+// via game::Character::GanarExperiencia (con el total de experiencia
+// acumulada de cada personaje) en vez de copiar stats_ directo, para no
+// duplicar la tabla de crecimiento por rol que ya vive en character.cpp.
+game::Party CrearPartyConProgreso(game::Vec2 posicionInicial, const game::Party& progresoPrevio) {
+    game::Party nuevo = CrearPartyDeEjemplo(posicionInicial);
+    auto& miembrosNuevos = nuevo.Miembros();
+    const auto& miembrosPrevios = progresoPrevio.Miembros();
+    for (size_t i = 0; i < miembrosNuevos.size() && i < miembrosPrevios.size(); ++i) {
+        int xpTotal = miembrosPrevios[i].ExperienciaAcumuladaTotal();
+        if (xpTotal > 0) miembrosNuevos[i].GanarExperiencia(xpTotal);
     }
+    return nuevo;
+}
+
+// Uno de los 2 tipos "comunes" (agresivo o especial, rol local 0 o 1 — ver
+// game::RolLocalDeEnemigo en enemy.h) del tema pedido, con la misma chance
+// cada uno.
+game::TipoEnemigo TipoComunAleatorio(Tema tema) {
+    int base = static_cast<int>(tema) * game::kEnemigosPorTema;
+    return static_cast<game::TipoEnemigo>(base + (game::Roll(2) - 1));  // +0 o +1
+}
+
+// El jefe (rol local 2) del tema pedido.
+game::TipoEnemigo JefeDe(Tema tema) {
+    int base = static_cast<int>(tema) * game::kEnemigosPorTema;
+    return static_cast<game::TipoEnemigo>(base + 2);
 }
 
 // Arma un enemigo del tipo pedido, con sus stats de siempre, ubicado en
@@ -84,7 +139,12 @@ game::TipoEnemigo TipoAleatorio() {
 // se puedan distinguir en el log y en las fichas de combate. 'dificultad'
 // escala hp/ataque (ver EscalaDe) — los numeros comentados en cada caso de
 // abajo son los de referencia en Media (multiplicador 1.0, igual que antes
-// de que existiera el mapa de dificultades).
+// de que existiera el mapa de dificultades). Los 9 tipos (2 comunes + 1
+// jefe por cada uno de los 3 temas, ver game::TipoEnemigo en enemy.h) estan
+// pensados con una tabla de stats pareja entre temas: el "comun agresivo"
+// de cada uno es el mas duro de los dos comunes (mismo criterio que antes
+// tenia el unico agresivo, el Bandido Aturdidor), y los 3 jefes quedan
+// todos en un rango similar de hp/ataque (52-56 de referencia en Media).
 game::Enemy CrearEnemigoDeTipo(game::TipoEnemigo tipo, game::Vec2 posicion, int salaIndice, int ocurrencia,
                                 Dificultad dificultad) {
     const char* sufijo = (ocurrencia == 2) ? " II" : (ocurrencia == 3) ? " III" : "";
@@ -96,21 +156,44 @@ game::Enemy CrearEnemigoDeTipo(game::TipoEnemigo tipo, game::Vec2 posicion, int 
     };
 
     switch (tipo) {
-        case game::TipoEnemigo::EsqueletoErrante:
-            return game::Enemy(std::string("Esqueleto Errante") + sufijo, tipo,
-                Escalado(/*hp*/22, /*ataque*/7, /*defensa*/3, /*velocidad*/80.0f),
+        // --- Bosque ---
+        case game::TipoEnemigo::LoboSalvaje:
+            return game::Enemy(std::string("Lobo Salvaje") + sufijo, tipo,
+                Escalado(/*hp*/18, /*ataque*/8, /*defensa*/2, /*velocidad*/130.0f),
                 posicion, salaIndice);
-        case game::TipoEnemigo::RataGigante:
-            return game::Enemy(std::string("Rata Gigante") + sufijo, tipo,
-                Escalado(/*hp*/12, /*ataque*/5, /*defensa*/1, /*velocidad*/130.0f),
+        case game::TipoEnemigo::AranaGigante:
+            return game::Enemy(std::string("Araña Gigante") + sufijo, tipo,
+                Escalado(/*hp*/20, /*ataque*/6, /*defensa*/2, /*velocidad*/90.0f),
                 posicion, salaIndice);
-        case game::TipoEnemigo::BanditoAturdidor:
-            return game::Enemy(std::string("Bandido Aturdidor") + sufijo, tipo,
-                Escalado(/*hp*/24, /*ataque*/7, /*defensa*/4, /*velocidad*/85.0f),
+        case game::TipoEnemigo::AlfaDelBosque:
+            return game::Enemy("Alfa del Bosque", tipo,
+                Escalado(/*hp*/54, /*ataque*/8, /*defensa*/5, /*velocidad*/100.0f),
                 posicion, salaIndice);
-        default:
-            return game::Enemy("Capitan Bandido", tipo,
-                Escalado(/*hp*/52, /*ataque*/8, /*defensa*/5, /*velocidad*/85.0f),
+        // --- Carcel ---
+        case game::TipoEnemigo::PresoAmotinado:
+            return game::Enemy(std::string("Preso Amotinado") + sufijo, tipo,
+                Escalado(/*hp*/22, /*ataque*/7, /*defensa*/3, /*velocidad*/95.0f),
+                posicion, salaIndice);
+        case game::TipoEnemigo::GuardiaCorrupto:
+            return game::Enemy(std::string("Guardia Corrupto") + sufijo, tipo,
+                Escalado(/*hp*/24, /*ataque*/6, /*defensa*/4, /*velocidad*/80.0f),
+                posicion, salaIndice);
+        case game::TipoEnemigo::Alcaide:
+            return game::Enemy("Alcaide", tipo,
+                Escalado(/*hp*/54, /*ataque*/8, /*defensa*/5, /*velocidad*/85.0f),
+                posicion, salaIndice);
+        // --- Castillo ---
+        case game::TipoEnemigo::GuardiaReal:
+            return game::Enemy(std::string("Guardia Real") + sufijo, tipo,
+                Escalado(/*hp*/26, /*ataque*/7, /*defensa*/5, /*velocidad*/88.0f),
+                posicion, salaIndice);
+        case game::TipoEnemigo::MagoDeLaCorte:
+            return game::Enemy(std::string("Mago de la Corte") + sufijo, tipo,
+                Escalado(/*hp*/16, /*ataque*/6, /*defensa*/2, /*velocidad*/95.0f),
+                posicion, salaIndice);
+        default:  // CapitanDeLaGuardia
+            return game::Enemy("Capitan de la Guardia", tipo,
+                Escalado(/*hp*/56, /*ataque*/9, /*defensa*/6, /*velocidad*/90.0f),
                 posicion, salaIndice);
     }
 }
@@ -124,7 +207,7 @@ game::Enemy CrearEnemigoDeTipo(game::TipoEnemigo tipo, game::Vec2 posicion, int 
 // cuantos enemigos entran: Facil 2-3 (mazmorra "de entrada"), Media 3-5
 // (igual que siempre), Dificil 5-7 (la grilla de hasta 3 columnas soporta
 // hasta 3 filas sin problema).
-std::vector<game::Enemy> CrearGrupoDeSala(game::Vec2 centro, int salaIndice, Dificultad dificultad) {
+std::vector<game::Enemy> CrearGrupoDeSala(game::Vec2 centro, int salaIndice, Tema tema, Dificultad dificultad) {
     int cantidad;
     switch (dificultad) {
         case Dificultad::Facil:   cantidad = 1 + game::Roll(2); break;  // 2 o 3
@@ -132,14 +215,14 @@ std::vector<game::Enemy> CrearGrupoDeSala(game::Vec2 centro, int salaIndice, Dif
         default:                  cantidad = 2 + game::Roll(3); break; // 3, 4 o 5 (Media)
     }
     std::vector<game::Enemy> grupo;
-    int vistos[3] = {0, 0, 0};  // contador por TipoEnemigo, para el sufijo
+    int vistos[9] = {0};  // contador por TipoEnemigo (indice del enum), para el sufijo
 
     constexpr int kMaxPorFila = 3;
     constexpr float kSeparacionX = 65.0f;
     constexpr float kSeparacionY = 55.0f;
 
     for (int j = 0; j < cantidad; ++j) {
-        game::TipoEnemigo tipo = TipoAleatorio();
+        game::TipoEnemigo tipo = TipoComunAleatorio(tema);
         int& ocurrencias = vistos[static_cast<int>(tipo)];
         ocurrencias += 1;
 
@@ -153,6 +236,25 @@ std::vector<game::Enemy> CrearGrupoDeSala(game::Vec2 centro, int salaIndice, Dif
         grupo.push_back(CrearEnemigoDeTipo(tipo, posicion, salaIndice, ocurrencias, dificultad));
     }
     return grupo;
+}
+
+// Cuantas salas tiene la cadena de una mazmorra segun su Dificultad (ver
+// game::Dungeon::Dungeon en dungeon.h/cpp) -- 1 inicial + N de combate + la
+// del jefe (siempre la ultima). Antes era un numero fijo (5) para las 3
+// dificultades; ahora escala igual que ya escala la cantidad de enemigos por
+// sala en CrearGrupoDeSala: Facil se mantiene tan corta como la mazmorra
+// original ("de entrada"), Media y Dificil se estiran cada vez mas. La
+// escalera quedo pareja a proposito -- 2 salas de combate mas por escalon
+// (3 -> 5 -> 7) -- despues de feedback de que Facil y Media casi no se
+// notaban distintas en duracion con el primer ajuste (6/7/9, un escalon de
+// 1 sala y otro de 2). Ver "Mazmorras mas largas: cantidad de salas por
+// Dificultad" en docs/design.md.
+int SalasPorDificultad(Dificultad dificultad) {
+    switch (dificultad) {
+        case Dificultad::Facil:   return 5;  // 1 inicial + 3 de combate + jefe
+        case Dificultad::Dificil: return 9;  // 1 inicial + 7 de combate + jefe
+        default:                  return 7;  // Media: 1 inicial + 5 de combate + jefe
+    }
 }
 
 // Chance (de 10) de que una sala con contenido tenga ADEMAS un cofre aparte
@@ -199,14 +301,32 @@ game::ResultadoLoot LootDeEnemigoPorDificultad(game::TipoEnemigo tipo, Dificulta
     return loot;
 }
 
+// Oro que suelta un enemigo derrotado (ver "Fuente del oro" y "Sistema de
+// oro" en docs/design.md) -- escala con la Dificultad igual que hp/ataque de
+// los enemigos (ver EscalaDe), asi que una mazmorra Dificil no solo pega mas
+// fuerte, tambien paga mas. El jefe deja bastante mas que un comun, para que
+// se sienta como el premio grande de la mazmorra ademas de la Mejora
+// garantizada que ya suelta (ver TirarLootDeEnemigo en item.cpp).
+int OroDeEnemigoPorDificultad(game::TipoEnemigo tipo, Dificultad dificultad) {
+    int base = game::EsJefe(tipo) ? 25 : 8;
+    return static_cast<int>(base * EscalaDe(dificultad).ataque + 0.5f);
+}
+
+// Oro de un cofre, independiente del item que tambien suelta -- mismo
+// criterio de escalado que arriba.
+int OroDeCofrePorDificultad(Dificultad dificultad) {
+    return static_cast<int>(10 * EscalaDe(dificultad).ataque + 0.5f);
+}
+
 // Todo lo que hace falta para generar una mazmorra jugable de la dificultad
 // pedida: la mazmorra procedural en si, el punto donde aparece el party al
 // entrar, y los enemigos/cofres repartidos por sus salas. A diferencia de la
 // vieja PartidaNueva/GenerarPartidaNueva (antes de Round G), esto YA NO
 // incluye al party — ahora el party es independiente del mapa (persiste con
 // su HP/inventario/equipo actual al pasar de una mazmorra a otra, "sigue con
-// el desgaste" — ver EstadoJuego::Mapa) y se crea/resetea aparte, solo en
-// "Nueva partida" o tras un Game Over (reinicio total de la run).
+// el desgaste" — ver EstadoJuego::MapaTema/MapaDificultad) y se crea/
+// resetea aparte, solo en "Nueva partida" o tras un Game Over (reinicio
+// total de la run).
 struct MazmorraGenerada {
     game::Dungeon mazmorra;
     game::Vec2 posicionInicial;
@@ -214,16 +334,18 @@ struct MazmorraGenerada {
     std::vector<game::Cofre> cofres;
 };
 
-MazmorraGenerada GenerarMazmorra(Dificultad dificultad) {
+MazmorraGenerada GenerarMazmorra(Tema tema, Dificultad dificultad) {
     // Mazmorra procedural: una cadena de salas conectadas por pasillos (ver
     // game/dungeon.cpp). La sala 0 es donde arranca el party, sin enemigos;
-    // las salas intermedias tienen un grupo de enemigos de tipo aleatorio
-    // (cuantos, segun 'dificultad' — ver CrearGrupoDeSala), que se enganchan
-    // todos juntos en un mismo combate; la ultima sala, en cambio, tiene un
-    // unico Capitan Bandido — el jefe de la mazmorra, que al caer la marca
-    // como "Superada" en el mapa (ver "Balance" en docs/design.md y
-    // CombatEncounter::Actualizar para su IA especial).
-    game::Dungeon mazmorra;
+    // las salas intermedias tienen un grupo de enemigos comunes del tema
+    // elegido (cuantos, segun 'dificultad' — ver CrearGrupoDeSala), que se
+    // enganchan todos juntos en un mismo combate; la ultima sala, en
+    // cambio, tiene un unico jefe (el de 'tema' — ver JefeDe), que al caer
+    // la marca como "Superada" esa combinacion tema+dificultad en el mapa
+    // (ver "Balance" en docs/design.md y CombatEncounter::Actualizar para
+    // su IA especial). La CANTIDAD de salas de la cadena tambien depende de
+    // 'dificultad' — ver SalasPorDificultad.
+    game::Dungeon mazmorra(SalasPorDificultad(dificultad));
     game::Vec2 posicionInicial = mazmorra.CentroDeSala(0);
 
     std::vector<game::Enemy> enemigos;
@@ -231,11 +353,11 @@ MazmorraGenerada GenerarMazmorra(Dificultad dificultad) {
     size_t indiceSalaJefe = salas.size() - 1;
     for (size_t i = 1; i < salas.size(); ++i) {
         if (i == indiceSalaJefe) {
-            enemigos.push_back(CrearEnemigoDeTipo(game::TipoEnemigo::CapitanBandido,
+            enemigos.push_back(CrearEnemigoDeTipo(JefeDe(tema),
                 mazmorra.CentroDeSala(i), static_cast<int>(i), 1, dificultad));
             continue;
         }
-        std::vector<game::Enemy> grupo = CrearGrupoDeSala(mazmorra.CentroDeSala(i), static_cast<int>(i), dificultad);
+        std::vector<game::Enemy> grupo = CrearGrupoDeSala(mazmorra.CentroDeSala(i), static_cast<int>(i), tema, dificultad);
         for (auto& e : grupo) enemigos.push_back(std::move(e));
     }
 
@@ -253,26 +375,150 @@ MazmorraGenerada GenerarMazmorra(Dificultad dificultad) {
     return MazmorraGenerada{ std::move(mazmorra), posicionInicial, std::move(enemigos), std::move(cofres) };
 }
 
+// Paleta de tiles que usa la Ciudad para dibujarse (ver render::SpriteSet::
+// TilePiso/TilePared) -- reusa la de Castillo (indice 2, "dorado calido")
+// en vez de sumar una cuarta paleta dedicada solo para 3 edificios
+// estaticos (kNumTemas en sprites.h quedaria en 3, sin tocar). Eleccion
+// nuestra, no pedida explicitamente por el usuario -- documentada en
+// docs/design.md, seccion "La Ciudad".
+constexpr int kTemaCiudad = 2;
+
+// Todo lo que hace falta para dibujar y explorar la Ciudad: la mazmorra en
+// si (una unica plaza rectangular, armada a mano en vez de procedural — ver
+// mas abajo) y sus 3 edificios interactuables. A diferencia de
+// MazmorraGenerada, esto NO varia entre visitas: la Ciudad es siempre el
+// mismo layout, asi que ConstruirCiudad() no usa game::Roll para nada.
+struct CiudadGenerada {
+    game::Dungeon mazmorra;
+    game::Vec2 posicionInicial;
+    std::vector<game::Edificio> edificios;
+};
+
+// Arma la plaza de la Ciudad a mano con el constructor de datos-ya-resueltos
+// de game::Dungeon (el mismo que usa game/save.h para reconstruir una
+// mazmorra guardada, ver el comentario de ese constructor en dungeon.h) —
+// una unica sala rectangular sin trampas, con paredes de borde calculadas
+// igual que el ultimo paso de Dungeon::Dungeon(int) (cualquier tile del
+// bounding box, con 1 de margen, que no sea parte de la sala es pared). Da
+// colision y camara gratis sin escribir logica de movimiento nueva para la
+// Ciudad.
+CiudadGenerada ConstruirCiudad() {
+    constexpr int kAncho = 16;  // en tiles
+    constexpr int kAlto = 12;
+
+    std::vector<game::Habitacion> habitaciones{ game::Habitacion{0, 0, kAncho, kAlto} };
+
+    std::vector<game::Rect> paredes;
+    for (int y = -1; y <= kAlto; ++y) {
+        for (int x = -1; x <= kAncho; ++x) {
+            bool esPiso = (x >= 0 && x < kAncho && y >= 0 && y < kAlto);
+            if (esPiso) continue;
+            paredes.push_back(game::Rect{
+                x * game::kTileSize, y * game::kTileSize, game::kTileSize, game::kTileSize
+            });
+        }
+    }
+
+    game::Dungeon mazmorra(std::move(habitaciones), std::move(paredes), /*trampas*/{});
+    game::Vec2 centro = mazmorra.CentroDeSala(0);
+
+    // El party arranca abajo de la plaza, mirando "hacia arriba" a los 3
+    // edificios — mismo criterio de composicion que un hub tipico (todo a
+    // la vista apenas se entra, nada escondido detras del punto de spawn).
+    // Distancias ajustadas (1/2/3 tiles en vez de 3/2/4) tras verificar bajo
+    // Xvfb que con las primeras el cartel con el nombre de la Entrada a las
+    // mazmorras (la mas lejana de las 3) quedaba cortado arriba de la
+    // ventana apenas se entraba a la Ciudad — la camara sigue al lider (ver
+    // Renderer::DibujarEscenarioSinUI), asi que la distancia que importa es
+    // la del edificio AL PUNTO DE SPAWN, no al centro de la plaza.
+    game::Vec2 posicionInicial{ centro.x, centro.y + 1.0f * game::kTileSize };
+
+    std::vector<game::Edificio> edificios{
+        game::Edificio{ game::TipoEdificio::Herreria, game::Vec2{ centro.x - 4.0f * game::kTileSize, centro.y - 2.0f * game::kTileSize } },
+        game::Edificio{ game::TipoEdificio::Tienda, game::Vec2{ centro.x + 4.0f * game::kTileSize, centro.y - 2.0f * game::kTileSize } },
+        game::Edificio{ game::TipoEdificio::EntradaMazmorras, game::Vec2{ centro.x, centro.y - 3.0f * game::kTileSize } },
+    };
+
+    return CiudadGenerada{ std::move(mazmorra), posicionInicial, std::move(edificios) };
+}
+
+// Catalogo de precios de la Herreria (Mejoras, ver game/item.h) y la Tienda
+// (Consumibles) -- vive aca, no en game/item.cpp, por el mismo motivo que
+// ItemDeCofrePorDificultad/LootDeEnemigoPorDificultad mas arriba: es
+// contenido de juego especifico de este prototipo, no algo que game/ deba
+// conocer. 'fabricar' apunta directo a la funcion de fabrica del catalogo
+// (ver game/item.h) — comprar llama a esta funcion para obtener el Item real
+// (nombre/descripcion incluidos, para no duplicar ese texto a mano en la UI,
+// ver render::ui::OfertaComercio) y lo agrega al inventario igual que
+// cualquier otro item encontrado.
+struct OfertaComercio {
+    int precio;
+    game::Item (*fabricar)();
+};
+
+constexpr OfertaComercio kOfertasHerreria[] = {
+    { 40, game::PiedraDeFuerza },
+    { 40, game::AmuletoDeProteccion },
+    { 45, game::DagaVeloz },
+    { 45, game::TalismanDeVitalidad },
+};
+constexpr int kNumOfertasHerreria = 4;
+
+constexpr OfertaComercio kOfertasTienda[] = {
+    { 15, game::PocionCuracionMenor },
+    { 15, game::ElixirDeEnergia },
+    { 20, game::BombaDeVeneno },
+    { 20, game::FrascoDeEscudo },
+    { 12, game::Antidoto },
+};
+constexpr int kNumOfertasTienda = 5;
+
 // MenuInicio es el estado inicial: pantalla de titulo con las 4 opciones de
 // ui::OpcionMenuInicio (ver render/menu_ui.h) antes de largar a explorar.
 // SobreMi es la pantalla placeholder de esa opcion (ver ui::DibujarSobreMi) —
 // un estado propio, no un sub-estado de MenuInicio, para que se dibuje y se
 // lea el input igual que cualquier otra pantalla de la maquina de estados.
-// Mapa es la pantalla de seleccion de mazmorra (ver ui::DibujarMapa) — a ella
-// se llega al elegir "Nueva partida", al cargar una partida guardada parada
-// ahi, al ganarle al jefe de una mazmorra, al elegir "Volver al mapa" en la
-// pausa, o tras un Game Over (reinicio total de la run); desde ahi ENTER
-// genera una mazmorra nueva de la dificultad elegida y entra a Exploracion.
-// Pausa es la pantalla que abre ESC durante la exploracion (ver
-// ui::DibujarPausa) — desde ahi se puede volver a jugar, guardar, volver al
-// mapa, volver a MenuInicio sin cerrar el juego, o salir. No existe durante
-// Combate (ESC no hace nada ahi, igual que F5 tampoco guarda en combate).
+// Ciudad es el hub central donde se prepara la run (ver ConstruirCiudad):
+// una plaza explorable igual que una mazmorra, pero estatica y sin
+// enemigos/cofres, con 3 edificios interactuables (ver game::Edificio) —
+// Herreria y Tienda (ver mas abajo) y la Entrada a las mazmorras, que lleva
+// a MapaTema. Se llega aca al elegir "Nueva partida", al elegir "Volver a
+// la ciudad" en la pausa (ver ui::OpcionPausa::VolverAlMapa — el nombre del
+// enum quedo igual, solo cambio el texto y el destino), al ganarle al jefe
+// de una mazmorra, tras un Game Over, o al cargar una partida guardada
+// parada en la Ciudad.
+// Herreria y Tienda son las pantallas de comercio de esos dos edificios
+// (ver ui::DibujarComercio) — Herreria vende Mejoras (equipo permanente),
+// Tienda vende Consumibles (ver kOfertasHerreria/kOfertasTienda mas arriba).
+// Las dos comparten el mismo bloque de logica en el loop principal (misma
+// forma de comprar, solo cambia el catalogo) y ESC en cualquiera de las dos
+// vuelve a Ciudad. Aprender habilidades (pedido tambien por el usuario)
+// queda para una vuelta futura — ver Roadmap en docs/design.md.
+// MapaTema y MapaDificultad son los dos pasos de la pantalla de seleccion de
+// mazmorra (ver ui::DibujarMapaTema/DibujarMapaDificultad): primero se
+// elige un tema (Bosque/Carcel/Castillo) y despues, dentro de ese tema, una
+// dificultad — 9 combinaciones en total. A MapaTema ya NO se llega directo
+// desde ningun menu — solo caminando hasta la Entrada a las mazmorras
+// dentro de la Ciudad, o cargando una partida guardada parada ahi. Desde
+// MapaTema, ENTER pasa a MapaDificultad (con el tema ya fijado en
+// 'temaMapaElegido'); desde ahi, ENTER genera la mazmorra de esa combinacion
+// y entra a Exploracion. ESC en MapaDificultad vuelve a MapaTema (no a la
+// pausa); ESC en MapaTema abre la pausa (igual que antes solo tenia el paso
+// unico).
+// Pausa es la pantalla que abre ESC durante la exploracion o la Ciudad (ver
+// ui::DibujarPausa) — desde ahi se puede volver a jugar, guardar, volver a
+// la ciudad, volver a MenuInicio sin cerrar el juego, o salir. No existe
+// durante Combate (ESC no hace nada ahi, igual que F5 tampoco guarda en
+// combate) ni durante Herreria/Tienda (ESC ahi vuelve directo a Ciudad, sin
+// pasar por la pausa).
 // SeleccionSlot es la pantalla de elegir en que slot guardar o de cual
 // cargar (ver ui::DibujarSeleccionSlot) — se llega desde F5, desde
 // "Guardar" en la pausa, o desde "Cargar" en el menu de inicio;
 // 'estadoAlCancelarSlot' (mas abajo) guarda a cual de esos tres volver con
 // ESC/"Volver".
-enum class EstadoJuego { MenuInicio, SobreMi, Mapa, Exploracion, Pausa, Combate, SeleccionSlot };
+enum class EstadoJuego {
+    MenuInicio, SobreMi, Ciudad, Herreria, Tienda, MapaTema, MapaDificultad, Exploracion, Pausa, Combate, SeleccionSlot
+};
 
 // Distancia (en pixeles) a la que hay que estar del interactuable mas
 // cercano (enemigo o cofre) para poder engancharlo/abrirlo con [E].
@@ -367,9 +613,16 @@ int main() {
     // tarde el jugador elige "Nueva partida" (desde el menu la primera vez,
     // o volviendo por la pausa despues) se resetea todo de nuevo — ver el
     // case NuevaPartida mas abajo — y entrar a una mazmorra desde el mapa
-    // llama a GenerarMazmorra(dificultad) para reemplazar esto.
+    // llama a GenerarMazmorra(tema, dificultad) para reemplazar esto.
+    // 'temaMazmorraCargada' es el tema de LO QUE HAY CARGADO ahora mismo en
+    // mazmorra/enemigos/cofres (para que el renderer sepa que paleta de
+    // piso/pared usar de fondo, ver renderer.DibujarEscenarioSinUI mas
+    // abajo) — no necesariamente el tema "en curso" de la run (que vive en
+    // mazmorraActivaIndice); se actualiza cada vez que se llama a
+    // GenerarMazmorra o se carga una partida.
     game::Party party = CrearPartyDeEjemplo(game::Vec2{0.0f, 0.0f});
-    MazmorraGenerada fondoInicial = GenerarMazmorra(Dificultad::Media);
+    Tema temaMazmorraCargada = Tema::Bosque;
+    MazmorraGenerada fondoInicial = GenerarMazmorra(temaMazmorraCargada, Dificultad::Media);
     game::Dungeon mazmorra = std::move(fondoInicial.mazmorra);
     game::Vec2 posicionInicial = fondoInicial.posicionInicial;
     std::vector<game::Enemy> enemigos = std::move(fondoInicial.enemigos);
@@ -391,7 +644,12 @@ int main() {
 
     EstadoJuego estado = EstadoJuego::MenuInicio;
     std::unique_ptr<game::CombatEncounter> encuentro;
-    bool panelExpandido = false;     // arranca compacto; TAB lo expande/oculta
+    // El panel de arriba a la izquierda queda siempre en modo compacto (ver
+    // ui::DibujarPanelParty) — TAB ya no lo alterna a una version expandida
+    // sobre el mapa; ahora abre/cierra la ficha de personajes a pantalla
+    // completa (ver fichaAbierta abajo y "Ficha de personajes" en
+    // docs/design.md).
+    bool fichaAbierta = false;       // TAB la abre/cierra durante exploracion
     bool inventarioAbierto = false;  // [I] lo abre/cierra durante exploracion
     bool lootRepartido = false;      // evita repartir el botin mas de una vez por combate
     bool derrotaSonada = false;      // evita repetir el sonido de derrota mientras se ve el Game Over
@@ -404,12 +662,14 @@ int main() {
     int opcionPausaSeleccionada = 0; // indice sobre ui::OpcionPausa (ver render/menu_ui.h)
     bool salirDelJuego = false;      // "Salir" (del menu de inicio o de la pausa) lo pone en true
 
-    // --- Mapa de mazmorras (ver EstadoJuego::Mapa) ---
-    bool mazmorraSuperada[game::kNumMazmorrasMapa] = { false, false, false };  // que mazmorras se ganaron esta run
-    int mazmorraActivaIndice = -1;   // indice (0..2) de la mazmorra en curso, o -1 si no hay ninguna (parado en el mapa)
-    int opcionMapaSeleccionada = 0;  // indice sobre ui::kNumMazmorrasMapa
+    // --- Mapa de mazmorras (ver EstadoJuego::MapaTema/MapaDificultad) ---
+    bool mazmorraSuperada[game::kNumCombinacionesMapa] = {};  // que combinaciones tema+dificultad se ganaron esta run
+    int mazmorraActivaIndice = -1;   // indice combinado (0..8, ver IndiceCombinado) de la mazmorra en curso, o -1
+    int opcionMapaTemaSeleccionada = 0;        // indice sobre ui::kNumTemasMapa (paso 1)
+    Tema temaMapaElegido = Tema::Bosque;       // tema fijado al pasar de MapaTema a MapaDificultad (paso 2)
+    int opcionMapaDificultadSeleccionada = 0;  // indice sobre ui::kNumMazmorrasMapa (paso 2)
     // Adonde vuelve "Continuar"/ESC en la pausa — se pisa cada vez que se
-    // entra a Pausa (desde Exploracion o desde Mapa), ver mas abajo.
+    // entra a Pausa (desde Exploracion o desde MapaTema), ver mas abajo.
     EstadoJuego estadoPrevioAPausa = EstadoJuego::Exploracion;
 
     // --- Seleccion de slot (ver EstadoJuego::SeleccionSlot) ---
@@ -417,6 +677,36 @@ int main() {
     bool modoGuardarSlot = true;         // true = eligiendo donde guardar; false = eligiendo que cargar
     EstadoJuego estadoAlCancelarSlot = EstadoJuego::MenuInicio;  // adonde vuelve ESC/"Volver"
     std::string mensajeSlot;             // resultado de la ultima accion en esta pantalla
+
+    // --- Ciudad (ver EstadoJuego::Ciudad/Herreria/Tienda, ConstruirCiudad) ---
+    // True mientras 'mazmorra'/'enemigos'/'cofres' de arriba tienen cargada
+    // la Ciudad en vez de una mazmorra real o el fondo generico del mapa —
+    // hace falta aparte de mazmorraActivaIndice (que solo distingue "mapa" de
+    // "mazmorra en curso") para que el guardado sepa distinguir la Ciudad de
+    // MapaTema, que las dos tienen mazmorraActivaIndice == -1 (ver
+    // game::kPantallaCiudad/kPantallaMapa en save.h).
+    bool enCiudad = false;
+    std::vector<game::Edificio> edificiosCiudad;  // vacio salvo mientras enCiudad es true
+
+    // Reemplaza 'mazmorra'/'enemigos'/'cofres'/'posicionInicial'/
+    // 'temaMazmorraCargada' por los de la Ciudad y entra a explorarla — la
+    // usan los 4 puntos donde el jugador "vuelve a casa" a prepararse:
+    // Nueva partida, Volver a la ciudad (pausa), ganarle al jefe de una
+    // mazmorra, y Game Over (ver cada uno mas abajo). NO toca 'party' ni
+    // 'mazmorraActivaIndice'/'mazmorraSuperada' — cada llamador decide por
+    // su cuenta si corresponde resetearlos antes de llamar a esto.
+    auto EntrarALaCiudad = [&]() {
+        CiudadGenerada generada = ConstruirCiudad();
+        mazmorra = std::move(generada.mazmorra);
+        posicionInicial = generada.posicionInicial;
+        enemigos.clear();
+        cofres.clear();
+        edificiosCiudad = std::move(generada.edificios);
+        temaMazmorraCargada = static_cast<Tema>(kTemaCiudad);
+        enCiudad = true;
+        party.ReiniciarFormacion(posicionInicial);
+        estado = EstadoJuego::Ciudad;
+    };
 
     while (!WindowShouldClose() && !salirDelJuego) {
         float dt = GetFrameTime();
@@ -440,21 +730,25 @@ int main() {
             if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
                 switch (static_cast<ui::OpcionMenuInicio>(opcionMenuSeleccionada)) {
                     case ui::OpcionMenuInicio::NuevaPartida: {
-                        // Reinicio total: party de cero (stats de partida,
-                        // sin items ni equipo) y el mapa entero sin ninguna
+                        // Reinicio de la RUN: party de cero en equipo/
+                        // inventario/HP/oro y el mapa entero sin ninguna
                         // mazmorra superada — asi el codigo no tiene que
                         // distinguir entre el party/mapa "de fondo" del menu
                         // y una vuelta aca despues de haber jugado (via
                         // Pausa -> Menu principal, ver EstadoJuego::Pausa):
                         // "Nueva partida" siempre arranca una run nueva de
-                        // cero. Ya no entra directo a una mazmorra — ahora
-                        // primero hay que elegir dificultad en el mapa.
-                        party = CrearPartyDeEjemplo(game::Vec2{0.0f, 0.0f});
-                        for (int i = 0; i < game::kNumMazmorrasMapa; ++i) mazmorraSuperada[i] = false;
+                        // cero. Ya no entra directo al mapa de mazmorras —
+                        // ahora primero hay que pasar por la Ciudad (ver
+                        // EstadoJuego::Ciudad) y caminar hasta la Entrada a
+                        // las mazmorras. El NIVEL de cada personaje, en
+                        // cambio, NO se resetea aca — es progreso permanente
+                        // del jugador (ver CrearPartyConProgreso arriba y
+                        // "Sistema de niveles" en docs/design.md).
+                        party = CrearPartyConProgreso(game::Vec2{0.0f, 0.0f}, party);
+                        for (int i = 0; i < game::kNumCombinacionesMapa; ++i) mazmorraSuperada[i] = false;
                         mazmorraActivaIndice = -1;
-                        opcionMapaSeleccionada = 0;
-                        party.ReiniciarFormacion(posicionInicial);
-                        estado = EstadoJuego::Mapa;
+                        opcionMapaTemaSeleccionada = 0;
+                        EntrarALaCiudad();
                         break;
                     }
                     case ui::OpcionMenuInicio::Cargar: {
@@ -492,7 +786,7 @@ int main() {
             // arriba) — se dibuja "congelada" de fondo para que el menu no
             // arranque sobre una pantalla vacia, mismo truco visual que usa
             // la pantalla de combate.
-            renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres);
+            renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres, static_cast<int>(temaMazmorraCargada));
             ui::DibujarMenuInicio(anchoVentana, altoVentana, opcionMenuSeleccionada, AlgunaPartidaGuardada(hayGuardado));
             EndDrawing();
         } else if (estado == EstadoJuego::SobreMi) {
@@ -501,42 +795,88 @@ int main() {
             }
 
             BeginDrawing();
-            renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres);
+            renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres, static_cast<int>(temaMazmorraCargada));
             ui::DibujarSobreMi(anchoVentana, altoVentana);
             EndDrawing();
-        } else if (estado == EstadoJuego::Mapa) {
+        } else if (estado == EstadoJuego::MapaTema) {
             if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D)) {
-                opcionMapaSeleccionada = (opcionMapaSeleccionada + 1) % ui::kNumMazmorrasMapa;
+                opcionMapaTemaSeleccionada = (opcionMapaTemaSeleccionada + 1) % ui::kNumTemasMapa;
             } else if (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_A)) {
-                opcionMapaSeleccionada = (opcionMapaSeleccionada + ui::kNumMazmorrasMapa - 1) % ui::kNumMazmorrasMapa;
+                opcionMapaTemaSeleccionada = (opcionMapaTemaSeleccionada + ui::kNumTemasMapa - 1) % ui::kNumTemasMapa;
             }
 
             if (IsKeyPressed(KEY_ESCAPE)) {
                 opcionPausaSeleccionada = 0;
-                estadoPrevioAPausa = EstadoJuego::Mapa;
+                estadoPrevioAPausa = EstadoJuego::MapaTema;
                 estado = EstadoJuego::Pausa;
             } else if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
+                // Fija el tema elegido y pasa al paso 2 (elegir dificultad
+                // dentro de ese tema, ver EstadoJuego::MapaDificultad) — no
+                // genera ninguna mazmorra todavia.
+                temaMapaElegido = static_cast<Tema>(opcionMapaTemaSeleccionada);
+                opcionMapaDificultadSeleccionada = 0;
+                estado = EstadoJuego::MapaDificultad;
+            }
+
+            // Progreso por tema (cuantas de las 3 dificultades ya estan
+            // superadas), para el cartel "x/3 superadas" de cada tarjeta —
+            // ver ui::DibujarMapaTema.
+            int progresoPorTema[game::kNumTemasMapa] = {};
+            for (int t = 0; t < game::kNumTemasMapa; ++t) {
+                for (int d = 0; d < game::kNumDificultadesMapa; ++d) {
+                    if (mazmorraSuperada[IndiceCombinado(static_cast<Tema>(t), static_cast<Dificultad>(d))]) {
+                        progresoPorTema[t] += 1;
+                    }
+                }
+            }
+
+            BeginDrawing();
+            renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres, static_cast<int>(temaMazmorraCargada));
+            ui::DibujarMapaTema(anchoVentana, altoVentana, opcionMapaTemaSeleccionada, progresoPorTema);
+            EndDrawing();
+        } else if (estado == EstadoJuego::MapaDificultad) {
+            if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D)) {
+                opcionMapaDificultadSeleccionada = (opcionMapaDificultadSeleccionada + 1) % ui::kNumMazmorrasMapa;
+            } else if (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_A)) {
+                opcionMapaDificultadSeleccionada =
+                    (opcionMapaDificultadSeleccionada + ui::kNumMazmorrasMapa - 1) % ui::kNumMazmorrasMapa;
+            }
+
+            if (IsKeyPressed(KEY_ESCAPE)) {
+                // Vuelve al paso 1 (elegir tema), no a la pausa — la pausa
+                // solo se abre desde MapaTema o desde la exploracion.
+                estado = EstadoJuego::MapaTema;
+            } else if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
                 // Entrar genera SIEMPRE una mazmorra nueva (layout fresco),
-                // incluso si esta ya se habia superado antes — las 3
-                // mazmorras son rejugables sin limite (pedido explicito:
-                // "dificultad creciente, cada una rejugable indefinidamente
-                // con un layout regenerado"). El party NO se toca — sigue
-                // con el HP/inventario/equipo que traia del mapa ("sigue con
-                // el desgaste" entre mazmorras).
-                Dificultad dificultad = static_cast<Dificultad>(opcionMapaSeleccionada);
-                MazmorraGenerada generada = GenerarMazmorra(dificultad);
+                // incluso si esta combinacion ya se habia superado antes —
+                // las 9 combinaciones son rejugables sin limite (pedido
+                // explicito: "dificultad creciente, cada una rejugable
+                // indefinidamente con un layout regenerado"). El party NO se
+                // toca — sigue con el HP/inventario/equipo que traia del
+                // mapa ("sigue con el desgaste" entre mazmorras).
+                Dificultad dificultad = static_cast<Dificultad>(opcionMapaDificultadSeleccionada);
+                MazmorraGenerada generada = GenerarMazmorra(temaMapaElegido, dificultad);
                 mazmorra = std::move(generada.mazmorra);
                 posicionInicial = generada.posicionInicial;
                 enemigos = std::move(generada.enemigos);
                 cofres = std::move(generada.cofres);
-                mazmorraActivaIndice = opcionMapaSeleccionada;
+                temaMazmorraCargada = temaMapaElegido;
+                mazmorraActivaIndice = IndiceCombinado(temaMapaElegido, dificultad);
+                edificiosCiudad.clear();
+                enCiudad = false;
                 party.ReiniciarFormacion(posicionInicial);
                 estado = EstadoJuego::Exploracion;
             }
 
+            bool superadaDeEsteTema[game::kNumDificultadesMapa];
+            for (int d = 0; d < game::kNumDificultadesMapa; ++d) {
+                superadaDeEsteTema[d] = mazmorraSuperada[IndiceCombinado(temaMapaElegido, static_cast<Dificultad>(d))];
+            }
+
             BeginDrawing();
-            renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres);
-            ui::DibujarMapa(anchoVentana, altoVentana, opcionMapaSeleccionada, mazmorraSuperada);
+            renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres, static_cast<int>(temaMazmorraCargada));
+            ui::DibujarMapaDificultad(anchoVentana, altoVentana, static_cast<int>(temaMapaElegido),
+                                       opcionMapaDificultadSeleccionada, superadaDeEsteTema);
             EndDrawing();
         } else if (estado == EstadoJuego::Exploracion) {
             if (timerMensaje > 0.0f) {
@@ -547,14 +887,17 @@ int main() {
                 }
             }
 
-            // ESC con el inventario abierto lo cierra primero (mismo criterio
-            // "cerrar lo de encima antes" que un juego tipico) — recien con
-            // el inventario ya cerrado, ESC abre la pausa. Arranca siempre
-            // en "Continuar" (indice 0) para que un ESC sin querer, seguido
-            // de un ENTER sin querer, no dispare "Guardar" ni "Salir".
+            // ESC cierra primero lo que este encima (mismo criterio "cerrar
+            // lo de encima antes" que un juego tipico): inventario, despues
+            // la ficha de personajes, y recien con los dos cerrados abre la
+            // pausa. Arranca siempre en "Continuar" (indice 0) para que un
+            // ESC sin querer, seguido de un ENTER sin querer, no dispare
+            // "Guardar" ni "Salir".
             if (IsKeyPressed(KEY_ESCAPE)) {
                 if (inventarioAbierto) {
                     inventarioAbierto = false;
+                } else if (fichaAbierta) {
+                    fichaAbierta = false;
                 } else {
                     opcionPausaSeleccionada = 0;
                     estadoPrevioAPausa = EstadoJuego::Exploracion;
@@ -562,7 +905,11 @@ int main() {
                 }
             }
 
-            if (IsKeyPressed(KEY_I)) inventarioAbierto = !inventarioAbierto;
+            // [I] y F5 quedan sin efecto mientras la ficha de personajes esta
+            // abierta (mismo criterio que ya evita abrir el inventario a
+            // medias de otra pantalla) — primero hay que cerrarla con TAB o
+            // ESC.
+            if (!fichaAbierta && IsKeyPressed(KEY_I)) inventarioAbierto = !inventarioAbierto;
 
             // F5 abre la seleccion de slot en cualquier momento de la
             // exploracion (con el inventario abierto o no) — nunca durante
@@ -570,7 +917,7 @@ int main() {
             // este bloque es EstadoJuego::Exploracion nomas. Antes guardaba
             // directo a un unico archivo; ahora hay que elegir en cual de
             // los kNumSlots guardar (ver EstadoJuego::SeleccionSlot).
-            if (IsKeyPressed(KEY_F5)) {
+            if (!fichaAbierta && IsKeyPressed(KEY_F5)) {
                 modoGuardarSlot = true;
                 estadoAlCancelarSlot = EstadoJuego::Exploracion;
                 opcionSlotSeleccionada = 0;
@@ -624,6 +971,11 @@ int main() {
                         }
                     }
                 }
+            } else if (fichaAbierta) {
+                // Con la ficha de personajes abierta se congela la
+                // exploracion igual que con el inventario — solo TAB (o ESC,
+                // ya manejado arriba) la cierra.
+                if (IsKeyPressed(KEY_TAB)) fichaAbierta = false;
             } else {
                 // Arma el combate contra TODOS los enemigos vivos de
                 // 'salaIndice' de una sola vez (un combate por sala, no por
@@ -733,7 +1085,7 @@ int main() {
                     }
                 }
 
-                if (IsKeyPressed(KEY_TAB)) panelExpandido = !panelExpandido;
+                if (IsKeyPressed(KEY_TAB)) fichaAbierta = true;
 
                 // Interactuable mas cercano: el enemigo vivo o el cofre sin
                 // abrir mas cercano, si esta a distancia de interaccion —
@@ -772,7 +1124,15 @@ int main() {
                     } else if (cofreCercano != nullptr) {
                         cofreCercano->abierto = true;
                         party.Inventario().Agregar(cofreCercano->contenido);
-                        mensajeFlotante = "Encontraste: " + cofreCercano->contenido.nombre;
+                        // Oro (ver "Fuente del oro" en docs/design.md):
+                        // ademas del item de siempre, cada cofre deja oro
+                        // segun la Dificultad de la mazmorra activa.
+                        Dificultad dificultadDelCofre = (mazmorraActivaIndice >= 0)
+                            ? DificultadDeIndiceCombinado(mazmorraActivaIndice) : Dificultad::Media;
+                        int oroDelCofre = OroDeCofrePorDificultad(dificultadDelCofre);
+                        party.GanarOro(oroDelCofre);
+                        mensajeFlotante = "Encontraste: " + cofreCercano->contenido.nombre
+                            + "  +" + std::to_string(oroDelCofre) + " oro";
                         timerMensaje = kDuracionMensaje;
                     }
                 }
@@ -780,12 +1140,233 @@ int main() {
 
             if (inventarioAbierto) {
                 BeginDrawing();
-                renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres);
+                renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres, static_cast<int>(temaMazmorraCargada));
                 ui::DibujarInventario(party, objetivoInventario, renderer.Sprites());
                 EndDrawing();
+            } else if (fichaAbierta) {
+                BeginDrawing();
+                renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres, static_cast<int>(temaMazmorraCargada));
+                ui::DibujarFichaPersonajes(party, renderer.Sprites());
+                EndDrawing();
             } else {
-                renderer.DibujarFrame(mazmorra, party, enemigos, cofres, panelExpandido, prompt, mensajeFlotante);
+                // El panel de siempre queda fijo en modo compacto (ver el
+                // comentario de fichaAbierta mas arriba) — 'false' hardcodeado
+                // en vez de una variable que ya no existe.
+                renderer.DibujarFrame(mazmorra, party, enemigos, cofres, static_cast<int>(temaMazmorraCargada),
+                                       /*panelExpandido*/false, prompt, mensajeFlotante);
             }
+        } else if (estado == EstadoJuego::Ciudad) {
+            // Mismo timer que ya usa mensajeFlotante en Exploracion.
+            if (timerMensaje > 0.0f) {
+                timerMensaje -= dt;
+                if (timerMensaje <= 0.0f) {
+                    timerMensaje = 0.0f;
+                    mensajeFlotante.clear();
+                }
+            }
+
+            // Mismo orden "cerrar lo de encima antes" que en Exploracion:
+            // inventario, ficha, y recien con los dos cerrados abre la
+            // pausa.
+            if (IsKeyPressed(KEY_ESCAPE)) {
+                if (inventarioAbierto) {
+                    inventarioAbierto = false;
+                } else if (fichaAbierta) {
+                    fichaAbierta = false;
+                } else {
+                    opcionPausaSeleccionada = 0;
+                    estadoPrevioAPausa = EstadoJuego::Ciudad;
+                    estado = EstadoJuego::Pausa;
+                }
+            }
+
+            if (!fichaAbierta && IsKeyPressed(KEY_I)) inventarioAbierto = !inventarioAbierto;
+
+            // F5 tambien guarda desde la Ciudad, igual que en Exploracion —
+            // ver game::kPantallaCiudad en el bloque de SeleccionSlot mas
+            // abajo, que es quien decide que se guarda "parado en la
+            // Ciudad" en vez de "parado en el mapa".
+            if (!fichaAbierta && IsKeyPressed(KEY_F5)) {
+                modoGuardarSlot = true;
+                estadoAlCancelarSlot = EstadoJuego::Ciudad;
+                opcionSlotSeleccionada = 0;
+                mensajeSlot.clear();
+                estado = EstadoJuego::SeleccionSlot;
+            }
+
+            std::string prompt;
+
+            if (inventarioAbierto) {
+                // Mismo bloque que Exploracion (opera solo sobre el party,
+                // no depende de que haya una mazmorra "real" cargada).
+                auto& miembros = party.Miembros();
+                if (IsKeyPressed(KEY_TAB) && !miembros.empty()) {
+                    objetivoInventario = (objetivoInventario + 1) % miembros.size();
+                }
+                int indice = NumeroPresionado();
+                if (indice >= 0 && objetivoInventario < miembros.size()) {
+                    const auto& pilas = party.Inventario().Pilas();
+                    if (static_cast<size_t>(indice) < pilas.size()) {
+                        bool esConsumibleDeCombate = pilas[indice].item.efecto == game::EfectoItem::AplicarEstado
+                            || pilas[indice].item.efecto == game::EfectoItem::CurarEstados;
+                        if (esConsumibleDeCombate) {
+                            mensajeFlotante = pilas[indice].item.nombre + " solo se puede usar en combate.";
+                            timerMensaje = kDuracionMensaje;
+                        } else if (pilas[indice].item.tipo == game::TipoItem::Consumible) {
+                            game::ResultadoUsoItem resultado = party.Inventario().Usar(
+                                static_cast<size_t>(indice), miembros[objetivoInventario]);
+                            if (resultado.exitoso) {
+                                mensajeFlotante = resultado.texto;
+                                timerMensaje = kDuracionMensaje;
+                            }
+                        } else {
+                            game::ResultadoEquipar resultado = party.Inventario().Equipar(
+                                static_cast<size_t>(indice), miembros[objetivoInventario]);
+                            if (resultado.exitoso) {
+                                mensajeFlotante = resultado.texto;
+                                timerMensaje = kDuracionMensaje;
+                            }
+                        }
+                    }
+                }
+            } else if (fichaAbierta) {
+                if (IsKeyPressed(KEY_TAB)) fichaAbierta = false;
+            } else {
+                // Movimiento + colision: mismo codigo que Exploracion, pero
+                // sin persecucion de agresivos ni trampas de piso (la
+                // Ciudad no tiene ninguno de los dos — ver ConstruirCiudad).
+                game::Vec2 direccion = input::LeerDireccionMovimiento();
+                game::Character& lider = party.Lider();
+
+                float velocidadPxPorSeg = lider.GetStats().velocidad * kFactorVelocidadExploracion;
+                game::Vec2 posicionActual = lider.Posicion();
+                game::Vec2 posicionDeseada = posicionActual + direccion * (velocidadPxPorSeg * dt);
+
+                game::Vec2 posicionResuelta = mazmorra.ResolverColision(
+                    lider.Colisionador(), posicionActual, posicionDeseada);
+                lider.SetPosicion(posicionResuelta);
+
+                party.ActualizarFormacion(dt);
+
+                if (IsKeyPressed(KEY_TAB)) fichaAbierta = true;
+
+                // Edificio interactuable mas cercano (mismo criterio de
+                // distancia que un enemigo/cofre en Exploracion).
+                game::Edificio* edificioCercano = nullptr;
+                float distanciaCercana = kDistanciaInteraccion;
+                for (auto& edificio : edificiosCiudad) {
+                    float distancia = game::Length(lider.Posicion() - edificio.posicion);
+                    if (distancia < distanciaCercana) {
+                        distanciaCercana = distancia;
+                        edificioCercano = &edificio;
+                    }
+                }
+
+                if (edificioCercano != nullptr) {
+                    // La Entrada a las mazmorras ya lleva "Entrada" en su
+                    // propio nombre (ver game::NombreDeEdificio) — anteponer
+                    // "Entrar a" ahi sonaba redundante ("Entrar a Entrada a
+                    // las mazmorras"), asi que ese caso arma su propio texto.
+                    prompt = (edificioCercano->tipo == game::TipoEdificio::EntradaMazmorras)
+                        ? "[E] Ir a la Entrada a las mazmorras"
+                        : std::string("[E] Entrar a ") + game::NombreDeEdificio(edificioCercano->tipo);
+                }
+
+                if (IsKeyPressed(KEY_E) && edificioCercano != nullptr) {
+                    if (edificioCercano->tipo == game::TipoEdificio::Herreria) {
+                        mensajeFlotante.clear();
+                        timerMensaje = 0.0f;
+                        estado = EstadoJuego::Herreria;
+                    } else if (edificioCercano->tipo == game::TipoEdificio::Tienda) {
+                        mensajeFlotante.clear();
+                        timerMensaje = 0.0f;
+                        estado = EstadoJuego::Tienda;
+                    } else {  // EntradaMazmorras
+                        // Mismo fondo "de entrada" que el juego mostraba
+                        // antes de que existiera la Ciudad (ver
+                        // 'fondoInicial' al arrancar main()) — un tema y
+                        // dificultad fijos, solo para tener un fondo
+                        // variado detras del mapa (el party todavia no
+                        // entra ahi, ver EstadoJuego::MapaTema).
+                        MazmorraGenerada fondo = GenerarMazmorra(Tema::Bosque, Dificultad::Media);
+                        mazmorra = std::move(fondo.mazmorra);
+                        posicionInicial = fondo.posicionInicial;
+                        enemigos = std::move(fondo.enemigos);
+                        cofres = std::move(fondo.cofres);
+                        temaMazmorraCargada = Tema::Bosque;
+                        edificiosCiudad.clear();
+                        enCiudad = false;
+                        opcionMapaTemaSeleccionada = 0;
+                        estado = EstadoJuego::MapaTema;
+                    }
+                }
+            }
+
+            if (inventarioAbierto) {
+                BeginDrawing();
+                renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres, static_cast<int>(temaMazmorraCargada),
+                                                edificiosCiudad);
+                ui::DibujarInventario(party, objetivoInventario, renderer.Sprites());
+                EndDrawing();
+            } else if (fichaAbierta) {
+                BeginDrawing();
+                renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres, static_cast<int>(temaMazmorraCargada),
+                                                edificiosCiudad);
+                ui::DibujarFichaPersonajes(party, renderer.Sprites());
+                EndDrawing();
+            } else {
+                renderer.DibujarFrame(mazmorra, party, enemigos, cofres, static_cast<int>(temaMazmorraCargada),
+                                       /*panelExpandido*/false, prompt, mensajeFlotante, edificiosCiudad);
+            }
+        } else if (estado == EstadoJuego::Herreria || estado == EstadoJuego::Tienda) {
+            if (timerMensaje > 0.0f) {
+                timerMensaje -= dt;
+                if (timerMensaje <= 0.0f) {
+                    timerMensaje = 0.0f;
+                    mensajeFlotante.clear();
+                }
+            }
+
+            bool esHerreria = (estado == EstadoJuego::Herreria);
+            const OfertaComercio* tabla = esHerreria ? kOfertasHerreria : kOfertasTienda;
+            int numOfertas = esHerreria ? kNumOfertasHerreria : kNumOfertasTienda;
+
+            if (IsKeyPressed(KEY_ESCAPE)) {
+                mensajeFlotante.clear();
+                timerMensaje = 0.0f;
+                estado = EstadoJuego::Ciudad;
+            } else {
+                int indice = NumeroPresionado();
+                if (indice >= 0 && indice < numOfertas) {
+                    game::Item item = tabla[indice].fabricar();
+                    if (party.Oro() >= tabla[indice].precio) {
+                        party.GanarOro(-tabla[indice].precio);
+                        party.Inventario().Agregar(item);
+                        mensajeFlotante = "Compraste: " + item.nombre + ".";
+                    } else {
+                        mensajeFlotante = "No te alcanza el oro para " + item.nombre + ".";
+                    }
+                    timerMensaje = kDuracionMensaje;
+                }
+            }
+
+            // Se arma de nuevo cada frame a partir del catalogo de precios
+            // (kOfertasHerreria/kOfertasTienda) -- son a lo sumo 5 items,
+            // costo insignificante, y asi el nombre/descripcion mostrados
+            // siempre salen del game::Item real (una sola fuente de verdad
+            // para ese texto, ver ui::OfertaComercio en menu_ui.h).
+            std::vector<ui::OfertaComercio> ofertasUi;
+            ofertasUi.reserve(numOfertas);
+            for (int i = 0; i < numOfertas; ++i) {
+                game::Item muestra = tabla[i].fabricar();
+                ofertasUi.push_back(ui::OfertaComercio{ muestra.nombre, muestra.descripcion, tabla[i].precio });
+            }
+
+            BeginDrawing();
+            renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres, static_cast<int>(temaMazmorraCargada),
+                                            edificiosCiudad);
+            ui::DibujarComercio(anchoVentana, altoVentana, esHerreria, ofertasUi, party.Oro(), mensajeFlotante);
+            EndDrawing();
         } else if (estado == EstadoJuego::Pausa) {
             // Mismo timer que ya usa mensajeFlotante en Exploracion
             // (reutilizado tal cual, no uno aparte) — si el jugador pausa
@@ -834,15 +1415,20 @@ int main() {
                         break;
                     }
                     case ui::OpcionPausa::VolverAlMapa:
-                        // Abandona la mazmorra en curso sin marcarla como
-                        // superada — el party sigue tal cual esta (HP,
-                        // inventario, equipo: "sigue con el desgaste" entre
-                        // mazmorras). Si la pausa se abrio desde el propio
-                        // Mapa (estadoPrevioAPausa ya es Mapa) esto es
-                        // exactamente lo mismo que "Continuar".
+                        // "Volver a la ciudad" (ver el comentario de este
+                        // enum en menu_ui.h): abandona la mazmorra en curso
+                        // sin marcarla como superada y vuelve a la Ciudad —
+                        // el party sigue tal cual esta (HP, inventario,
+                        // equipo, oro: "sigue con el desgaste" entre
+                        // mazmorras). Ya no vuelve directo a MapaTema (solo
+                        // se llega ahi caminando hasta la Entrada a las
+                        // mazmorras dentro de la Ciudad). Si la pausa se
+                        // abrio desde la propia Ciudad (estadoPrevioAPausa
+                        // ya es Ciudad) esto es exactamente lo mismo que
+                        // "Continuar".
                         mazmorraActivaIndice = -1;
-                        opcionMapaSeleccionada = 0;
-                        estado = EstadoJuego::Mapa;
+                        opcionMapaTemaSeleccionada = 0;
+                        EntrarALaCiudad();
                         break;
                     case ui::OpcionPausa::MenuPrincipal:
                         // No toca party/mapa/mazmorra/enemigos/cofres —
@@ -867,7 +1453,12 @@ int main() {
             }
 
             BeginDrawing();
-            renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres);
+            // 'edificiosCiudad' viene vacio salvo que la pausa se haya
+            // abierto desde la Ciudad (ver enCiudad) — en ese caso se ven
+            // los edificios de fondo, igual que se verian los enemigos/
+            // cofres de una mazmorra si la pausa se abrio desde ahi.
+            renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres, static_cast<int>(temaMazmorraCargada),
+                                            edificiosCiudad);
             ui::DibujarPausa(anchoVentana, altoVentana, opcionPausaSeleccionada, mensajeFlotante);
             EndDrawing();
         } else if (estado == EstadoJuego::SeleccionSlot) {
@@ -888,13 +1479,19 @@ int main() {
                 } else {
                     int slot = opcionSlotSeleccionada;
                     if (modoGuardarSlot) {
-                        // enMapa se deduce de mazmorraActivaIndice: solo es
-                        // -1 cuando no hay ninguna mazmorra en curso (parado
-                        // en el mapa, o en su pausa) — ver como se mantiene
-                        // en EstadoJuego::Mapa/Pausa/VolverAlMapa mas arriba.
-                        bool enMapa = (mazmorraActivaIndice < 0);
+                        // 'pantalla' se deduce de enCiudad/mazmorraActivaIndice
+                        // (ver game::kPantallaCiudad/kPantallaMapa/
+                        // kPantallaExploracion en save.h): la Ciudad tiene
+                        // prioridad porque tambien deja mazmorraActivaIndice
+                        // en -1 (igual que MapaTema/MapaDificultad) — sin
+                        // chequear enCiudad primero las dos pantallas
+                        // quedarian indistinguibles, igual que antes de la
+                        // Ciudad (ver el comentario de kVersion sobre v6 en
+                        // save.cpp).
+                        int pantalla = enCiudad ? game::kPantallaCiudad
+                            : (mazmorraActivaIndice < 0 ? game::kPantallaMapa : game::kPantallaExploracion);
                         bool guardado = game::GuardarPartida(slot, mazmorra, party, enemigos, cofres,
-                                                              mazmorraSuperada, enMapa, mazmorraActivaIndice);
+                                                              mazmorraSuperada, pantalla, mazmorraActivaIndice);
                         mensajeSlot = guardado
                             ? ("Guardado en Slot " + std::to_string(slot + 1) + ".")
                             : ("No se pudo guardar en Slot " + std::to_string(slot + 1) + ".");
@@ -902,29 +1499,63 @@ int main() {
                     } else if (hayGuardado[slot]) {
                         game::ResultadoCarga carga = game::CargarPartida(slot);
                         if (carga.valido) {
-                            // Mismo reemplazo de estado que antes hacia
-                            // "Cargar" directo desde el menu de inicio (ver
-                            // ui::OpcionMenuInicio::Cargar mas arriba) — pero
-                            // ahora el estado destino depende de si se habia
-                            // guardado parado en el mapa o a mitad de una
-                            // mazmorra (ver DatosPartida::enMapa en save.h).
-                            mazmorra = game::Dungeon(std::move(carga.datos.habitaciones), std::move(carga.datos.paredes),
-                                                      std::move(carga.datos.trampas));
-                            posicionInicial = mazmorra.CentroDeSala(0);
+                            // Party/inventario/oro/progreso del mapa: comun
+                            // a las 3 pantallas posibles (ver game::
+                            // kPantallaCiudad/kPantallaMapa/
+                            // kPantallaExploracion en save.h).
                             party = game::Party(std::move(carga.datos.miembros));
+                            party.GanarOro(carga.datos.oro);
                             for (auto& pila : carga.datos.pilasInventario) {
                                 party.Inventario().Agregar(std::move(pila.item), pila.cantidad);
                             }
-                            enemigos = std::move(carga.datos.enemigos);
-                            cofres = std::move(carga.datos.cofres);
-                            for (int i = 0; i < game::kNumMazmorrasMapa; ++i) {
+                            for (int i = 0; i < game::kNumCombinacionesMapa; ++i) {
                                 mazmorraSuperada[i] = carga.datos.mazmorraSuperada[i];
                             }
                             mazmorraActivaIndice = carga.datos.mazmorraActivaIndice;
-                            opcionMapaSeleccionada = 0;
+                            opcionMapaTemaSeleccionada = 0;
+
+                            if (carga.datos.pantalla == game::kPantallaCiudad) {
+                                // La Ciudad es siempre el mismo layout (ver
+                                // ConstruirCiudad) — se reconstruye de cero
+                                // en vez de usar las habitaciones/paredes/
+                                // trampas guardadas (serian identicas de
+                                // todos modos) para no tener que guardar
+                                // tambien los 3 edificios, que no viajan en
+                                // el archivo (ver el comentario de
+                                // game::Edificio en edificio.h).
+                                CiudadGenerada generada = ConstruirCiudad();
+                                mazmorra = std::move(generada.mazmorra);
+                                posicionInicial = generada.posicionInicial;
+                                enemigos.clear();
+                                cofres.clear();
+                                edificiosCiudad = std::move(generada.edificios);
+                                temaMazmorraCargada = static_cast<Tema>(kTemaCiudad);
+                                enCiudad = true;
+                                mazmorraActivaIndice = -1;
+                                estado = EstadoJuego::Ciudad;
+                            } else {
+                                // MapaTema/MapaDificultad (fondo generico) o
+                                // una mazmorra real a mitad de explorar —
+                                // las dos comparten el mismo formato de
+                                // datos, solo cambia el estado destino y si
+                                // 'mazmorraActivaIndice' es valido.
+                                mazmorra = game::Dungeon(std::move(carga.datos.habitaciones), std::move(carga.datos.paredes),
+                                                          std::move(carga.datos.trampas));
+                                posicionInicial = mazmorra.CentroDeSala(0);
+                                enemigos = std::move(carga.datos.enemigos);
+                                cofres = std::move(carga.datos.cofres);
+                                edificiosCiudad.clear();
+                                enCiudad = false;
+                                if (mazmorraActivaIndice >= 0) {
+                                    temaMazmorraCargada = TemaDeIndiceCombinado(mazmorraActivaIndice);
+                                    temaMapaElegido = temaMazmorraCargada;
+                                }
+                                estado = (carga.datos.pantalla == game::kPantallaExploracion)
+                                    ? EstadoJuego::Exploracion : EstadoJuego::MapaTema;
+                            }
+
                             party.ReiniciarFormacion(party.Lider().Posicion());
                             mensajeSlot.clear();
-                            estado = carga.datos.enMapa ? EstadoJuego::Mapa : EstadoJuego::Exploracion;
                         } else {
                             mensajeSlot = "Ese archivo esta dañado.";
                         }
@@ -937,7 +1568,8 @@ int main() {
             }
 
             BeginDrawing();
-            renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres);
+            renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres, static_cast<int>(temaMazmorraCargada),
+                                            edificiosCiudad);
             ui::DibujarSeleccionSlot(anchoVentana, altoVentana, opcionSlotSeleccionada, modoGuardarSlot, hayGuardado, mensajeSlot);
             EndDrawing();
         } else {  // EstadoJuego::Combate
@@ -993,9 +1625,11 @@ int main() {
                     // hay mazmorra activa (no deberia pasar nunca: a Combate
                     // solo se llega desde una mazmorra generada por el mapa).
                     Dificultad dificultadActual = (mazmorraActivaIndice >= 0)
-                        ? static_cast<Dificultad>(mazmorraActivaIndice) : Dificultad::Media;
+                        ? DificultadDeIndiceCombinado(mazmorraActivaIndice) : Dificultad::Media;
                     std::string botin;
+                    int oroGanado = 0;
                     for (game::Enemy* e : encuentro->Enemigos()) {
+                        oroGanado += OroDeEnemigoPorDificultad(e->Tipo(), dificultadActual);
                         game::ResultadoLoot loot = LootDeEnemigoPorDificultad(e->Tipo(), dificultadActual);
                         if (loot.hay) {
                             party.Inventario().Agregar(loot.item);
@@ -1003,26 +1637,74 @@ int main() {
                             botin += loot.item.nombre;
                         }
                     }
+                    party.GanarOro(oroGanado);
+
+                    // --- Experiencia (ver "Sistema de niveles" en
+                    // docs/design.md): cada enemigo del encuentro da XP
+                    // segun su rol (game::XpPorEnemigo, mismo criterio que
+                    // el loot de arriba), y CADA miembro del party que siga
+                    // con vida al ganar el combate la recibe COMPLETA — no
+                    // se reparte entre los 4, nivel individual por
+                    // personaje. Character::GanarExperiencia aplica sola el
+                    // crecimiento de stats de su rol si sube de nivel.
+                    //
+                    // --- Recurso (ver "Regeneracion de recurso" en
+                    // docs/design.md): en el mismo loop, cada miembro vivo
+                    // recupera ademas una porcion de su Resistencia/
+                    // Concentracion maxima (Character::RegenerarRecursoPor
+                    // Victoria) — sin esto, el recurso quedaba seco para el
+                    // resto de la run apenas se gastaba una vez, sin forma
+                    // de recuperarlo salvo items o un Game Over. Se aplica
+                    // siempre al ganar (no solo cuando hay XP), aunque en la
+                    // practica todo encuentro con enemigos otorga XP > 0.
+                    int xpGanada = 0;
+                    for (game::Enemy* e : encuentro->Enemigos()) xpGanada += game::XpPorEnemigo(e->Tipo());
+                    std::string subidasDeNivel;
+                    for (auto& miembro : party.Miembros()) {
+                        if (!miembro.EstaVivo()) continue;
+                        miembro.RegenerarRecursoPorVictoria();
+                        if (xpGanada <= 0) continue;
+                        int nivelAntes = miembro.Nivel();
+                        miembro.GanarExperiencia(xpGanada);
+                        if (miembro.Nivel() > nivelAntes) {
+                            if (!subidasDeNivel.empty()) subidasDeNivel += " ";
+                            subidasDeNivel += miembro.Nombre() + " sube a nivel "
+                                + std::to_string(miembro.Nivel()) + "!";
+                        }
+                    }
+
                     mensajeFlotante = botin.empty() ? "No encontraste botin esta vez." : ("Botin: " + botin);
-                    timerMensaje = kDuracionMensaje;
+                    if (oroGanado > 0) mensajeFlotante += "  +" + std::to_string(oroGanado) + " oro";
+                    if (xpGanada > 0) mensajeFlotante += "  +" + std::to_string(xpGanada) + " XP";
+                    if (!subidasDeNivel.empty()) mensajeFlotante += "  " + subidasDeNivel;
+                    // Mas tiempo en pantalla si ademas hay que leer una o
+                    // mas subidas de nivel (mensaje bastante mas largo que
+                    // el de botin solo).
+                    timerMensaje = subidasDeNivel.empty() ? kDuracionMensaje : kDuracionMensaje * 1.6f;
                     lootRepartido = true;
                     audio.ReproducirVictoria();
                 }
                 if (GetKeyPressed() != 0) {
-                    // Ganarle al Capitan Bandido (el jefe, siempre solo en su
-                    // sala) marca la mazmorra activa como Superada y vuelve
-                    // al mapa en vez de a la exploracion — ya no queda nada
-                    // mas que hacer en esta mazmorra (aunque sigue siendo
+                    // Ganarle al jefe (el de esta combinacion tema+
+                    // dificultad, siempre solo en su sala — ver
+                    // game::EsJefe) marca la mazmorra activa como Superada y
+                    // vuelve a la Ciudad (antes volvia directo al mapa,
+                    // MapaTema — decision nuestra, no pedida explicitamente:
+                    // con la Ciudad como hub central tiene mas sentido que
+                    // el jugador pase primero por ahi a gastar el oro/botin
+                    // recien ganado antes de elegir la proxima mazmorra, ver
+                    // "La Ciudad" en docs/design.md) — ya no queda nada mas
+                    // que hacer en esta mazmorra (aunque sigue siendo
                     // rejugable desde el mapa, con un layout nuevo).
                     bool esVictoriaFinal = false;
                     for (game::Enemy* e : encuentro->Enemigos()) {
-                        if (e->Tipo() == game::TipoEnemigo::CapitanBandido) { esVictoriaFinal = true; break; }
+                        if (game::EsJefe(e->Tipo())) { esVictoriaFinal = true; break; }
                     }
                     if (esVictoriaFinal && mazmorraActivaIndice >= 0) {
                         mazmorraSuperada[mazmorraActivaIndice] = true;
                         mazmorraActivaIndice = -1;
-                        opcionMapaSeleccionada = 0;
-                        estado = EstadoJuego::Mapa;
+                        opcionMapaTemaSeleccionada = 0;
+                        EntrarALaCiudad();
                     } else {
                         estado = EstadoJuego::Exploracion;
                     }
@@ -1038,16 +1720,23 @@ int main() {
                     // explicito del usuario: "perder cuesta toda la
                     // partida"): un party wipe reinicia la RUN COMPLETA, no
                     // solo revive en el lugar como antes. El party vuelve a
-                    // sus stats de partida (pierde todos los items/equipo
-                    // ganados en la run) y el mapa entero pierde su progreso
-                    // (ninguna mazmorra queda Superada); se vuelve al mapa
-                    // para arrancar de cero, no a la mazmorra donde se perdio.
-                    party = CrearPartyDeEjemplo(game::Vec2{0.0f, 0.0f});
-                    for (int i = 0; i < game::kNumMazmorrasMapa; ++i) mazmorraSuperada[i] = false;
+                    // sus stats de partida (pierde todos los items/equipo/
+                    // ORO ganados en la run, ver Party::GanarOro) y el mapa
+                    // entero pierde su progreso (ninguna mazmorra queda
+                    // Superada); se vuelve a la Ciudad para arrancar de
+                    // cero (antes volvia directo al mapa, MapaTema — mismo
+                    // criterio que la victoria final de arriba: la Ciudad
+                    // es ahora el punto de partida de toda run, gane o
+                    // pierda), no a la mazmorra donde se perdio. El NIVEL de
+                    // cada personaje sobrevive a esto a proposito — es
+                    // progreso permanente del jugador, no de la run (ver
+                    // CrearPartyConProgreso y "Sistema de niveles" en
+                    // docs/design.md).
+                    party = CrearPartyConProgreso(game::Vec2{0.0f, 0.0f}, party);
+                    for (int i = 0; i < game::kNumCombinacionesMapa; ++i) mazmorraSuperada[i] = false;
                     mazmorraActivaIndice = -1;
-                    opcionMapaSeleccionada = 0;
-                    party.ReiniciarFormacion(posicionInicial);
-                    estado = EstadoJuego::Mapa;
+                    opcionMapaTemaSeleccionada = 0;
+                    EntrarALaCiudad();
                     encuentro.reset();
                 }
             }
@@ -1056,7 +1745,7 @@ int main() {
             ClearBackground(BLACK);
             // Se dibuja la mazmorra "congelada" de fondo para dar contexto, y
             // encima la pantalla de combate (que ya trae su propio overlay oscuro).
-            renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres);
+            renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres, static_cast<int>(temaMazmorraCargada));
             if (encuentro) {
                 ui::DibujarCombate(*encuentro, anchoVentana, altoVentana, dt, renderer.Sprites());
                 audio.ProcesarEventos(*encuentro);
