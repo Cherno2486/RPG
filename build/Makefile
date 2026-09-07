@@ -317,6 +317,30 @@ src/game/combat_state.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/game/combat_state.cpp.s
 .PHONY : src/game/combat_state.cpp.s
 
+src/game/deambulante.obj: src/game/deambulante.cpp.obj
+.PHONY : src/game/deambulante.obj
+
+# target to build an object file
+src/game/deambulante.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/game/deambulante.cpp.obj
+.PHONY : src/game/deambulante.cpp.obj
+
+src/game/deambulante.i: src/game/deambulante.cpp.i
+.PHONY : src/game/deambulante.i
+
+# target to preprocess a source file
+src/game/deambulante.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/game/deambulante.cpp.i
+.PHONY : src/game/deambulante.cpp.i
+
+src/game/deambulante.s: src/game/deambulante.cpp.s
+.PHONY : src/game/deambulante.s
+
+# target to generate assembly for a file
+src/game/deambulante.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/game/deambulante.cpp.s
+.PHONY : src/game/deambulante.cpp.s
+
 src/game/dice.obj: src/game/dice.cpp.obj
 .PHONY : src/game/dice.obj
 
@@ -801,6 +825,9 @@ help:
 	@echo ... src/game/combat_state.obj
 	@echo ... src/game/combat_state.i
 	@echo ... src/game/combat_state.s
+	@echo ... src/game/deambulante.obj
+	@echo ... src/game/deambulante.i
+	@echo ... src/game/deambulante.s
 	@echo ... src/game/dice.obj
 	@echo ... src/game/dice.i
 	@echo ... src/game/dice.s

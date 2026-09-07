@@ -11,6 +11,7 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/character.cpp" "CMakeFiles/rpg_mazmorras.dir/src/game/character.cpp.obj" "gcc" "CMakeFiles/rpg_mazmorras.dir/src/game/character.cpp.obj.d"
   "C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/combat.cpp" "CMakeFiles/rpg_mazmorras.dir/src/game/combat.cpp.obj" "gcc" "CMakeFiles/rpg_mazmorras.dir/src/game/combat.cpp.obj.d"
   "C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/combat_state.cpp" "CMakeFiles/rpg_mazmorras.dir/src/game/combat_state.cpp.obj" "gcc" "CMakeFiles/rpg_mazmorras.dir/src/game/combat_state.cpp.obj.d"
+  "C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/deambulante.cpp" "CMakeFiles/rpg_mazmorras.dir/src/game/deambulante.cpp.obj" "gcc" "CMakeFiles/rpg_mazmorras.dir/src/game/deambulante.cpp.obj.d"
   "C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/dice.cpp" "CMakeFiles/rpg_mazmorras.dir/src/game/dice.cpp.obj" "gcc" "CMakeFiles/rpg_mazmorras.dir/src/game/dice.cpp.obj.d"
   "C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/dungeon.cpp" "CMakeFiles/rpg_mazmorras.dir/src/game/dungeon.cpp.obj" "gcc" "CMakeFiles/rpg_mazmorras.dir/src/game/dungeon.cpp.obj.d"
   "C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/effects.cpp" "CMakeFiles/rpg_mazmorras.dir/src/game/effects.cpp.obj" "gcc" "CMakeFiles/rpg_mazmorras.dir/src/game/effects.cpp.obj.d"

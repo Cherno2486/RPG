@@ -56,17 +56,18 @@ siguientes veces es mucho más rápido.
   (donde se arranca, con una fuente al medio y la Entrada a las mazmorras) y
   la **Calle de Comercios** (Herrería + Tienda), a la que se llega caminando
   hacia la derecha desde la plaza. Un perro, unos pájaros y algunos aldeanos
-  caminan solos por las dos zonas (sin nada que interactuar con ellos
-  todavía, solo para que se sienta habitada). Un badge de **"Oro: N"** en el
-  HUD muestra el oro actual del party — se gana en combates y cofres dentro
-  de las mazmorras (más en Dificultades más altas), nunca dentro de la
-  Ciudad.
-- **E**: sobre el edificio más cercano — el cartel de abajo indica cuál con
-  "[E] Ir a la Herrería" / "[E] Ir a la Tienda" / "[E] Ir a la Entrada a las
-  mazmorras". La Herrería y la Tienda abren la pantalla de comercio (ver
-  abajo); la Entrada lleva al mapa de mazmorras de siempre (elegir tema y
-  dificultad — ver "Mapa de mazmorras" abajo), que funciona exactamente
-  igual que antes desde ahí para abajo.
+  caminan solos por las dos zonas, dándole vida al lugar. Un badge de
+  **"Oro: N"** en el HUD muestra el oro actual del party — se gana en
+  combates y cofres dentro de las mazmorras (más en Dificultades más altas),
+  nunca dentro de la Ciudad.
+- **E**: sobre el interactuable más cercano, sea edificio o aldeano — el
+  cartel de abajo indica cuál con "[E] Entrar a Herrería" / "[E] Entrar a
+  Tienda" / "[E] Ir a la Entrada a las mazmorras" / "[E] Hablar". La Herrería
+  y la Tienda abren la pantalla de comercio (ver abajo); la Entrada lleva al
+  mapa de mazmorras de siempre (elegir tema y dificultad — ver "Mapa de
+  mazmorras" abajo), que funciona exactamente igual que antes desde ahí para
+  abajo; un aldeano tira una línea de flavor text al azar (sin diálogo ni
+  elección) — el perro y los pájaros siguen sin nada que hablar.
 - **I**, **TAB**, **F5**, **ESC**: mismas funciones que durante la
   exploración (inventario, ficha de personajes, guardar, pausa).
 
@@ -591,8 +592,9 @@ Ver "Sonido" en `docs/design.md` para el detalle técnico (`render/audio.h`).
     "parecía una mazmorra más": ahora es un bioma propio (piso/pared de
     adoquín y tapia con seto, no reciclados), con dos zonas conectadas por
     una calle (Plaza Central + Calle de Comercios) y perro/pájaros/
-    aldeanos decorativos deambulando. Ver "La Ciudad: hub central, oro y
-    comercio" en
+    aldeanos deambulando. Revisada una vez más para hacer hablables a los
+    aldeanos: `[E]` junto a uno muestra una línea de flavor text al azar,
+    sin árbol de diálogo. Ver "La Ciudad: hub central, oro y comercio" en
     `docs/design.md`.
 36. Pendiente: aprender habilidades en la Ciudad (parte del pedido
     original, deferida esta vuelta), contenido para "Sobre mi", seguir

@@ -1,23 +1,30 @@
 #pragma once
 #include "mathtypes.h"
 
-// Entidades puramente decorativas que le dan "vida" a la Ciudad (ver
-// EstadoJuego::Ciudad en main.cpp): un perro, pajaros y aldeanos caminando
-// sola por la plaza y la calle de comercios. Nacen del pedido directo del
-// usuario tras ver la primera version de la Ciudad ("parece una mazmorra
-// mas... quiero que tenga vida, que se mueva un perro, algunos pajaros").
+// Entidades que le dan "vida" a la Ciudad (ver EstadoJuego::Ciudad en
+// main.cpp): un perro, pajaros y aldeanos caminando sola por la plaza y la
+// calle de comercios. Nacen del pedido directo del usuario tras ver la
+// primera version de la Ciudad ("parece una mazmorra mas... quiero que
+// tenga vida, que se mueva un perro, algunos pajaros").
 //
-// A diferencia de un game::Enemy o un game::Character, no tienen stats,
-// bando, ni ninguna interaccion posible (ver el scoping de esta vuelta en
-// docs/design.md, seccion "La Ciudad") -- main.cpp las actualiza cada frame
-// con ActualizarDeambulante() mientras el jugador esta parado en la Ciudad,
-// y el renderer las dibuja con su sprite segun 'tipo' (ver
-// render::SpriteSet::Deambulante). Deliberadamente NO chocan contra las
-// paredes de la Ciudad (evitaria reusar la logica de colision de Dungeon
-// para algo que no importa si por un instante el sprite pisa el borde) --
-// en cambio quedan acotadas a un circulo de radio 'radio' alrededor de su
-// punto de anclaje, elegido a mano en ConstruirCiudad() para cubrir zonas de
-// piso real, asi que en la practica no se los ve alejarse hacia una pared.
+// A diferencia de un game::Enemy o un game::Character, no tienen stats ni
+// bando -- son puro movimiento ambiental, actualizado cada frame por
+// main.cpp con ActualizarDeambulante() mientras el jugador esta parado en
+// la Ciudad, y dibujado por el renderer con su sprite segun 'tipo' (ver
+// render::SpriteSet::Deambulante). El perro y los pajaros siguen sin
+// ninguna interaccion posible (decision de scoping de la primera vuelta,
+// ver docs/design.md); los aldeanos (ver EsAldeano mas abajo) SI se les
+// puede hablar con [E] desde EstadoJuego::Ciudad -- una linea de flavor
+// text al azar por tipo (ver FraseDeAldeano en main.cpp, mismo criterio de
+// "contenido concreto vive en main.cpp" que ya seguia el catalogo de
+// comercio), sin arbol de dialogo ni eleccion del jugador.
+//
+// Deliberadamente NO chocan contra las paredes de la Ciudad (evitaria
+// reusar la logica de colision de Dungeon para algo que no importa si por
+// un instante el sprite pisa el borde) -- en cambio quedan acotadas a un
+// circulo de radio 'radio' alrededor de su punto de anclaje, elegido a mano
+// en ConstruirCiudad() para cubrir zonas de piso real, asi que en la
+// practica no se los ve alejarse hacia una pared.
 //
 // No se guardan en el sistema de guardado (game/save.h) -- mismo criterio
 // que game::Edificio: la Ciudad es siempre el mismo layout, asi que se
@@ -27,6 +34,15 @@
 namespace game {
 
 enum class TipoDeambulante { Perro, Pajaro, AldeanoA, AldeanoB, AldeanoC };
+
+// True para los 3 tipos de aldeano -- son los unicos deambulantes con los
+// que main.cpp deja hablar con [E] (ver el comentario de arriba). Header-
+// only (inline) por lo chico que es, mismo criterio que game::NombreDeEdificio
+// en edificio.h.
+inline bool EsAldeano(TipoDeambulante tipo) {
+    return tipo == TipoDeambulante::AldeanoA || tipo == TipoDeambulante::AldeanoB ||
+           tipo == TipoDeambulante::AldeanoC;
+}
 
 struct Deambulante {
     TipoDeambulante tipo = TipoDeambulante::Perro;

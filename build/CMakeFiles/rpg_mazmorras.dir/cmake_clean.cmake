@@ -5,6 +5,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/rpg_mazmorras.dir/src/game/combat.cpp.obj.d"
   "CMakeFiles/rpg_mazmorras.dir/src/game/combat_state.cpp.obj"
   "CMakeFiles/rpg_mazmorras.dir/src/game/combat_state.cpp.obj.d"
+  "CMakeFiles/rpg_mazmorras.dir/src/game/deambulante.cpp.obj"
+  "CMakeFiles/rpg_mazmorras.dir/src/game/deambulante.cpp.obj.d"
   "CMakeFiles/rpg_mazmorras.dir/src/game/dice.cpp.obj"
   "CMakeFiles/rpg_mazmorras.dir/src/game/dice.cpp.obj.d"
   "CMakeFiles/rpg_mazmorras.dir/src/game/dungeon.cpp.obj"

@@ -177,6 +177,7 @@ CMakeFiles/rpg_mazmorras.dir/src/main.cpp.obj: \
  C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game/combat.h \
  C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game/dice.h \
  C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game/edificio.h \
+ C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game/deambulante.h \
  C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\game/save.h \
  C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\render/renderer.h \
  C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\render/sprites.h \

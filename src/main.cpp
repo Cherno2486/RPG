@@ -538,6 +538,37 @@ constexpr OfertaComercio kOfertasTienda[] = {
 };
 constexpr int kNumOfertasTienda = 5;
 
+// Frases sueltas de los 3 aldeanos de la Ciudad (ver game::TipoDeambulante,
+// game::EsAldeano) al hablarles con [E] desde EstadoJuego::Ciudad -- puro
+// flavor text, sin arbol de dialogo ni eleccion del jugador: una linea al
+// azar (game::Roll) de un pool chico por aldeano cada vez, mostrada con el
+// mismo mensajeFlotante/timerMensaje que ya usa el cartel de un cofre. Vive
+// aca, no en game/deambulante.h, mismo criterio de siempre: contenido
+// concreto de ESTE juego (como el catalogo de comercio de arriba), no
+// mecanica generica de game/.
+const char* FraseDeAldeano(game::TipoDeambulante tipo) {
+    static const char* kFrasesA[] = {
+        "Lindo dia para salir a una mazmorra, ¿no?",
+        "Cuidado con los lobos si van al Bosque.",
+        "Ojala encuentren buen botin ahi afuera.",
+    };
+    static const char* kFrasesB[] = {
+        "Si les sobra oro, denle una vuelta a la Tienda.",
+        "La Herreria tiene mejoras que valen la pena.",
+        "Los precios subieron un poco... pero vale la pena.",
+    };
+    static const char* kFrasesC[] = {
+        "Vengo de lejos. La Carcel no es un lugar lindo.",
+        "El Castillo tiene un jefe durisimo, avisados estan.",
+        "Cada mazmorra que superan, esta ciudad se ve mas tranquila.",
+    };
+    const char** frases = kFrasesA;
+    int cantidad = 3;
+    if (tipo == game::TipoDeambulante::AldeanoB) { frases = kFrasesB; cantidad = 3; }
+    else if (tipo == game::TipoDeambulante::AldeanoC) { frases = kFrasesC; cantidad = 3; }
+    return frases[game::Roll(cantidad) - 1];
+}
+
 // MenuInicio es el estado inicial: pantalla de titulo con las 4 opciones de
 // ui::OpcionMenuInicio (ver render/menu_ui.h) antes de largar a explorar.
 // SobreMi es la pantalla placeholder de esa opcion (ver ui::DibujarSobreMi) —
@@ -1324,23 +1355,37 @@ int main() {
 
                 // Perro/pajaros/aldeanos siguen deambulando mientras el
                 // jugador esta parado en la Ciudad (ver game::Deambulante) —
-                // puramente visual, no participan de la colision ni de
-                // ninguna interaccion.
+                // puramente visual (el perro y los pajaros), salvo los
+                // aldeanos, a los que se les puede hablar con [E] (ver mas
+                // abajo) — ninguno participa de la colision.
                 for (auto& deambulante : deambulantesCiudad) {
                     game::ActualizarDeambulante(deambulante, dt);
                 }
 
                 if (IsKeyPressed(KEY_TAB)) fichaAbierta = true;
 
-                // Edificio interactuable mas cercano (mismo criterio de
-                // distancia que un enemigo/cofre en Exploracion).
+                // Interactuable mas cercano: un edificio o un aldeano (ver
+                // game::EsAldeano — el perro y los pajaros no cuentan),
+                // el que este mas cerca gana el prompt de abajo. Mismo
+                // criterio de distancia que un enemigo/cofre en Exploracion.
                 game::Edificio* edificioCercano = nullptr;
+                game::Deambulante* aldeanoCercano = nullptr;
                 float distanciaCercana = kDistanciaInteraccion;
                 for (auto& edificio : edificiosCiudad) {
                     float distancia = game::Length(lider.Posicion() - edificio.posicion);
                     if (distancia < distanciaCercana) {
                         distanciaCercana = distancia;
                         edificioCercano = &edificio;
+                        aldeanoCercano = nullptr;
+                    }
+                }
+                for (auto& deambulante : deambulantesCiudad) {
+                    if (!game::EsAldeano(deambulante.tipo)) continue;
+                    float distancia = game::Length(lider.Posicion() - deambulante.posicion);
+                    if (distancia < distanciaCercana) {
+                        distanciaCercana = distancia;
+                        aldeanoCercano = &deambulante;
+                        edificioCercano = nullptr;
                     }
                 }
 
@@ -1352,6 +1397,8 @@ int main() {
                     prompt = (edificioCercano->tipo == game::TipoEdificio::EntradaMazmorras)
                         ? "[E] Ir a la Entrada a las mazmorras"
                         : std::string("[E] Entrar a ") + game::NombreDeEdificio(edificioCercano->tipo);
+                } else if (aldeanoCercano != nullptr) {
+                    prompt = "[E] Hablar";
                 }
 
                 if (IsKeyPressed(KEY_E) && edificioCercano != nullptr) {
@@ -1383,6 +1430,12 @@ int main() {
                         opcionMapaTemaSeleccionada = 0;
                         estado = EstadoJuego::MapaTema;
                     }
+                } else if (IsKeyPressed(KEY_E) && aldeanoCercano != nullptr) {
+                    // Flavor text nomas — ver FraseDeAldeano mas arriba. Usa
+                    // el mismo mensajeFlotante/timerMensaje que ya muestra
+                    // el botin de un cofre.
+                    mensajeFlotante = FraseDeAldeano(aldeanoCercano->tipo);
+                    timerMensaje = kDuracionMensaje;
                 }
             }
 
