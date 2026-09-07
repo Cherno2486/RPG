@@ -50,11 +50,17 @@ siguientes veces es mucho más rápido.
   **ESC o ENTER** vuelve al menú desde ahí.
 
 **La Ciudad (hub central):**
-- **WASD / flechas**: mover al líder por la plaza (mismo movimiento libre y
+- **WASD / flechas**: mover al líder por la Ciudad (mismo movimiento libre y
   formación de fila que en la exploración de una mazmorra, sin enemigos ni
-  trampas acá). Un badge de **"Oro: N"** en el HUD muestra el oro actual del
-  party — se gana en combates y cofres dentro de las mazmorras (más en
-  Dificultades más altas), nunca dentro de la Ciudad.
+  trampas acá) — dos zonas conectadas por una calle: la **Plaza Central**
+  (donde se arranca, con una fuente al medio y la Entrada a las mazmorras) y
+  la **Calle de Comercios** (Herrería + Tienda), a la que se llega caminando
+  hacia la derecha desde la plaza. Un perro, unos pájaros y algunos aldeanos
+  caminan solos por las dos zonas (sin nada que interactuar con ellos
+  todavía, solo para que se sienta habitada). Un badge de **"Oro: N"** en el
+  HUD muestra el oro actual del party — se gana en combates y cofres dentro
+  de las mazmorras (más en Dificultades más altas), nunca dentro de la
+  Ciudad.
 - **E**: sobre el edificio más cercano — el cartel de abajo indica cuál con
   "[E] Ir a la Herrería" / "[E] Ir a la Tienda" / "[E] Ir a la Entrada a las
   mazmorras". La Herrería y la Tienda abren la pantalla de comercio (ver
@@ -581,7 +587,12 @@ Ver "Sonido" en `docs/design.md` para el detalle técnico (`render/audio.h`).
     todos a la Ciudad; obligó a subir la versión del guardado (v5 → v6).
     Pedido directo del usuario ("una ciudad, donde prepararse antes de ir
     a las mazmorras... con herrería, para comprar pociones, aprender
-    habilidades, etc."). Ver "La Ciudad: hub central, oro y comercio" en
+    habilidades, etc."). Revisada en la misma vuelta tras feedback de que
+    "parecía una mazmorra más": ahora es un bioma propio (piso/pared de
+    adoquín y tapia con seto, no reciclados), con dos zonas conectadas por
+    una calle (Plaza Central + Calle de Comercios) y perro/pájaros/
+    aldeanos decorativos deambulando. Ver "La Ciudad: hub central, oro y
+    comercio" en
     `docs/design.md`.
 36. Pendiente: aprender habilidades en la Ciudad (parte del pedido
     original, deferida esta vuelta), contenido para "Sobre mi", seguir

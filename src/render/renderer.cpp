@@ -51,6 +51,8 @@ constexpr float kEscalaPersonaje = 1.8f;
 constexpr float kEscalaJefe = 2.4f;
 constexpr float kEscalaCofre = 1.6f;
 constexpr float kEscalaAntorcha = 1.6f;
+constexpr float kEscalaDeambulante = 1.6f;        // perro y aldeanos
+constexpr float kEscalaDeambulantePajaro = 1.1f;  // mas chico que el resto
 
 Color ColorDeGrillaJefe() { return Color{ 230, 190, 80, 255 }; }  // anillo dorado detras del Capitan
 
@@ -112,6 +114,40 @@ void DibujarEdificio(const game::Edificio& edificio) {
     int anchoTexto = MeasureText(nombre, 14);
     DrawText(nombre, (int)(edificio.posicion.x - anchoTexto / 2.0f), (int)(yCumbre - 20), 14, RAYWHITE);
 }
+
+// Fuente decorativa de la plaza (ver ConstruirCiudad en main.cpp): igual que
+// los edificios, sin arte pixel-art propio -- primitivas de raylib nomas,
+// con un pulso chico de tamano en el agua (mismo recurso que ya usan la
+// antorcha y la trampa de fuego, GetTime() variando algo cuadro a cuadro
+// para que no se sienta estatica del todo). Sin colision, igual que los
+// edificios -- el party puede caminar "a traves" del circulo.
+void DibujarFuente(Vector2 centro, float tiempo) {
+    constexpr float kRadio = game::kTileSize * 1.1f;
+    Color piedra = { 150, 142, 128, 255 };
+    Color piedraOsc = { 110, 104, 92, 255 };
+    Color agua = { 90, 150, 200, 210 };
+    Color aguaClara = { 150, 200, 230, 200 };
+
+    DrawCircle((int)centro.x, (int)centro.y, kRadio, piedra);
+    DrawCircleLines((int)centro.x, (int)centro.y, (int)kRadio, piedraOsc);
+    float pulso = 0.85f + 0.06f * sinf(tiempo * 2.0f);
+    DrawCircle((int)centro.x, (int)centro.y, kRadio * 0.72f * pulso, agua);
+    DrawCircle((int)centro.x, (int)centro.y, kRadio * 0.3f, piedraOsc);
+    DrawCircle((int)centro.x, (int)centro.y, kRadio * 0.18f, aguaClara);
+}
+
+// Tinte por instancia de un pajaro (ver game::TipoDeambulante::Pajaro): la
+// textura base es neutra (ver CrearPajaro en sprites.cpp) para poder reusar
+// la misma para las 3 instancias que arma ConstruirCiudad, tinendola
+// distinto segun su posicion en el vector -- mismo mecanismo que ya usa
+// TinteDecoracionPorTema, aplicado por indice en vez de por tema.
+Color TintePajaroPorIndice(int indice) {
+    switch (((indice % 3) + 3) % 3) {
+        case 0:  return Color{ 150, 110, 80, 255 };   // gorrion, marron
+        case 1:  return Color{ 100, 100, 108, 255 };  // paloma, gris
+        default: return Color{ 205, 80, 65, 255 };    // petirrojo, pecho rojizo
+    }
+}
 } // namespace
 
 Renderer::Renderer(int anchoVentana, int altoVentana, const char* titulo)
@@ -150,7 +186,9 @@ Renderer::~Renderer() {
 
 void Renderer::DibujarEscenarioSinUI(const game::Dungeon& mazmorra, const game::Party& party,
                                       const std::vector<game::Enemy>& enemigos, const std::vector<game::Cofre>& cofres,
-                                      int tema, const std::vector<game::Edificio>& edificios) {
+                                      int tema, const std::vector<game::Edificio>& edificios,
+                                      const std::vector<game::Deambulante>& deambulantes,
+                                      const std::vector<game::Vec2>& fuentes) {
     ClearBackground(ColorDePiso());
 
     // La camara sigue al lider: la mazmorra generada por salas es mas
@@ -160,7 +198,17 @@ void Renderer::DibujarEscenarioSinUI(const game::Dungeon& mazmorra, const game::
 
     BeginMode2D(camara_);
 
-    Color tinteDecoracion = TinteDecoracionPorTema(tema);
+    // La Ciudad (ver EstadoJuego::Ciudad en main.cpp) usa su propio juego de
+    // texturas (piso/pared/decoracion), no uno de los 3 temas de mazmorra —
+    // ver render::kTemaCiudad en sprites.h para el porque (evitar que la
+    // Ciudad "parezca una mazmorra mas" con la paleta de Castillo, que era
+    // lo que hacia la primera version). Sin tinte: esas texturas ya tienen
+    // el color final, a diferencia de las decoraciones de mazmorra que se
+    // tinen por tema.
+    bool esCiudad = (tema == kTemaCiudad);
+    const Texture2D& texPiso = esCiudad ? sprites_->TilePisoCiudad() : sprites_->TilePiso(tema);
+    const Texture2D& texPared = esCiudad ? sprites_->TileParedCiudad() : sprites_->TilePared(tema);
+    Color tinteDecoracion = esCiudad ? WHITE : TinteDecoracionPorTema(tema);
 
     // Piso tileado, solo dentro de cada sala (los pasillos siguen mostrando
     // el color de fondo liso de ClearBackground, que coincide con el color
@@ -171,22 +219,27 @@ void Renderer::DibujarEscenarioSinUI(const game::Dungeon& mazmorra, const game::
         float y0 = sala.y * game::kTileSize;
         float x1 = (sala.x + sala.ancho) * game::kTileSize;
         float y1 = (sala.y + sala.alto) * game::kTileSize;
-        DibujarTileado(sprites_->TilePiso(tema), Rectangle{ x0, y0, x1 - x0, y1 - y0 }, kEscalaTile);
+        DibujarTileado(texPiso, Rectangle{ x0, y0, x1 - x0, y1 - y0 }, kEscalaTile);
 
-        // Decoracion suelta de piso (grieta/musgo/escombros/charco),
-        // disperso por tile via HashTile — se dibuja ANTES que las paredes
-        // (mas abajo), asi que si algun tile "cae" sobre una muesca de sala
-        // en L o un pilar (que tambien son parte de este bounding box, ver
-        // "Variedad de formas de sala"), la pared que se dibuja despues lo
-        // tapa sin dejar rastro; no hace falta que este loop sepa distinguir
-        // piso real de hueco.
+        // Decoracion suelta de piso (grieta/musgo/escombros/charco en una
+        // mazmorra; pasto/maceta en la Ciudad), disperso por tile via
+        // HashTile — se dibuja ANTES que las paredes (mas abajo), asi que si
+        // algun tile "cae" sobre una muesca de sala en L o un pilar (que
+        // tambien son parte de este bounding box, ver "Variedad de formas de
+        // sala"), la pared que se dibuja despues lo tapa sin dejar rastro;
+        // no hace falta que este loop sepa distinguir piso real de hueco.
         for (int ty = sala.y; ty < sala.y + sala.alto; ++ty) {
             for (int tx = sala.x; tx < sala.x + sala.ancho; ++tx) {
                 uint32_t h = HashTile(tx, ty);
                 if ((int)(h % 100) >= kChanceDecoracionPisoDe100) continue;
-                int variante = (int)((h / 100) % SpriteSet::kNumDecoracionesPiso);
                 Vector2 centro{ (tx + 0.5f) * game::kTileSize, (ty + 0.5f) * game::kTileSize };
-                DibujarSpriteCentrado(sprites_->DecoracionPiso(variante), centro, kEscalaTile, tinteDecoracion);
+                if (esCiudad) {
+                    int variante = (int)((h / 100) % SpriteSet::kNumDecoracionesCiudad);
+                    DibujarSpriteCentrado(sprites_->DecoracionCiudad(variante), centro, kEscalaTile, tinteDecoracion);
+                } else {
+                    int variante = (int)((h / 100) % SpriteSet::kNumDecoracionesPiso);
+                    DibujarSpriteCentrado(sprites_->DecoracionPiso(variante), centro, kEscalaTile, tinteDecoracion);
+                }
             }
         }
     }
@@ -194,7 +247,16 @@ void Renderer::DibujarEscenarioSinUI(const game::Dungeon& mazmorra, const game::
     // Paredes, con textura de ladrillos tileada en vez de un rectangulo
     // liso.
     for (const auto& pared : mazmorra.Paredes()) {
-        DibujarTileado(sprites_->TilePared(tema), Rectangle{ pared.x, pared.y, pared.width, pared.height }, kEscalaTile);
+        DibujarTileado(texPared, Rectangle{ pared.x, pared.y, pared.width, pared.height }, kEscalaTile);
+    }
+
+    // Fuentes decorativas (solo la Ciudad las pasa) — ver DibujarFuente
+    // arriba.
+    {
+        float tiempo = (float)GetTime();
+        for (const auto& fuente : fuentes) {
+            DibujarFuente(Vector2{ fuente.x, fuente.y }, tiempo);
+        }
     }
 
     // Antorchas: solo en tiles de pared "de frente" (el tile de abajo, hacia
@@ -203,8 +265,10 @@ void Renderer::DibujarEscenarioSinUI(const game::Dungeon& mazmorra, const game::
     // superior de cada sala, la unica cara de pared que este angulo de
     // camara realmente "mira". Se reparten cada 3 tiles, con un offset por
     // fila derivado del hash para que no quede perfectamente alineado entre
-    // salas distintas.
-    {
+    // salas distintas. La Ciudad no lleva antorchas (una tapia con seto no
+    // es un buen lugar para montar una — ver DibujarFuente arriba para su
+    // propio detalle de ambientacion).
+    if (!esCiudad) {
         std::unordered_set<int64_t> tilesDePared;
         tilesDePared.reserve(mazmorra.Paredes().size() * 2);
         for (const auto& pared : mazmorra.Paredes()) {
@@ -260,6 +324,21 @@ void Renderer::DibujarEscenarioSinUI(const game::Dungeon& mazmorra, const game::
         DibujarEdificio(edificio);
     }
 
+    // Deambulantes (perro/pajaros/aldeanos, solo la Ciudad los pasa): mismo
+    // anclaje "plantado" que un personaje/enemigo (ver DibujarSpritePlantado),
+    // sin nombre ni ningun otro adorno encima porque son pura ambientacion,
+    // no interactuables (ver game::Deambulante). Los pajaros se tinen
+    // distinto por indice (ver TintePajaroPorIndice arriba) y se dibujan mas
+    // chicos que el resto.
+    for (size_t i = 0; i < deambulantes.size(); ++i) {
+        const auto& d = deambulantes[i];
+        Vector2 pos{ d.posicion.x, d.posicion.y };
+        bool esPajaro = (d.tipo == game::TipoDeambulante::Pajaro);
+        float escala = esPajaro ? kEscalaDeambulantePajaro : kEscalaDeambulante;
+        Color tinte = esPajaro ? TintePajaroPorIndice((int)i) : WHITE;
+        DibujarSpritePlantado(sprites_->Deambulante(d.tipo), pos, escala, tinte);
+    }
+
     // Enemigos vivos en la mazmorra: su sprite pixel-art segun tipo, con su
     // nombre arriba para saber que es interactuable.
     for (const auto& enemigo : enemigos) {
@@ -306,10 +385,12 @@ void Renderer::DibujarEscenarioSinUI(const game::Dungeon& mazmorra, const game::
 void Renderer::DibujarFrame(const game::Dungeon& mazmorra, const game::Party& party,
                              const std::vector<game::Enemy>& enemigos, const std::vector<game::Cofre>& cofres, int tema,
                              bool panelExpandido, const std::string& promptInteraccion, const std::string& mensajeFlotante,
-                             const std::vector<game::Edificio>& edificios) {
+                             const std::vector<game::Edificio>& edificios,
+                             const std::vector<game::Deambulante>& deambulantes,
+                             const std::vector<game::Vec2>& fuentes) {
     BeginDrawing();
 
-    DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres, tema, edificios);
+    DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres, tema, edificios, deambulantes, fuentes);
 
     ui::DibujarPanelParty(party, panelExpandido, *sprites_);
 

@@ -581,6 +581,30 @@ src/render/audio.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/render/audio.cpp.s
 .PHONY : src/render/audio.cpp.s
 
+src/render/character_sheet_ui.obj: src/render/character_sheet_ui.cpp.obj
+.PHONY : src/render/character_sheet_ui.obj
+
+# target to build an object file
+src/render/character_sheet_ui.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/render/character_sheet_ui.cpp.obj
+.PHONY : src/render/character_sheet_ui.cpp.obj
+
+src/render/character_sheet_ui.i: src/render/character_sheet_ui.cpp.i
+.PHONY : src/render/character_sheet_ui.i
+
+# target to preprocess a source file
+src/render/character_sheet_ui.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/render/character_sheet_ui.cpp.i
+.PHONY : src/render/character_sheet_ui.cpp.i
+
+src/render/character_sheet_ui.s: src/render/character_sheet_ui.cpp.s
+.PHONY : src/render/character_sheet_ui.s
+
+# target to generate assembly for a file
+src/render/character_sheet_ui.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\rpg_mazmorras.dir\build.make CMakeFiles/rpg_mazmorras.dir/src/render/character_sheet_ui.cpp.s
+.PHONY : src/render/character_sheet_ui.cpp.s
+
 src/render/combat_ui.obj: src/render/combat_ui.cpp.obj
 .PHONY : src/render/combat_ui.obj
 
@@ -810,6 +834,9 @@ help:
 	@echo ... src/render/audio.obj
 	@echo ... src/render/audio.i
 	@echo ... src/render/audio.s
+	@echo ... src/render/character_sheet_ui.obj
+	@echo ... src/render/character_sheet_ui.i
+	@echo ... src/render/character_sheet_ui.s
 	@echo ... src/render/combat_ui.obj
 	@echo ... src/render/combat_ui.i
 	@echo ... src/render/combat_ui.s

@@ -27,6 +27,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/rpg_mazmorras.dir/src/main.cpp.obj.d"
   "CMakeFiles/rpg_mazmorras.dir/src/render/audio.cpp.obj"
   "CMakeFiles/rpg_mazmorras.dir/src/render/audio.cpp.obj.d"
+  "CMakeFiles/rpg_mazmorras.dir/src/render/character_sheet_ui.cpp.obj"
+  "CMakeFiles/rpg_mazmorras.dir/src/render/character_sheet_ui.cpp.obj.d"
   "CMakeFiles/rpg_mazmorras.dir/src/render/combat_ui.cpp.obj"
   "CMakeFiles/rpg_mazmorras.dir/src/render/combat_ui.cpp.obj.d"
   "CMakeFiles/rpg_mazmorras.dir/src/render/input.cpp.obj"

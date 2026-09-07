@@ -731,6 +731,221 @@ Image CrearTileParedCastillo() {
     return img;
 }
 
+// --- Ciudad: piso, pared y decoracion propios ---
+// La primera version de la Ciudad reusaba TilePiso/TileParedCastillo (ver
+// kTemaCiudad en sprites.h) -- descartado tras feedback directo del usuario
+// ("parece una mazmorra mas, quiero que tenga estetica de ciudad, que sea
+// un bioma mas"). Paleta calida de adoquin/tapia en vez de piedra de
+// mazmorra, con un seto prolijo arriba de la pared en vez de otra hilada de
+// piedra, que es lo que mas la distingue a simple vista.
+
+Image CrearTilePisoCiudad() {
+    Image img = GenImageColor(kCanvasTile, kCanvasTile, Color{ 152, 144, 130, 255 });
+    Color claro = { 172, 164, 148, 255 };
+    Color oscuro = { 118, 110, 96, 255 };
+    Color pastito = { 92, 128, 58, 255 };
+
+    ImageDrawRectangle(&img, 1, 1, 6, 5, claro);
+    ImageDrawRectangle(&img, 9, 2, 6, 5, oscuro);
+    ImageDrawRectangle(&img, 2, 9, 5, 6, oscuro);
+    ImageDrawRectangle(&img, 10, 10, 5, 5, claro);
+    ImageDrawLineEx(&img, Vector2{ 7, 14 }, Vector2{ 9, 12 }, 1, pastito);  // pastito creciendo en una junta
+
+    return img;
+}
+
+Image CrearTileParedCiudad() {
+    Image img = GenImageColor(kCanvasTile, kCanvasTile, Color{ 196, 162, 120, 255 });
+    Color claro = { 214, 182, 138, 255 };
+    Color mortero = { 158, 128, 92, 255 };
+    Color seto = { 70, 110, 48, 255 };
+    Color setoOsc = { 50, 84, 34, 255 };
+
+    ImageDrawRectangle(&img, 0, 5, 16, 11, claro);
+    ImageDrawRectangle(&img, 0, 10, 16, 1, mortero);
+    ImageDrawRectangle(&img, 0, 5, 8, 1, mortero);
+    ImageDrawRectangle(&img, 8, 5, 1, 6, mortero);
+
+    // Seto arriba de la tapia -- lo que mas la distingue de una pared de
+    // mazmorra a simple vista.
+    ImageDrawRectangle(&img, 0, 0, 16, 6, seto);
+    ImageDrawCircle(&img, 2, 4, 2, setoOsc);
+    ImageDrawCircle(&img, 7, 3, 2, setoOsc);
+    ImageDrawCircle(&img, 12, 4, 2, setoOsc);
+
+    return img;
+}
+
+Image CrearPastoCiudad() {
+    Image img = GenImageColor(kCanvasTile, kCanvasTile, BLANK);
+    Color pasto = { 92, 140, 58, 255 };
+    Color pastoOsc = { 66, 106, 40, 255 };
+
+    ImageDrawLineEx(&img, Vector2{ 5, 14 }, Vector2{ 4, 8 }, 1, pasto);
+    ImageDrawLineEx(&img, Vector2{ 7, 14 }, Vector2{ 8, 7 }, 1, pastoOsc);
+    ImageDrawLineEx(&img, Vector2{ 9, 14 }, Vector2{ 10, 9 }, 1, pasto);
+    ImageDrawLineEx(&img, Vector2{ 11, 14 }, Vector2{ 12, 8 }, 1, pastoOsc);
+
+    return img;
+}
+
+Image CrearMacetaCiudad() {
+    Image img = GenImageColor(kCanvasTile, kCanvasTile, BLANK);
+    Color barro = { 168, 96, 62, 255 };
+    Color barroOsc = { 128, 70, 44, 255 };
+    Color hoja = { 80, 128, 54, 255 };
+    Color flor = { 220, 90, 110, 255 };
+
+    ImageDrawTriangle(&img, Vector2{ 4, 15 }, Vector2{ 12, 15 }, Vector2{ 10, 9 }, barro);
+    ImageDrawTriangle(&img, Vector2{ 4, 15 }, Vector2{ 6, 9 }, Vector2{ 10, 9 }, barroOsc);
+    ImageDrawRectangle(&img, 3, 8, 10, 2, barroOsc);
+
+    ImageDrawCircle(&img, 8, 5, 4, hoja);
+    ImageDrawCircle(&img, 6, 4, 2, flor);
+    ImageDrawCircle(&img, 10, 3, 2, flor);
+
+    return img;
+}
+
+// --- Deambulantes de la Ciudad (perro, pajaro, aldeanos) ---
+// Puramente decorativos (ver game::Deambulante) -- pedido directo del
+// usuario tras ver la primera version de la Ciudad ("quiero que tenga vida,
+// que se mueva un perro, algunos pajaros").
+
+Image CrearPerro() {
+    // Mismo plan de cuerpo cuadrupedo que el Lobo Salvaje (ver
+    // CrearLoboSalvaje) pero paleta calida, oreja caida (en vez de parada) y
+    // cola curva hacia arriba (en vez de recta) -- para que se lea como
+    // mascota a primera vista, no como depredador. Nunca aparece en combate.
+    Image img = GenImageColor(kCanvasPersonaje, kCanvasPersonajeAlto, BLANK);
+
+    Color pelaje = { 158, 118, 74, 255 };
+    Color pelajeOsc = { 120, 86, 50, 255 };
+    Color panza = { 226, 205, 172, 255 };
+    Color ojo = { 40, 30, 24, 255 };
+    Color nariz = { 30, 24, 20, 255 };
+    Color lengua = { 210, 110, 120, 255 };
+    Color cola = { 140, 102, 62, 255 };
+
+    int cy = 17;
+
+    ImageDrawTriangle(&img, Vector2{ 2, (float)(cy - 6) }, Vector2{ 6, (float)(cy - 7) }, Vector2{ 3, (float)(cy + 1) }, pelajeOsc);
+
+    ImageDrawCircle(&img, 10, cy, 7, pelaje);
+    ImageDrawCircle(&img, 10, cy + 3, 4, panza);
+    ImageDrawCircle(&img, 4, cy - 3, 4, pelaje);
+    ImageDrawCircle(&img, 2, cy - 4, 1, ojo);
+    ImageDrawCircle(&img, 0, cy - 2, 1, nariz);
+    ImageDrawRectangle(&img, 1, cy - 1, 2, 2, lengua);
+
+    ImageDrawRectangle(&img, 5, cy + 6, 2, 4, pelajeOsc);
+    ImageDrawRectangle(&img, 13, cy + 6, 2, 4, pelajeOsc);
+
+    ImageDrawLineEx(&img, Vector2{ 17, (float)cy }, Vector2{ 19, (float)(cy - 5) }, 2, cola);
+    ImageDrawLineEx(&img, Vector2{ 19, (float)(cy - 5) }, Vector2{ 16, (float)(cy - 8) }, 2, cola);
+
+    return img;
+}
+
+Image CrearPajaro() {
+    // Paleta base neutra a proposito: se tine distinto por instancia al
+    // dibujarlo (ver TintePajaroPorIndice en renderer.cpp) en vez de sumar
+    // una textura por variante para solo 3 pajaros.
+    Image img = GenImageColor(kCanvasPersonaje, kCanvasPersonajeAlto, BLANK);
+
+    Color cuerpo = { 210, 195, 175, 255 };
+    Color cuerpoOsc = { 170, 155, 138, 255 };
+    Color pico = { 235, 175, 60, 255 };
+    Color ojo = { 30, 26, 22, 255 };
+    Color pata = { 200, 150, 60, 255 };
+
+    int cx = 10, cy = 20;
+
+    ImageDrawCircle(&img, cx, cy, 5, cuerpo);
+    ImageDrawCircle(&img, cx - 4, cy - 3, 3, cuerpo);
+    ImageDrawTriangle(&img, Vector2{ (float)cx - 7, (float)(cy - 4) }, Vector2{ (float)cx - 11, (float)(cy - 3) }, Vector2{ (float)cx - 7, (float)(cy - 2) }, pico);
+    ImageDrawCircle(&img, cx - 5, cy - 4, 1, ojo);
+    ImageDrawTriangle(&img, Vector2{ (float)cx + 2, (float)(cy - 2) }, Vector2{ (float)cx + 8, (float)(cy - 5) }, Vector2{ (float)cx + 3, (float)(cy + 2) }, cuerpoOsc);
+    ImageDrawRectangle(&img, cx - 1, cy + 4, 1, 3, pata);
+    ImageDrawRectangle(&img, cx + 2, cy + 4, 1, 3, pata);
+
+    return img;
+}
+
+Image CrearAldeanoA() {
+    // Campesino: tunica verde, sin nada en la cabeza mas que el pelo.
+    Image img = GenImageColor(kCanvasPersonaje, kCanvasPersonajeAlto, BLANK);
+    Color piel = { 222, 180, 140, 255 };
+    Color pelo = { 90, 60, 35, 255 };
+    Color tunica = { 96, 130, 70, 255 };
+    Color tunicaOsc = { 68, 98, 48, 255 };
+    Color pantalon = { 92, 74, 52, 255 };
+    Color bota = { 55, 42, 30, 255 };
+
+    ImageDrawCircle(&img, 10, 8, 5, piel);
+    ImageDrawRectangle(&img, 5, 2, 10, 4, pelo);
+
+    ImageDrawRectangle(&img, 4, 13, 12, 8, tunica);
+    ImageDrawRectangle(&img, 4, 13, 12, 2, tunicaOsc);
+
+    ImageDrawRectangle(&img, 6, 21, 3, 5, pantalon);
+    ImageDrawRectangle(&img, 11, 21, 3, 5, pantalon);
+    ImageDrawRectangle(&img, 6, 24, 3, 2, bota);
+    ImageDrawRectangle(&img, 11, 24, 3, 2, bota);
+
+    return img;
+}
+
+Image CrearAldeanoB() {
+    // Comerciante: tunica roja con delantal claro.
+    Image img = GenImageColor(kCanvasPersonaje, kCanvasPersonajeAlto, BLANK);
+    Color piel = { 210, 165, 125, 255 };
+    Color pelo = { 40, 36, 34, 255 };
+    Color tunica = { 168, 62, 54, 255 };
+    Color tunicaOsc = { 128, 44, 40, 255 };
+    Color delantal = { 214, 198, 170, 255 };
+    Color pantalon = { 58, 52, 48, 255 };
+    Color bota = { 40, 34, 30, 255 };
+
+    ImageDrawCircle(&img, 10, 8, 5, piel);
+    ImageDrawCircle(&img, 10, 5, 5, pelo);
+    ImageDrawRectangle(&img, 6, 9, 8, 2, piel);
+
+    ImageDrawRectangle(&img, 4, 13, 12, 8, tunica);
+    ImageDrawRectangle(&img, 4, 13, 12, 2, tunicaOsc);
+    ImageDrawRectangle(&img, 7, 15, 6, 6, delantal);
+
+    ImageDrawRectangle(&img, 6, 21, 3, 5, pantalon);
+    ImageDrawRectangle(&img, 11, 21, 3, 5, pantalon);
+    ImageDrawRectangle(&img, 6, 24, 3, 2, bota);
+    ImageDrawRectangle(&img, 11, 24, 3, 2, bota);
+
+    return img;
+}
+
+Image CrearAldeanoC() {
+    // Viajero con capucha azul-grisacea.
+    Image img = GenImageColor(kCanvasPersonaje, kCanvasPersonajeAlto, BLANK);
+    Color piel = { 200, 160, 122, 255 };
+    Color capucha = { 78, 92, 108, 255 };
+    Color capuchaOsc = { 54, 66, 80, 255 };
+    Color capa = { 88, 100, 116, 255 };
+    Color bota = { 42, 40, 42, 255 };
+
+    ImageDrawCircle(&img, 10, 9, 5, piel);
+    ImageDrawCircle(&img, 10, 7, 6, capucha);
+    ImageDrawRectangle(&img, 5, 10, 10, 3, capuchaOsc);
+    ImageDrawRectangle(&img, 7, 10, 6, 3, piel);
+
+    ImageDrawRectangle(&img, 4, 13, 12, 9, capa);
+    ImageDrawRectangle(&img, 4, 13, 12, 2, capuchaOsc);
+
+    ImageDrawRectangle(&img, 6, 22, 3, 4, bota);
+    ImageDrawRectangle(&img, 11, 22, 3, 4, bota);
+
+    return img;
+}
+
 Texture2D CargarPixelPerfecto(Image img) {
     Texture2D tex = LoadTextureFromImage(img);
     SetTextureFilter(tex, TEXTURE_FILTER_POINT);
@@ -784,6 +999,19 @@ SpriteSet::SpriteSet() {
     tilePared_[2] = CargarPixelPerfecto(CrearTileParedCastillo());
     for (auto& tex : tilePiso_) SetTextureWrap(tex, TEXTURE_WRAP_REPEAT);
     for (auto& tex : tilePared_) SetTextureWrap(tex, TEXTURE_WRAP_REPEAT);
+
+    tilePisoCiudad_ = CargarPixelPerfecto(CrearTilePisoCiudad());
+    tileParedCiudad_ = CargarPixelPerfecto(CrearTileParedCiudad());
+    SetTextureWrap(tilePisoCiudad_, TEXTURE_WRAP_REPEAT);
+    SetTextureWrap(tileParedCiudad_, TEXTURE_WRAP_REPEAT);
+    decoracionesCiudad_[0] = CargarPixelPerfecto(CrearPastoCiudad());
+    decoracionesCiudad_[1] = CargarPixelPerfecto(CrearMacetaCiudad());
+
+    deambulantes_[static_cast<int>(game::TipoDeambulante::Perro)] = CargarPixelPerfecto(CrearPerro());
+    deambulantes_[static_cast<int>(game::TipoDeambulante::Pajaro)] = CargarPixelPerfecto(CrearPajaro());
+    deambulantes_[static_cast<int>(game::TipoDeambulante::AldeanoA)] = CargarPixelPerfecto(CrearAldeanoA());
+    deambulantes_[static_cast<int>(game::TipoDeambulante::AldeanoB)] = CargarPixelPerfecto(CrearAldeanoB());
+    deambulantes_[static_cast<int>(game::TipoDeambulante::AldeanoC)] = CargarPixelPerfecto(CrearAldeanoC());
 }
 
 SpriteSet::~SpriteSet() {
@@ -796,6 +1024,11 @@ SpriteSet::~SpriteSet() {
     for (auto& tex : decoracionesPiso_) UnloadTexture(tex);
     UnloadTexture(antorcha_);
     for (auto& tex : trampas_) UnloadTexture(tex);
+
+    UnloadTexture(tilePisoCiudad_);
+    UnloadTexture(tileParedCiudad_);
+    for (auto& tex : decoracionesCiudad_) UnloadTexture(tex);
+    for (auto& tex : deambulantes_) UnloadTexture(tex);
 }
 
 void DibujarSpritePlantado(const Texture2D& textura, Vector2 posicionPies, float escala, Color tinte) {

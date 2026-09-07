@@ -2,13 +2,12 @@ CMakeFiles/rpg_mazmorras.dir/src/render/inventory_ui.cpp.obj: \
  C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\render\inventory_ui.cpp \
  C:\Users\ama5185\Desktop\Martin\RPG\rpg-mazmorras\src\render\inventory_ui.h \
  C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/party.h \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/vector \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/requires_hosted.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/algorithm \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/stl_algobase.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/x86_64-w64-mingw32/bits/c++config.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/x86_64-w64-mingw32/bits/os_defines.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/x86_64-w64-mingw32/bits/cpu_defines.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/pstl/pstl_config.h \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/stl_algobase.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/cpp_type_traits.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/version.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/type_traits \
@@ -29,23 +28,50 @@ CMakeFiles/rpg_mazmorras.dir/src/render/inventory_ui.cpp.obj: \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/backward/binders.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bit \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/concepts \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/allocator.h \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/x86_64-w64-mingw32/bits/c++allocator.h \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/new_allocator.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/stl_algo.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/algorithmfwd.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/initializer_list \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/stl_heap.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/uniform_int_dist.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/stl_tempbuf.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/new \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/exception.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/new_except.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/exception_defines.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/stl_construct.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/cstdlib \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/stdlib.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/corecrt.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/_mingw.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/_mingw_mac.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/_mingw_secapi.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/vadefs.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/corecrt_wstdlib.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/limits.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/syslimits.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/limits.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/crtdefs.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/sec_api/stdlib_s.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/stdlib.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/malloc.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/mm_malloc.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/errno.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/std_abs.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/pstl/glue_algorithm_defs.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/pstl/execution_defs.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/vector \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/requires_hosted.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/allocator.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/x86_64-w64-mingw32/bits/c++allocator.h \
+ C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/new_allocator.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/new_throw.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/memoryfwd.h \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/stl_construct.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/stl_uninitialized.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/ext/alloc_traits.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/alloc_traits.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/stl_vector.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/stdexcept_throw.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/stdexcept_throwfwd.h \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/initializer_list \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/stl_bvector.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/functional_hash.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/hash_bytes.h \
@@ -56,12 +82,6 @@ CMakeFiles/rpg_mazmorras.dir/src/render/inventory_ui.cpp.obj: \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/cstddef \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/stddef.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/stddef.h \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/crtdefs.h \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/corecrt.h \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/_mingw.h \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/_mingw_mac.h \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/_mingw_secapi.h \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/vadefs.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/uses_allocator.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/uses_allocator_args.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/tuple \
@@ -79,7 +99,6 @@ CMakeFiles/rpg_mazmorras.dir/src/render/inventory_ui.cpp.obj: \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/corecrt_stdio_config.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/corecrt_wconio.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/sec_api/wconio_s.h \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/corecrt_wstdlib.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/corecrt_wctype.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/_mingw_off_t.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/_mingw_stat64.h \
@@ -100,17 +119,6 @@ CMakeFiles/rpg_mazmorras.dir/src/render/inventory_ui.cpp.obj: \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/string_view \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/string_view.tcc \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/ext/string_conversions.h \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/cstdlib \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/stdlib.h \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/limits.h \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/syslimits.h \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/limits.h \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/sec_api/stdlib_s.h \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/stdlib.h \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/malloc.h \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/mm_malloc.h \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/x86_64-w64-mingw32/include/errno.h \
- C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/std_abs.h \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/cstdio \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/cerrno \
  C:/Users/ama5185/scoop/apps/mingw/16.2.0-rt_v14-rev1/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/bits/charconv.h \

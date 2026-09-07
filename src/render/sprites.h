@@ -3,6 +3,7 @@
 #include "../game/character.h"
 #include "../game/enemy.h"
 #include "../game/dungeon.h"
+#include "../game/deambulante.h"
 
 namespace render {
 
@@ -21,6 +22,20 @@ constexpr int kCanvasTile = 16;           // tiles de piso/pared/cofre, cuadrado
 // 0..kNumTemas-1 y es responsable de mantener el orden sincronizado (mismo
 // criterio que ya usaba game::Dificultad con render/menu_ui.h::DibujarMapa).
 constexpr int kNumTemas = 3;
+
+// Valor de 'tema' (parametro de Renderer::DibujarEscenarioSinUI/DibujarFrame)
+// que indica "esto es la Ciudad, no una mazmorra" -- deliberadamente FUERA
+// del rango 0..kNumTemas-1 de los temas de mazmorra (Bosque/Carcel/Castillo)
+// para que el renderer pueda distinguir un caso del otro con una simple
+// comparacion, en vez de que la Ciudad tuviera que fingir ser uno de los 3
+// temas existentes (asi se hacia en la primera version: kTemaCiudad = 2,
+// reusando la paleta de Castillo -- descartado tras feedback del usuario de
+// que la Ciudad "parecia una mazmorra mas", ver docs/design.md). La Ciudad
+// tiene su propio juego de texturas (TilePisoCiudad/TileParedCiudad/
+// DecoracionCiudad mas abajo), asi que este valor nunca llega a pasar por
+// IndiceTema() ni por TinteDecoracionPorTema() -- el renderer lo intercepta
+// antes.
+constexpr int kTemaCiudad = kNumTemas;
 
 // Tinte de la decoracion suelta de piso segun el tema (ver
 // SpriteSet::DecoracionPiso mas abajo) — reusa las mismas 4 texturas para
@@ -86,6 +101,30 @@ public:
     // en vez de sutiles, para que se puedan esquivar a simple vista.
     const Texture2D& Trampa(game::TipoTrampa tipo) const { return trampas_[static_cast<int>(tipo)]; }
 
+    // --- Ciudad (ver EstadoJuego::Ciudad en main.cpp) ---
+    // Piso/pared propios (adoquin + tapia con canteros), NADA que ver con
+    // TilePiso/TilePared de arriba -- la Ciudad es su propio "bioma", no un
+    // disfraz de una de las 3 mazmorras (pedido directo del usuario, ver
+    // kTemaCiudad arriba).
+    const Texture2D& TilePisoCiudad() const { return tilePisoCiudad_; }
+    const Texture2D& TileParedCiudad() const { return tileParedCiudad_; }
+
+    // Decoracion suelta de piso propia de la Ciudad (pasto entre los
+    // adoquines, maceta con flores) -- mismo mecanismo disperso-por-hash que
+    // DecoracionPiso, pero un juego de texturas separado (no tiene sentido
+    // ver una grieta de mazmorra o un charco en medio de la plaza).
+    static constexpr int kNumDecoracionesCiudad = 2;
+    const Texture2D& DecoracionCiudad(int indice) const {
+        return decoracionesCiudad_[((indice % kNumDecoracionesCiudad) + kNumDecoracionesCiudad) % kNumDecoracionesCiudad];
+    }
+
+    // Perro/pajaro/aldeanos que deambulan por la Ciudad (ver
+    // game::Deambulante) -- un pajaro reusa la misma textura para las 3
+    // instancias que arma ConstruirCiudad(), tinendola distinto al dibujar
+    // (ver TintePajaro en renderer.cpp) en vez de sumar 3 texturas casi
+    // identicas.
+    const Texture2D& Deambulante(game::TipoDeambulante tipo) const { return deambulantes_[static_cast<int>(tipo)]; }
+
 private:
     static int IndiceTema(int tema) { return ((tema % kNumTemas) + kNumTemas) % kNumTemas; }
 
@@ -98,6 +137,11 @@ private:
     Texture2D decoracionesPiso_[kNumDecoracionesPiso];
     Texture2D antorcha_;
     Texture2D trampas_[2];  // indexado por game::TipoTrampa
+
+    Texture2D tilePisoCiudad_;
+    Texture2D tileParedCiudad_;
+    Texture2D decoracionesCiudad_[kNumDecoracionesCiudad];
+    Texture2D deambulantes_[5];  // indexado por game::TipoDeambulante
 };
 
 // Dibuja un sprite de personaje/enemigo "parado en el piso": centrado en X

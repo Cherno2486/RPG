@@ -13,6 +13,7 @@
 #include "game/dice.h"
 #include "game/item.h"
 #include "game/edificio.h"
+#include "game/deambulante.h"
 #include "game/save.h"
 #include "render/renderer.h"
 #include "render/input.h"
@@ -375,44 +376,77 @@ MazmorraGenerada GenerarMazmorra(Tema tema, Dificultad dificultad) {
     return MazmorraGenerada{ std::move(mazmorra), posicionInicial, std::move(enemigos), std::move(cofres) };
 }
 
-// Paleta de tiles que usa la Ciudad para dibujarse (ver render::SpriteSet::
-// TilePiso/TilePared) -- reusa la de Castillo (indice 2, "dorado calido")
-// en vez de sumar una cuarta paleta dedicada solo para 3 edificios
-// estaticos (kNumTemas en sprites.h quedaria en 3, sin tocar). Eleccion
-// nuestra, no pedida explicitamente por el usuario -- documentada en
-// docs/design.md, seccion "La Ciudad".
-constexpr int kTemaCiudad = 2;
+// Paleta de tiles que usa la Ciudad para dibujarse: la suya propia (ver
+// render::SpriteSet::TilePisoCiudad/TileParedCiudad), NO una de las 3
+// paletas de mazmorra. La primera version de esta vuelta reusaba la de
+// Castillo (mismo indice, "kTemaCiudad = 2") para no sumar una cuarta
+// paleta solo para 3 edificios estaticos -- descartado tras feedback
+// directo del usuario ("la ciudad parece una mazmorra mas... quiero que
+// tenga estetica de ciudad, que sea un bioma mas"). render::kTemaCiudad
+// (sprites.h) es un valor fuera del rango 0..2 de game::Tema a proposito,
+// para que el renderer distinga los dos casos sin ambiguedad — ver el
+// comentario de esa constante.
 
 // Todo lo que hace falta para dibujar y explorar la Ciudad: la mazmorra en
-// si (una unica plaza rectangular, armada a mano en vez de procedural — ver
-// mas abajo) y sus 3 edificios interactuables. A diferencia de
-// MazmorraGenerada, esto NO varia entre visitas: la Ciudad es siempre el
-// mismo layout, asi que ConstruirCiudad() no usa game::Roll para nada.
+// si (varias zonas fijas conectadas por una calle, armada a mano en vez de
+// procedural — ver mas abajo), sus 3 edificios interactuables, la fuente
+// decorativa de la plaza, y el perro/pajaros/aldeanos que la recorren (ver
+// game::Deambulante). A diferencia de MazmorraGenerada, esto NO varia entre
+// visitas: la Ciudad es siempre el mismo layout, asi que ConstruirCiudad()
+// no usa game::Roll para elegirlo (si lo usa, indirectamente, para el
+// primer objetivo de cada deambulante — ver CrearDeambulante).
 struct CiudadGenerada {
     game::Dungeon mazmorra;
     game::Vec2 posicionInicial;
     std::vector<game::Edificio> edificios;
+    std::vector<game::Vec2> fuentes;
+    std::vector<game::Deambulante> deambulantes;
 };
 
-// Arma la plaza de la Ciudad a mano con el constructor de datos-ya-resueltos
-// de game::Dungeon (el mismo que usa game/save.h para reconstruir una
-// mazmorra guardada, ver el comentario de ese constructor en dungeon.h) —
-// una unica sala rectangular sin trampas, con paredes de borde calculadas
-// igual que el ultimo paso de Dungeon::Dungeon(int) (cualquier tile del
-// bounding box, con 1 de margen, que no sea parte de la sala es pared). Da
-// colision y camara gratis sin escribir logica de movimiento nueva para la
-// Ciudad.
+// Arma la Ciudad a mano con el constructor de datos-ya-resueltos de
+// game::Dungeon (el mismo que usa game/save.h para reconstruir una mazmorra
+// guardada, ver el comentario de ese constructor en dungeon.h): dos salas —
+// la Plaza Central (donde esta la Entrada a las mazmorras y arranca el
+// party) y la Calle de Comercios (Herreria + Tienda) — unidas por un tramo
+// de calle mas angosto, en vez de la unica sala chica de la primera version
+// (descartada por sentirse "como una mazmorra mas", ver el comentario de
+// arriba). Paredes de borde calculadas con el mismo criterio de siempre
+// (cualquier tile del bounding box combinado, con 1 de margen, que no sea
+// parte de NINGUNA de las 3 salas es pared) — generalizacion directa del
+// caso de una sola sala que ya usaba Dungeon::Dungeon(int). Da colision y
+// camara gratis sin escribir logica de movimiento nueva para la Ciudad.
 CiudadGenerada ConstruirCiudad() {
-    constexpr int kAncho = 16;  // en tiles
-    constexpr int kAlto = 12;
+    // Coordenadas en tiles. La Plaza (0,0)-(14,10) y la Calle de Comercios
+    // (17,2)-(27,8) quedan centradas en la misma fila (y=5 tiles en las
+    // dos), asi el tramo de calle que las conecta (14,4)-(17,8) es un
+    // pasillo recto sin quiebres. 4 tiles de alto (no 3): con 3, el borde
+    // de la calle quedaba justo en el mismo pixel que 'posicionInicial' de
+    // mas abajo (spawn 2 tiles abajo del centro de la plaza) y el lider
+    // quedaba trabado contra esa pared apenas cruzaba a la Calle de
+    // Comercios -- encontrado y corregido tras probar el cruce bajo Xvfb.
+    const game::Habitacion plaza{ 0, 0, 14, 10 };
+    const game::Habitacion calle{ 14, 4, 3, 4 };
+    const game::Habitacion comercio{ 17, 2, 10, 6 };
+    std::vector<game::Habitacion> habitaciones{ plaza, calle, comercio };
 
-    std::vector<game::Habitacion> habitaciones{ game::Habitacion{0, 0, kAncho, kAlto} };
+    auto esPiso = [&](int x, int y) {
+        for (const auto& h : habitaciones) {
+            if (x >= h.x && x < h.x + h.ancho && y >= h.y && y < h.y + h.alto) return true;
+        }
+        return false;
+    };
+    int minX = plaza.x, minY = plaza.y, maxX = plaza.x + plaza.ancho, maxY = plaza.y + plaza.alto;
+    for (const auto& h : habitaciones) {
+        minX = std::min(minX, h.x);
+        minY = std::min(minY, h.y);
+        maxX = std::max(maxX, h.x + h.ancho);
+        maxY = std::max(maxY, h.y + h.alto);
+    }
 
     std::vector<game::Rect> paredes;
-    for (int y = -1; y <= kAlto; ++y) {
-        for (int x = -1; x <= kAncho; ++x) {
-            bool esPiso = (x >= 0 && x < kAncho && y >= 0 && y < kAlto);
-            if (esPiso) continue;
+    for (int y = minY - 1; y <= maxY; ++y) {
+        for (int x = minX - 1; x <= maxX; ++x) {
+            if (esPiso(x, y)) continue;
             paredes.push_back(game::Rect{
                 x * game::kTileSize, y * game::kTileSize, game::kTileSize, game::kTileSize
             });
@@ -420,26 +454,57 @@ CiudadGenerada ConstruirCiudad() {
     }
 
     game::Dungeon mazmorra(std::move(habitaciones), std::move(paredes), /*trampas*/{});
-    game::Vec2 centro = mazmorra.CentroDeSala(0);
+    game::Vec2 centroPlaza = mazmorra.CentroDeSala(0);
+    game::Vec2 centroComercio = mazmorra.CentroDeSala(2);
 
-    // El party arranca abajo de la plaza, mirando "hacia arriba" a los 3
-    // edificios — mismo criterio de composicion que un hub tipico (todo a
-    // la vista apenas se entra, nada escondido detras del punto de spawn).
-    // Distancias ajustadas (1/2/3 tiles en vez de 3/2/4) tras verificar bajo
-    // Xvfb que con las primeras el cartel con el nombre de la Entrada a las
-    // mazmorras (la mas lejana de las 3) quedaba cortado arriba de la
-    // ventana apenas se entraba a la Ciudad — la camara sigue al lider (ver
-    // Renderer::DibujarEscenarioSinUI), asi que la distancia que importa es
-    // la del edificio AL PUNTO DE SPAWN, no al centro de la plaza.
-    game::Vec2 posicionInicial{ centro.x, centro.y + 1.0f * game::kTileSize };
+    // El party arranca abajo de la plaza, mirando "hacia arriba" a la
+    // fuente y a la Entrada a las mazmorras — mismo criterio de composicion
+    // que un hub tipico (todo a la vista apenas se entra, nada escondido
+    // detras del punto de spawn). 2 tiles (no 1, como en la primera
+    // version) para dejar despejado el circulo de la fuente, que esta
+    // justo en el centro de la plaza -- la camara sigue al lider (ver
+    // Renderer::DibujarEscenarioSinUI), asi que la distancia que importa
+    // para que no se corte el cartel de la Entrada es la del edificio AL
+    // PUNTO DE SPAWN, no al centro de la sala (verificado bajo Xvfb que 2+3
+    // tiles de distancia total siguen dejando el cartel completo en
+    // pantalla).
+    game::Vec2 posicionInicial{ centroPlaza.x, centroPlaza.y + 2.0f * game::kTileSize };
 
     std::vector<game::Edificio> edificios{
-        game::Edificio{ game::TipoEdificio::Herreria, game::Vec2{ centro.x - 4.0f * game::kTileSize, centro.y - 2.0f * game::kTileSize } },
-        game::Edificio{ game::TipoEdificio::Tienda, game::Vec2{ centro.x + 4.0f * game::kTileSize, centro.y - 2.0f * game::kTileSize } },
-        game::Edificio{ game::TipoEdificio::EntradaMazmorras, game::Vec2{ centro.x, centro.y - 3.0f * game::kTileSize } },
+        game::Edificio{ game::TipoEdificio::EntradaMazmorras, game::Vec2{ centroPlaza.x, centroPlaza.y - 3.0f * game::kTileSize } },
+        game::Edificio{ game::TipoEdificio::Herreria, game::Vec2{ centroComercio.x - 3.0f * game::kTileSize, centroComercio.y - 1.0f * game::kTileSize } },
+        game::Edificio{ game::TipoEdificio::Tienda, game::Vec2{ centroComercio.x + 3.0f * game::kTileSize, centroComercio.y - 1.0f * game::kTileSize } },
     };
 
-    return CiudadGenerada{ std::move(mazmorra), posicionInicial, std::move(edificios) };
+    // Fuente al centro de la plaza -- puramente decorativa (ver
+    // render::DibujarFuente), sin colision, mismo criterio que los
+    // edificios.
+    std::vector<game::Vec2> fuentes{ centroPlaza };
+
+    // Perro, pajaros y aldeanos deambulando (ver game::Deambulante) --
+    // pedido directo del usuario ("quiero que tenga vida, que se mueva un
+    // perro, algunos pajaros"). Anclajes elegidos a mano dentro de cada
+    // sala, lejos de las paredes y de la linea recta spawn-Entrada para que
+    // no se sientan "en el medio del paso". Puramente decorativos, no se
+    // guardan (ver el comentario de game::Deambulante).
+    std::vector<game::Deambulante> deambulantes{
+        game::CrearDeambulante(game::TipoDeambulante::Perro,
+            game::Vec2{ centroPlaza.x - 2.0f * game::kTileSize, centroPlaza.y + 2.0f * game::kTileSize }, 90.0f, 55.0f),
+        game::CrearDeambulante(game::TipoDeambulante::Pajaro,
+            game::Vec2{ centroPlaza.x - 4.5f * game::kTileSize, centroPlaza.y - 1.0f * game::kTileSize }, 70.0f, 45.0f),
+        game::CrearDeambulante(game::TipoDeambulante::Pajaro,
+            game::Vec2{ centroPlaza.x + 4.5f * game::kTileSize, centroPlaza.y + 2.5f * game::kTileSize }, 70.0f, 45.0f),
+        game::CrearDeambulante(game::TipoDeambulante::AldeanoA,
+            game::Vec2{ centroPlaza.x + 3.0f * game::kTileSize, centroPlaza.y + 1.5f * game::kTileSize }, 70.0f, 22.0f),
+        game::CrearDeambulante(game::TipoDeambulante::AldeanoB,
+            game::Vec2{ centroComercio.x - 1.5f * game::kTileSize, centroComercio.y + 1.5f * game::kTileSize }, 60.0f, 20.0f),
+        game::CrearDeambulante(game::TipoDeambulante::AldeanoC,
+            game::Vec2{ centroComercio.x + 1.5f * game::kTileSize, centroComercio.y + 1.5f * game::kTileSize }, 60.0f, 20.0f),
+        game::CrearDeambulante(game::TipoDeambulante::Pajaro,
+            game::Vec2{ centroComercio.x, centroComercio.y - 2.0f * game::kTileSize }, 60.0f, 45.0f),
+    };
+
+    return CiudadGenerada{ std::move(mazmorra), posicionInicial, std::move(edificios), std::move(fuentes), std::move(deambulantes) };
 }
 
 // Catalogo de precios de la Herreria (Mejoras, ver game/item.h) y la Tienda
@@ -687,6 +752,11 @@ int main() {
     // game::kPantallaCiudad/kPantallaMapa en save.h).
     bool enCiudad = false;
     std::vector<game::Edificio> edificiosCiudad;  // vacio salvo mientras enCiudad es true
+    // Fuente(s) decorativa(s) y deambulantes (perro/pajaros/aldeanos) de la
+    // Ciudad -- mismo criterio que edificiosCiudad arriba (vacios salvo
+    // mientras enCiudad es true, se llenan/vacian siempre junto con el).
+    std::vector<game::Vec2> fuentesCiudad;
+    std::vector<game::Deambulante> deambulantesCiudad;
 
     // Reemplaza 'mazmorra'/'enemigos'/'cofres'/'posicionInicial'/
     // 'temaMazmorraCargada' por los de la Ciudad y entra a explorarla — la
@@ -702,7 +772,9 @@ int main() {
         enemigos.clear();
         cofres.clear();
         edificiosCiudad = std::move(generada.edificios);
-        temaMazmorraCargada = static_cast<Tema>(kTemaCiudad);
+        fuentesCiudad = std::move(generada.fuentes);
+        deambulantesCiudad = std::move(generada.deambulantes);
+        temaMazmorraCargada = static_cast<Tema>(render::kTemaCiudad);
         enCiudad = true;
         party.ReiniciarFormacion(posicionInicial);
         estado = EstadoJuego::Ciudad;
@@ -863,6 +935,8 @@ int main() {
                 temaMazmorraCargada = temaMapaElegido;
                 mazmorraActivaIndice = IndiceCombinado(temaMapaElegido, dificultad);
                 edificiosCiudad.clear();
+                fuentesCiudad.clear();
+                deambulantesCiudad.clear();
                 enCiudad = false;
                 party.ReiniciarFormacion(posicionInicial);
                 estado = EstadoJuego::Exploracion;
@@ -1248,6 +1322,14 @@ int main() {
 
                 party.ActualizarFormacion(dt);
 
+                // Perro/pajaros/aldeanos siguen deambulando mientras el
+                // jugador esta parado en la Ciudad (ver game::Deambulante) —
+                // puramente visual, no participan de la colision ni de
+                // ninguna interaccion.
+                for (auto& deambulante : deambulantesCiudad) {
+                    game::ActualizarDeambulante(deambulante, dt);
+                }
+
                 if (IsKeyPressed(KEY_TAB)) fichaAbierta = true;
 
                 // Edificio interactuable mas cercano (mismo criterio de
@@ -1295,6 +1377,8 @@ int main() {
                         cofres = std::move(fondo.cofres);
                         temaMazmorraCargada = Tema::Bosque;
                         edificiosCiudad.clear();
+                        fuentesCiudad.clear();
+                        deambulantesCiudad.clear();
                         enCiudad = false;
                         opcionMapaTemaSeleccionada = 0;
                         estado = EstadoJuego::MapaTema;
@@ -1305,18 +1389,19 @@ int main() {
             if (inventarioAbierto) {
                 BeginDrawing();
                 renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres, static_cast<int>(temaMazmorraCargada),
-                                                edificiosCiudad);
+                                                edificiosCiudad, deambulantesCiudad, fuentesCiudad);
                 ui::DibujarInventario(party, objetivoInventario, renderer.Sprites());
                 EndDrawing();
             } else if (fichaAbierta) {
                 BeginDrawing();
                 renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres, static_cast<int>(temaMazmorraCargada),
-                                                edificiosCiudad);
+                                                edificiosCiudad, deambulantesCiudad, fuentesCiudad);
                 ui::DibujarFichaPersonajes(party, renderer.Sprites());
                 EndDrawing();
             } else {
                 renderer.DibujarFrame(mazmorra, party, enemigos, cofres, static_cast<int>(temaMazmorraCargada),
-                                       /*panelExpandido*/false, prompt, mensajeFlotante, edificiosCiudad);
+                                       /*panelExpandido*/false, prompt, mensajeFlotante,
+                                       edificiosCiudad, deambulantesCiudad, fuentesCiudad);
             }
         } else if (estado == EstadoJuego::Herreria || estado == EstadoJuego::Tienda) {
             if (timerMensaje > 0.0f) {
@@ -1364,7 +1449,7 @@ int main() {
 
             BeginDrawing();
             renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres, static_cast<int>(temaMazmorraCargada),
-                                            edificiosCiudad);
+                                            edificiosCiudad, deambulantesCiudad, fuentesCiudad);
             ui::DibujarComercio(anchoVentana, altoVentana, esHerreria, ofertasUi, party.Oro(), mensajeFlotante);
             EndDrawing();
         } else if (estado == EstadoJuego::Pausa) {
@@ -1453,12 +1538,13 @@ int main() {
             }
 
             BeginDrawing();
-            // 'edificiosCiudad' viene vacio salvo que la pausa se haya
-            // abierto desde la Ciudad (ver enCiudad) — en ese caso se ven
-            // los edificios de fondo, igual que se verian los enemigos/
-            // cofres de una mazmorra si la pausa se abrio desde ahi.
+            // 'edificiosCiudad'/'deambulantesCiudad'/'fuentesCiudad' vienen
+            // vacios salvo que la pausa se haya abierto desde la Ciudad (ver
+            // enCiudad) — en ese caso se ven de fondo, igual que se verian
+            // los enemigos/cofres de una mazmorra si la pausa se abrio desde
+            // ahi.
             renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres, static_cast<int>(temaMazmorraCargada),
-                                            edificiosCiudad);
+                                            edificiosCiudad, deambulantesCiudad, fuentesCiudad);
             ui::DibujarPausa(anchoVentana, altoVentana, opcionPausaSeleccionada, mensajeFlotante);
             EndDrawing();
         } else if (estado == EstadoJuego::SeleccionSlot) {
@@ -1529,7 +1615,9 @@ int main() {
                                 enemigos.clear();
                                 cofres.clear();
                                 edificiosCiudad = std::move(generada.edificios);
-                                temaMazmorraCargada = static_cast<Tema>(kTemaCiudad);
+                                fuentesCiudad = std::move(generada.fuentes);
+                                deambulantesCiudad = std::move(generada.deambulantes);
+                                temaMazmorraCargada = static_cast<Tema>(render::kTemaCiudad);
                                 enCiudad = true;
                                 mazmorraActivaIndice = -1;
                                 estado = EstadoJuego::Ciudad;
@@ -1545,6 +1633,8 @@ int main() {
                                 enemigos = std::move(carga.datos.enemigos);
                                 cofres = std::move(carga.datos.cofres);
                                 edificiosCiudad.clear();
+                                fuentesCiudad.clear();
+                                deambulantesCiudad.clear();
                                 enCiudad = false;
                                 if (mazmorraActivaIndice >= 0) {
                                     temaMazmorraCargada = TemaDeIndiceCombinado(mazmorraActivaIndice);
@@ -1569,7 +1659,7 @@ int main() {
 
             BeginDrawing();
             renderer.DibujarEscenarioSinUI(mazmorra, party, enemigos, cofres, static_cast<int>(temaMazmorraCargada),
-                                            edificiosCiudad);
+                                            edificiosCiudad, deambulantesCiudad, fuentesCiudad);
             ui::DibujarSeleccionSlot(anchoVentana, altoVentana, opcionSlotSeleccionada, modoGuardarSlot, hayGuardado, mensajeSlot);
             EndDrawing();
         } else {  // EstadoJuego::Combate

@@ -22,6 +22,7 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/game/save.cpp" "CMakeFiles/rpg_mazmorras.dir/src/game/save.cpp.obj" "gcc" "CMakeFiles/rpg_mazmorras.dir/src/game/save.cpp.obj.d"
   "C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/main.cpp" "CMakeFiles/rpg_mazmorras.dir/src/main.cpp.obj" "gcc" "CMakeFiles/rpg_mazmorras.dir/src/main.cpp.obj.d"
   "C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/render/audio.cpp" "CMakeFiles/rpg_mazmorras.dir/src/render/audio.cpp.obj" "gcc" "CMakeFiles/rpg_mazmorras.dir/src/render/audio.cpp.obj.d"
+  "C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/render/character_sheet_ui.cpp" "CMakeFiles/rpg_mazmorras.dir/src/render/character_sheet_ui.cpp.obj" "gcc" "CMakeFiles/rpg_mazmorras.dir/src/render/character_sheet_ui.cpp.obj.d"
   "C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/render/combat_ui.cpp" "CMakeFiles/rpg_mazmorras.dir/src/render/combat_ui.cpp.obj" "gcc" "CMakeFiles/rpg_mazmorras.dir/src/render/combat_ui.cpp.obj.d"
   "C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/render/input.cpp" "CMakeFiles/rpg_mazmorras.dir/src/render/input.cpp.obj" "gcc" "CMakeFiles/rpg_mazmorras.dir/src/render/input.cpp.obj.d"
   "C:/Users/ama5185/Desktop/Martin/RPG/rpg-mazmorras/src/render/inventory_ui.cpp" "CMakeFiles/rpg_mazmorras.dir/src/render/inventory_ui.cpp.obj" "gcc" "CMakeFiles/rpg_mazmorras.dir/src/render/inventory_ui.cpp.obj.d"

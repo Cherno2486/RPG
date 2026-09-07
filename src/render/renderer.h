@@ -8,6 +8,7 @@
 #include "../game/enemy.h"
 #include "../game/item.h"
 #include "../game/edificio.h"
+#include "../game/deambulante.h"
 #include "sprites.h"
 
 namespace render {
@@ -37,14 +38,20 @@ public:
     // Abrir cofre" — lo decide main.cpp, que ya sabe cual es el interactuable
     // mas cercano). 'mensajeFlotante', si no esta vacio, se muestra arriba
     // del prompt (p.ej. el resultado de abrir un cofre) por un tiempo corto.
-    // 'edificios' es opcional (vacio por defecto): solo lo usa la Ciudad
-    // (ver EstadoJuego::Ciudad en main.cpp) para dibujar sus construcciones
-    // interactuables dentro del espacio de camara -- las mazmorras normales
-    // no pasan nada aca.
+    // 'edificios', 'deambulantes' y 'fuentes' son opcionales (vacios por
+    // defecto): solo los usa la Ciudad (ver EstadoJuego::Ciudad en main.cpp)
+    // -- construcciones interactuables, el perro/pajaros/aldeanos que le dan
+    // vida (ver game::Deambulante) y el centro de cada fuente decorativa de
+    // la plaza, respectivamente. Las mazmorras normales no pasan nada aca.
+    // 'tema' puede ser tambien render::kTemaCiudad (ver sprites.h), en cuyo
+    // caso se usa la paleta dedicada de la Ciudad en vez de un tema de
+    // mazmorra.
     void DibujarFrame(const game::Dungeon& mazmorra, const game::Party& party,
                        const std::vector<game::Enemy>& enemigos, const std::vector<game::Cofre>& cofres, int tema,
                        bool panelExpandido, const std::string& promptInteraccion, const std::string& mensajeFlotante,
-                       const std::vector<game::Edificio>& edificios = {});
+                       const std::vector<game::Edificio>& edificios = {},
+                       const std::vector<game::Deambulante>& deambulantes = {},
+                       const std::vector<game::Vec2>& fuentes = {});
 
     // Dibuja solo la mazmorra + party + enemigos + cofres (sin panel de UI ni
     // carteles), y sin BeginDrawing/EndDrawing propios. La usa main.cpp para
@@ -55,11 +62,13 @@ public:
     // paredes, enemigos, cofres, party) dentro de ese espacio de camara — la
     // mazmorra generada por salas es mas grande que la ventana, asi que sin
     // esto no se veria nada al alejarse de la sala inicial. 'tema': ver el
-    // comentario de DibujarFrame arriba. 'edificios': ver el comentario de
-    // DibujarFrame arriba (mismo default vacio).
+    // comentario de DibujarFrame arriba. 'edificios'/'deambulantes'/'fuentes':
+    // ver el comentario de DibujarFrame arriba (mismos defaults vacios).
     void DibujarEscenarioSinUI(const game::Dungeon& mazmorra, const game::Party& party,
                                 const std::vector<game::Enemy>& enemigos, const std::vector<game::Cofre>& cofres,
-                                int tema, const std::vector<game::Edificio>& edificios = {});
+                                int tema, const std::vector<game::Edificio>& edificios = {},
+                                const std::vector<game::Deambulante>& deambulantes = {},
+                                const std::vector<game::Vec2>& fuentes = {});
 
 private:
     int anchoVentana_;

@@ -34,6 +34,7 @@ add_executable(rpg_mazmorras
     src/game/item.cpp
     src/game/inventory.cpp
     src/game/save.cpp
+    src/game/deambulante.cpp
     src/render/renderer.cpp
     src/render/sprites.cpp
     src/render/input.cpp
